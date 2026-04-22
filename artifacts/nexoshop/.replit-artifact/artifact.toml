@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "NexoShop"
+version = "1.0.0"
+id = "artifacts/nexoshop"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18424
+
+[services.development]
+run = "pnpm --filter @workspace/nexoshop run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nexoshop", "run", "build" ]
+publicDir = "artifacts/nexoshop/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18424"
+BASE_PATH = "/"

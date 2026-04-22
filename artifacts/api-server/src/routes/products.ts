@@ -1,0 +1,66 @@
+import { Router, type IRouter } from "express";
+import { db, productsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import {
+  GetProductsQueryParams,
+  GetProductsResponse,
+  GetProductResponse,
+} from "@workspace/api-zod";
+
+const router: IRouter = Router();
+
+router.get("/products", async (req, res): Promise<void> => {
+  const params = GetProductsQueryParams.safeParse(req.query);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  let products;
+  if (params.data.category && params.data.category !== "Tout") {
+    products = await db
+      .select()
+      .from(productsTable)
+      .where(eq(productsTable.category, params.data.category));
+  } else {
+    products = await db.select().from(productsTable);
+  }
+
+  res.json(
+    GetProductsResponse.parse(
+      products.map((p) => ({
+        ...p,
+        price: Number(p.price),
+      }))
+    )
+  );
+});
+
+router.get("/products/:id", async (req, res): Promise<void> => {
+  const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const id = parseInt(raw, 10);
+
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid product ID" });
+    return;
+  }
+
+  const [product] = await db
+    .select()
+    .from(productsTable)
+    .where(eq(productsTable.id, id));
+
+  if (!product) {
+    res.status(404).json({ error: "Product not found" });
+    return;
+  }
+
+  res.json(
+    GetProductResponse.parse({
+      ...product,
+      price: Number(product.price),
+    })
+  );
+});
+
+export default router;

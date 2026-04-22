@@ -1,0 +1,303 @@
+NexoShop Telegram Mini App
+Crée une Telegram Mini App complète pour ma boutique NexoShop. Voici le cahier des charges détaillé.
+
+🎯 Stack technique demandé
+Frontend : React 19 + Vite + TypeScript + TailwindCSS (mobile-first, dark mode)
+Backend : Node.js + Express + TypeScript
+Base de données : PostgreSQL + Drizzle ORM
+Bot Telegram : node-telegram-bot-api en mode polling
+Le SDK Telegram WebApp doit être chargé : https://telegram.org/js/telegram-web-app.js
+🔐 Contraintes de sécurité critiques
+L'app DOIT être accessible UNIQUEMENT depuis Telegram.
+Si quelqu'un ouvre l'URL dans Chrome/Safari sans initData Telegram → afficher un écran "❌ Cette application est accessible uniquement depuis le bot Telegram NexoShop" + bouton "Ouvrir le bot" qui redirige vers https://t.me/MonBotUsername.
+Côté backend : valider obligatoirement le initData Telegram via HMAC-SHA256 sur toutes les routes API (sauf /health). Pas de fallback dev en production.
+Algo : secret_key = HMAC_SHA256("WebAppData", BOT_TOKEN) puis expected_hash = HMAC_SHA256(secret_key, sorted_data_check_string).
+L'ID Telegram de l'utilisateur doit être extrait du initDataUnsafe.user.id validé côté serveur — jamais du frontend.
+Toute opération sensible (achat, recharge, conversion points) passe par le backend authentifié.
+🤖 Comportement du bot Telegram
+Commande /start
+Le bot doit répondre avec :
+
+Une image de bienvenue (banner/logo NexoShop — utilise un placeholder hébergé pour l'instant, je remplacerai)
+Un message court : "👋 Bienvenue sur NexoShop !\nClique sur le bouton ci-dessous pour accéder à la boutique."
+Un seul bouton inline de type web_app :
+Texte : 🛍️ Accéder à la boutique
+URL : process.env.MINI_APP_URL
+Toutes les autres anciennes commandes utilisateur (/menu, /solde, /panier...) doivent être supprimées. Garde uniquement les commandes admin (/admin, /addbalance, etc.).
+
+Système de référence (parrainage)
+/start ref_<userId> → enregistre que <userId> a parrainé le nouvel arrivant.
+
+📱 Interface Mini App — Layout général
+Header (toujours visible en haut)
+À gauche : icône portefeuille + solde actuel en € (ex: 💳 12.50 €)
+À droite : bouton panier 🛒 avec badge rouge indiquant le nombre d'articles
+Bottom navigation (toujours visible)
+3 onglets :
+
+🛍️ Boutique
+💳 Portefeuille
+👤 Profil
+🛍️ ONGLET 1 : BOUTIQUE
+Filtre par catégorie (pills horizontales scrollables en haut)
+Tout · 🎬 Streaming · 🎵 Musique · 🤖 IA · ⚽ Sport · 🔧 Tech · ✨ Spécial
+
+Liste des produits (cartes verticales)
+Chaque carte affiche : nom + emoji, description courte, prix en € (badge bleu en haut à droite), badge "Livraison auto" (vert) ou "Livraison manuelle" (orange), boutons + Panier et Acheter direct.
+
+LISTE COMPLÈTE DES PRODUITS À INTÉGRER
+🎬 Streaming (livraison manuelle, sauf indication contraire)
+Produit	Prix	Description
+🎬 Netflix (avec pub)	5.00€	Catalogue Netflix avec profil dédié — garantie à vie
+🎬 Netflix (sans pub)	8.00€	Netflix HD sans interruption — garantie à vie
+🏰 Disney+	4.50€	Disney, Marvel, Star Wars, Pixar — garantie à vie
+🍿 Crunchyroll Mega Fan	4.50€	Animes illimités, sans pub, HD — garantie à vie
+📺 Prime Video	12.00€	Accès 6 mois au catalogue Amazon Prime Video
+🍎 Apple TV+	4.50€	Accès 1 mois aux contenus originaux Apple
+⭐ Paramount+	4.50€	Catalogue Paramount+ — garantie à vie
+📡 IPTV 1 mois (essai)	10.00€	+10 000 chaînes TV en direct + VOD
+📡 IPTV 6 mois	30.00€	+10 000 chaînes TV + VOD
+📡 IPTV 1 an	50.00€	+10 000 chaînes TV + VOD
+🎵 Musique
+Produit	Prix	Livraison	Description
+🎵 Spotify Premium	10.00€	Manuelle	1 mois sans pub, HQ, mode hors ligne
+▶️ YouTube Premium	5.00€	Manuelle	1 mois sans pub + YouTube Music + arrière-plan
+🎧 Deezer Premium (1 lien à vie)	2.00€	Auto	Lien d'activation Deezer Premium à vie
+🎧 Deezer Premium (lot 10 liens)	5.00€	Auto	10 liens Deezer Premium à vie
+🎧 Deezer Premium (lot 50 liens)	15.00€	Auto	50 liens Deezer Premium à vie
+🎧 Deezer Premium (lot 200 liens)	20.00€	Auto	200 liens Deezer Premium à vie
+🎧 Générateur Deezer	35.00€	Manuelle	Générateur de liens Deezer à vie, illimité
+🤖 IA (livraison manuelle)
+Produit	Prix	Description
+💎 Gemini Pro+	14.50€	12 mois, IA Google niveau max
+💬 ChatGPT Plus	10.00€	1 mois GPT-4o + DALL-E + navigation web
+💬 ChatGPT Go 1 An	20.00€	12 mois ChatGPT Go
+⚽ Sport (livraison manuelle)
+Produit	Prix	Description
+💪 BASIC-FIT 2 mois	18.00€	Tous clubs Basic-Fit
+💪 BASIC-FIT 6 mois	50.00€	Tous clubs Basic-Fit
+💪 BASIC-FIT 1 an	70.00€	Tous clubs Basic-Fit
+🏋️ FITNESS PARK 2 mois	15.00€	Accès Fitness Park négocié
+🏋️ FITNESS PARK 6 mois	50.00€	Accès Fitness Park
+🏋️ FITNESS PARK 1 an	70.00€	Accès Fitness Park
+🔧 Tech (livraison auto — guides/PDF/textes)
+Produit	Prix	Description
+🎬 Cinéma Pathé	15.00€	Méthode place Pathé Illimité gratuite
+🎵 Spotify Premium (méthode)	10.00€	Spotify Premium gratuit Android/iOS
+👻 Snap+	10.00€	Snap+ gratuit, remboursé via Apple
+📱 App Store	7.00€	Méthode remboursement d'achats App Store
+🎮 PSN	5.00€	Carte-cadeau PSN gratuite via support
+👗 Shein	10.00€	Méthode commande gratuite par retour stratégique
+🚀 Social Boost	10.00€	Guide booster vues/likes/abonnés
+▶️ YouTube Premium (Android only)	5.00€	APK modifié pour Android
+🎬 Netflix Premium gratuit	5.00€	Méthode 30j via carte virtuelle
+📦 Amazon no rf	10.00€	Produits gratuits contre avis
+🍎 Unban Apple	5.00€	Guide réactivation compte Apple banni
+🛜 Hack Wifi	10.00€	Guide hacking WPA2/WEP
+🥤 Red Bull	8.00€	Méthode Red Bull 250ml à 0,10€ l'unité
+✨ Spécial / Autres
+Produit	Prix	Livraison	Description
+💳 Tech Carte Virtuelle	150.00€	Auto (lien Google Doc)	Infinie / sans limite — encaisse 17€ en 5 min à l'infini, rentable dès 9 runs
+🗺️ Télépéage Ulys	20.00€	Manuelle (badge physique envoyé)	Badge Ulys France/Portugal/Espagne/Italie. Demande nom/prénom/date naissance/email/adresse/plaque
+🦉 Duolingo Super	4.50€	Manuelle	Abonnement à vie, sans pub, cœurs illimités
+✂️ CapCut Pro	8.00€	Manuelle	Outils premium, export sans filigrane, à vie
+🎮 Robux	10.00€	Auto	Méthode Robux gratuits via sites de récompenses
+🎮 V-Bucks	10.00€	Auto	Méthode jusqu'à 6000 V-Bucks via VPN
+🎵 TikTok Boost	5.00€	Auto	Likes/vues/abonnés gratuits
+✅ TikTok Certif	15.00€	Manuelle	Badge certifié TikTok sans conditions
+🚫 TikTok Ban	15.00€	Manuelle	Méthode pour bannir un compte ciblé
+🛒 PANIER
+Bouton 🛒 dans le header (badge rouge avec nb articles)
+Page panier : liste des items, possibilité de retirer
+Auto-discount -5% dès 50€ total panier
+Champ "🎟️ Code promo" → applique réduction (% ou montant fixe)
+Bouton "Tout acheter" → débite le solde + livre chaque produit selon son type
+📦 FLOW D'ACHAT
+Clic "Acheter direct" sur un produit → modale de confirmation (prix, solde après, type de livraison)
+Vérification solde → si insuffisant : bouton "Recharger" qui ouvre l'onglet Portefeuille
+Si OK → débite le solde, crée une transaction
+Livraison :
+Auto → renvoie immédiatement le contenu (lien Deezer depuis stock DB, texte+PDF du tech, lien Google Doc pour Carte Virtuelle)
+Manuelle → crée une commande avec ID unique #12345, notifie l'admin Telegram + Discord webhook. L'admin livre via /new <orderId> <credentials>
+Pour Télépéage Ulys → workflow spécial multi-étapes pour collecter les infos
+💳 ONGLET 2 : PORTEFEUILLE
+Section 1 : Solde
+Carte premium avec dégradé bleu/violet
+Solde en gros (12.50 €)
+Stats secondaires : nombre d'achats, points fidélité
+Section 2 : Recharger
+3 cartes de méthode de paiement :
+
+🪙 Litecoin (LTC) — automatique
+Min : 5€
+Frais réseau : +2% sur le taux de change
+Flow : choix montant (5/10/20/30/50/autre) → conversion EUR→LTC via API CoinGecko → affichage adresse + montant LTC → input "TX Hash" → vérification via Blockchair (1 confirmation requise) → crédit auto
+🅿️ PayPal — semi-automatique
+Min : 5€
+Anti-spam : max 3 tentatives/heure, auto-ban si >5 paiements PENDING
+Flow : choix montant → 2 modes selon PAYPAL_API_ENABLED :
+API active : génère référence aléatoire (ex: "pizza weekend a1b2c3d4"), user envoie via PayPal.me avec cette note, polling auto vérifie
+API inactive : user paie puis envoie un screenshot → notifie admin → boutons Valider/Attendre/Refuser
+💳 SumUp (CB / Apple Pay) — automatique
+Génère un lien de paiement SumUp
+Polling vérifie l'historique pour transaction SUCCESSFUL correspondant
+Section 3 : Mon ID Telegram
+Affiche l'ID + bouton "📋 Copier"
+Section 4 : Historique des transactions
+Liste des 30 dernières transactions (crédit ⬆️ vert / débit ⬇️ rouge)
+Date, description, montant
+👤 ONGLET 3 : PROFIL
+Header utilisateur
+Avatar circulaire (initiale + dégradé bleu/violet)
+Prénom + @username
+Badge "🆔 ID : 123456789"
+Section "Statistiques" (grille 2x2)
+🛍️ Achats (nombre)
+⭐ Points fidélité
+💸 Total dépensé
+📦 Transactions
+Section "Mes mini-jeux" → ouvre des sous-pages
+🎰 Roue du destin
+💎 Points fidélité
+🎟️ Jackpot
+Section "Récompenses & paliers" → ouvre la page paliers
+Section "Parrainage" → ouvre la page parrainage
+🎮 PAGES BONUS
+🎰 ROUE DU DESTIN
+Animation de bande défilante (16 frames sur ~14s) — peut être remplacée par animation CSS roulette
+1 spin gratuit toutes les 24h (cooldown stocké en DB par user)
+Possibilité de reroll si récompense "Relance gratuite" ou via paliers
+Récompenses (probabilités exactes) :
+Récompense	Probabilité
+😔 Rien	60.2%
+💰 +0.50€	12%
+💵 +1.00€	8%
+💸 +5.00€	4%
+🎟️ Coupon -5%	5%
+🏷️ Coupon -3€	3.5%
+🔄 Relance gratuite	3%
+⭐ +10 points fidélité	2%
+🌟 +50 points fidélité	1.5%
+🎧 Lien Deezer Premium	0.5%
+💎 +100 points fidélité	0.3%
+🏆 Jackpot +20€ PayPal	0% (affiché mais impossible)
+💎 POINTS FIDÉLITÉ
+Affiche solde de points
+Conversion : 20 pts = 1€
+Paliers de conversion : 1, 2, 5, ou 10 blocs (ex: 200 pts → 10€)
+2 modes : conversion en solde direct OU génération d'un code coupon unique
+Historique des conversions
+🎟️ JACKPOT (loterie)
+Page d'info : "À chaque achat tu gagnes 1 ticket de jackpot 🎫"
+Affiche : nombre de tickets de l'utilisateur, total tickets en jeu (tous users), date du prochain tirage
+Tirage manuel par l'admin via panneau admin
+🏆 PALIERS (récompenses cumulées par total rechargé)
+Palier	Total rechargé	Récompense
+1	10€	+1 tour de roue gratuit
+2	30€	1 lien Deezer offert
+3	60€	Coupon 10€ + 2 tours de roue
+4	100€	Coupon -30% + 5 tours de roue
+5	200€	Coupon 20€ + 10 tours de roue
+6	350€	Coupon -50% + 20 tours de roue
+7	500€	1 an d'IPTV offert (contacter support)
+Affiche barre de progression vers prochain palier.
+
+🎁 PARRAINAGE
+Lien personnel : https://t.me/MonBot?start=ref_<userId>
+Bouton "Copier" + bouton "Partager" (utilise navigator.share)
+Récompense parrain : 5€ par filleul éligible
+Conditions filleul : compte > 24h ET au moins 20€ déposés
+Plafond : max 80€ gagnés au total via parrainage
+Affiche : liste des filleuls (pseudo + statut éligible/en attente), gains cumulés, gains restants disponibles
+📊 SCHÉMA BASE DE DONNÉES (Drizzle ORM, PostgreSQL)
+Tables principales à créer :
+
+users (telegram_id PK, username, first_name, balance NUMERIC, loyalty_points INT, purchase_count INT, total_recharged NUMERIC, free_spins INT, last_spin_at TIMESTAMP, jackpot_tickets INT, created_at)
+transactions (id, telegram_id FK, type ENUM('credit','debit'), amount NUMERIC, description, created_at)
+orders (id, telegram_id FK, product_name, price, status ENUM('pending','delivered','cancelled'), credentials TEXT, delivered_at, created_at)
+cart_items (id, telegram_id FK, product_id, quantity, added_at)
+coupons (code PK, type ENUM('amount','percent'), value NUMERIC, max_uses INT, current_uses INT, expires_at, restricted_to_user_id, created_at)
+coupon_usages (id, coupon_code FK, telegram_id, used_at)
+deezer_links (id, link, used BOOLEAN, used_by, used_at) — stock pour livraison auto
+referrals (id, referrer_id, referred_id, eligible BOOLEAN, paid BOOLEAN, created_at)
+wheel_spins (id, telegram_id, reward_type, reward_value, created_at)
+paypal_pending (id, telegram_id, amount, reference, status, screenshot_url, created_at)
+ltc_pending (id, telegram_id, amount_eur, amount_ltc, address, tx_hash, confirmed BOOLEAN, created_at)
+🔧 ENDPOINTS API REST (préfixe /api/webapp, tous protégés par validateInitData)
+GET /me → profil complet user (solde, points, stats)
+GET /products → liste produits groupés par catégorie
+GET /transactions?limit=30 → historique transactions
+GET /cart → contenu du panier
+POST /cart/add {productId, qty} → ajoute au panier
+DELETE /cart/:itemId → retire du panier
+POST /cart/checkout {couponCode?} → achète tout le panier
+POST /purchase {productId} → achat direct
+POST /coupon/apply {code} → vérifie et applique coupon
+GET /wheel/status → cooldown + free_spins disponibles
+POST /wheel/spin → effectue un spin, renvoie récompense
+POST /loyalty/convert {points, mode: 'balance'|'coupon'} → conversion
+GET /jackpot → tickets user + total + prochain tirage
+GET /milestones → paliers + progression
+GET /referrals → liste filleuls + gains
+POST /recharge/ltc {amountEur} → crée recharge LTC, renvoie adresse
+POST /recharge/ltc/verify {txHash} → vérifie tx + crédite
+POST /recharge/paypal {amount} → crée recharge PayPal
+POST /recharge/paypal/screenshot {rechargeId, imageBase64} → upload preuve
+POST /recharge/sumup {amount} → renvoie URL paiement SumUp
+POST /support/message {message} → envoie message support à admin via bot
+🎨 DESIGN SYSTEM
+Background : #0d1117 (dark)
+Cards : #161b22 avec border rgba(255,255,255,0.07)
+Accent principal : #3b82f6 (bleu) → #2563eb (dégradés)
+Accent secondaire : #8b5cf6 (violet) — pour avatar, parrainage
+Succès : #22c55e — Erreur : #ef4444 — Warning : #f59e0b
+Police : Inter (Google Fonts), tailles 11px (small) → 22px (titres)
+Border radius : 12-16px sur les cartes, 20px sur les modales
+Modales : slide-up depuis le bas (mobile pattern)
+Haptic feedback Telegram à chaque clic important (tg.HapticFeedback.selectionChanged())
+Theme adapté au color scheme Telegram (tg.colorScheme)
+🚀 Variables d'environnement requises
+TELEGRAM_BOT_TOKEN=...
+ADMIN_TELEGRAM_ID=...
+DATABASE_URL=postgresql://...
+MINI_APP_URL=https://...
+DISCORD_WEBHOOK_ORDERS=...
+DISCORD_WEBHOOK_USERS=...
+DISCORD_WEBHOOK_SUPPORT=...
+PAYPAL_ME_USERNAME=...
+PAYPAL_API_ENABLED=true|false
+PAYPAL_CLIENT_ID=...
+PAYPAL_CLIENT_SECRET=...
+LTC_WALLET_ADDRESS=...
+SUMUP_API_KEY=...
+SUMUP_MERCHANT_CODE=...
+
+⚙️ Panneau admin (commandes Telegram, hors mini app)
+Garde ces commandes admin actives sur le bot (le panneau admin reste dans Telegram, pas dans la Mini App pour l'instant) :
+
+/admin → menu admin avec boutons inline
+/addbalance <userId> <amount>
+/addspins <userId> <nb> et /addspinsall <nb>
+/addpoints <userId> <nb> et /removepoints <userId> <nb>
+/ban <userId> et /unban <userId>
+/coupon <code> <type> <value> <max_uses> <expires_days>
+/jackpot_draw → tire le gagnant
+/new <orderId> <credentials> → livre une commande manuelle
+/newiptv <orderId> <m3u_link> → livre IPTV
+/adddeezer puis envoyer les liens, /fini pour terminer
+/deezerstock, /cleardeezer
+/stats → stats globales
+/broadcast <message> → message à tous les users
+✅ Critères de validation
+ L'app refuse l'accès depuis un navigateur sans initData Telegram valide
+ /start envoie image + bouton WebApp uniquement (aucun autre menu)
+ Les 3 onglets (Boutique / Portefeuille / Profil) sont fonctionnels
+ Le solde et le panier sont visibles dans le header partout
+ Tous les produits listés ci-dessus sont présents avec leurs prix exacts
+ La roue du destin est jouable avec cooldown 24h et probabilités exactes
+ Le système de points (20pts=1€) fonctionne
+ Le parrainage avec lien ?start=ref_<id> fonctionne (5€/filleul éligible, plafond 80€)
+ Les paliers se débloquent automatiquement selon le total rechargé
+ PayPal + LTC + SumUp fonctionnels
+ Livraison auto pour Deezer/techs/Carte Virtuelle, manuelle pour le reste
+ Notifications Discord webhooks pour : nouveaux users, achats, recharges, parrainages, support

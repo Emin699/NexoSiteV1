@@ -1,22 +1,41 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NexoShop API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: products
+    description: Product catalog
+  - name: users
+    description: User management
+  - name: cart
+    description: Shopping cart
+  - name: orders
+    description: Orders
+  - name: wallet
+    description: Wallet and transactions
+  - name: coupons
+    description: Coupon codes
+  - name: wheel
+    description: Wheel of destiny
+  - name: loyalty
+    description: Loyalty points
+  - name: referral
+    description: Referral program
+  - name: jackpot
+    description: Jackpot lottery
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +43,386 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /products:
+    get:
+      operationId: getProducts
+      tags: [products]
+      summary: Get all products
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get product by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  /users/me/stats:
+    get:
+      operationId: getMeStats
+      tags: [users]
+      summary: Get user stats
+      responses:
+        "200":
+          description: User stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
+
+  /users/register:
+    post:
+      operationId: registerUser
+      tags: [users]
+      summary: Register or login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserBody"
+      responses:
+        "200":
+          description: User registered or logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /cart:
+    get:
+      operationId: getCart
+      tags: [cart]
+      summary: Get cart items
+      responses:
+        "200":
+          description: Cart items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartSummary"
+    post:
+      operationId: addToCart
+      tags: [cart]
+      summary: Add item to cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddToCartBody"
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartSummary"
+    delete:
+      operationId: clearCart
+      tags: [cart]
+      summary: Clear cart
+      responses:
+        "200":
+          description: Cart cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartSummary"
+
+  /cart/{productId}:
+    delete:
+      operationId: removeFromCart
+      tags: [cart]
+      summary: Remove item from cart
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated cart
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CartSummary"
+
+  /cart/validate-coupon:
+    post:
+      operationId: validateCoupon
+      tags: [cart]
+      summary: Validate a coupon code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateCouponBody"
+      responses:
+        "200":
+          description: Coupon validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CouponValidation"
+
+  /cart/checkout:
+    post:
+      operationId: checkout
+      tags: [cart]
+      summary: Checkout (purchase cart)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckoutBody"
+      responses:
+        "200":
+          description: Checkout result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResult"
+        "400":
+          description: Insufficient balance
+
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [orders]
+      summary: Get user orders
+      responses:
+        "200":
+          description: Orders list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+
+  /orders/buy:
+    post:
+      operationId: buyProduct
+      tags: [orders]
+      summary: Buy a single product directly
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BuyProductBody"
+      responses:
+        "200":
+          description: Purchase result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Insufficient balance
+
+  /wallet:
+    get:
+      operationId: getWallet
+      tags: [wallet]
+      summary: Get wallet info
+      responses:
+        "200":
+          description: Wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/transactions:
+    get:
+      operationId: getTransactions
+      tags: [wallet]
+      summary: Get transaction history
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /wallet/recharge/crypto:
+    post:
+      operationId: initiateCryptoRecharge
+      tags: [wallet]
+      summary: Initiate a crypto recharge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CryptoRechargeBody"
+      responses:
+        "200":
+          description: Recharge initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CryptoRechargeResult"
+
+  /wallet/recharge/crypto/verify:
+    post:
+      operationId: verifyCryptoRecharge
+      tags: [wallet]
+      summary: Verify crypto payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyCryptoBody"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyCryptoResult"
+
+  /wheel/spin:
+    post:
+      operationId: spinWheel
+      tags: [wheel]
+      summary: Spin the wheel of destiny
+      responses:
+        "200":
+          description: Spin result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WheelSpinResult"
+        "400":
+          description: No spins available
+
+  /wheel/status:
+    get:
+      operationId: getWheelStatus
+      tags: [wheel]
+      summary: Get wheel status
+      responses:
+        "200":
+          description: Wheel status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WheelStatus"
+
+  /loyalty/convert:
+    post:
+      operationId: convertPoints
+      tags: [loyalty]
+      summary: Convert loyalty points to balance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConvertPointsBody"
+      responses:
+        "200":
+          description: Conversion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConvertPointsResult"
+        "400":
+          description: Insufficient points
+
+  /referral:
+    get:
+      operationId: getReferral
+      tags: [referral]
+      summary: Get referral info
+      responses:
+        "200":
+          description: Referral info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralInfo"
+
+  /jackpot:
+    get:
+      operationId: getJackpot
+      tags: [jackpot]
+      summary: Get jackpot info
+      responses:
+        "200":
+          description: Jackpot info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JackpotInfo"
+
+  /tiers:
+    get:
+      operationId: getTiers
+      tags: [users]
+      summary: Get tier progression info
+      responses:
+        "200":
+          description: Tier info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TierProgress"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +430,401 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        emoji:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        deliveryType:
+          type: string
+          enum: [auto, manual]
+        inStock:
+          type: boolean
+      required: [id, name, emoji, category, description, price, deliveryType, inStock]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        telegramId:
+          type: ["string", "null"]
+        username:
+          type: ["string", "null"]
+        firstName:
+          type: string
+        balance:
+          type: number
+        loyaltyPoints:
+          type: integer
+        purchaseCount:
+          type: integer
+        totalRecharged:
+          type: number
+        freeSpins:
+          type: integer
+        jackpotTickets:
+          type: integer
+        createdAt:
+          type: string
+      required: [id, firstName, balance, loyaltyPoints, purchaseCount, totalRecharged, freeSpins, jackpotTickets, createdAt]
+
+    UserStats:
+      type: object
+      properties:
+        purchaseCount:
+          type: integer
+        loyaltyPoints:
+          type: integer
+        totalSpent:
+          type: number
+        transactionCount:
+          type: integer
+        totalRecharged:
+          type: number
+        currentTier:
+          type: integer
+        nextTierAt:
+          type: ["number", "null"]
+      required: [purchaseCount, loyaltyPoints, totalSpent, transactionCount, totalRecharged, currentTier]
+
+    RegisterUserBody:
+      type: object
+      properties:
+        firstName:
+          type: string
+        username:
+          type: ["string", "null"]
+        referredBy:
+          type: ["integer", "null"]
+      required: [firstName]
+
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        productEmoji:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+        deliveryType:
+          type: string
+      required: [id, productId, productName, productEmoji, price, quantity, deliveryType]
+
+    CartSummary:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        subtotal:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
+        couponCode:
+          type: ["string", "null"]
+        itemCount:
+          type: integer
+      required: [items, subtotal, discount, total, itemCount]
+
+    AddToCartBody:
+      type: object
+      properties:
+        productId:
+          type: integer
+        quantity:
+          type: integer
+      required: [productId]
+
+    ValidateCouponBody:
+      type: object
+      properties:
+        code:
+          type: string
+        cartTotal:
+          type: number
+      required: [code, cartTotal]
+
+    CouponValidation:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        discount:
+          type: number
+        type:
+          type: ["string", "null"]
+        message:
+          type: string
+      required: [valid, discount, message]
+
+    CheckoutBody:
+      type: object
+      properties:
+        couponCode:
+          type: ["string", "null"]
+      required: []
+
+    CheckoutResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        totalCharged:
+          type: number
+        newBalance:
+          type: number
+      required: [success, orders, totalCharged, newBalance]
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        productName:
+          type: string
+        price:
+          type: number
+        status:
+          type: string
+          enum: [pending, delivered, cancelled]
+        credentials:
+          type: ["string", "null"]
+        deliveredAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, productName, price, status, createdAt]
+
+    BuyProductBody:
+      type: object
+      properties:
+        productId:
+          type: integer
+      required: [productId]
+
+    Wallet:
+      type: object
+      properties:
+        balance:
+          type: number
+        loyaltyPoints:
+          type: integer
+        totalRecharged:
+          type: number
+        purchaseCount:
+          type: integer
+      required: [balance, loyaltyPoints, totalRecharged, purchaseCount]
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [credit, debit]
+        amount:
+          type: number
+        description:
+          type: string
+        createdAt:
+          type: string
+      required: [id, type, amount, description, createdAt]
+
+    CryptoRechargeBody:
+      type: object
+      properties:
+        amountEur:
+          type: number
+      required: [amountEur]
+
+    CryptoRechargeResult:
+      type: object
+      properties:
+        address:
+          type: string
+        amountLtc:
+          type: number
+        amountEur:
+          type: number
+        exchangeRate:
+          type: number
+        expiresAt:
+          type: string
+      required: [address, amountLtc, amountEur, exchangeRate, expiresAt]
+
+    VerifyCryptoBody:
+      type: object
+      properties:
+        txHash:
+          type: string
+        amountEur:
+          type: number
+      required: [txHash, amountEur]
+
+    VerifyCryptoResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        newBalance:
+          type: ["number", "null"]
+      required: [success, message]
+
+    WheelSpinResult:
+      type: object
+      properties:
+        reward:
+          type: string
+        rewardType:
+          type: string
+        rewardValue:
+          type: ["number", "null"]
+        message:
+          type: string
+        newBalance:
+          type: ["number", "null"]
+        newPoints:
+          type: ["integer", "null"]
+      required: [reward, rewardType, message]
+
+    WheelStatus:
+      type: object
+      properties:
+        canSpin:
+          type: boolean
+        freeSpins:
+          type: integer
+        nextSpinAt:
+          type: ["string", "null"]
+        hoursUntilNextSpin:
+          type: ["number", "null"]
+      required: [canSpin, freeSpins]
+
+    ConvertPointsBody:
+      type: object
+      properties:
+        points:
+          type: integer
+      required: [points]
+
+    ConvertPointsResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        pointsConverted:
+          type: integer
+        eurEarned:
+          type: number
+        newBalance:
+          type: number
+        newPoints:
+          type: integer
+      required: [success, pointsConverted, eurEarned, newBalance, newPoints]
+
+    ReferralInfo:
+      type: object
+      properties:
+        referralLink:
+          type: string
+        totalEarned:
+          type: number
+        remainingCap:
+          type: number
+        referrals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReferralEntry"
+      required: [referralLink, totalEarned, remainingCap, referrals]
+
+    ReferralEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        referredName:
+          type: string
+        eligible:
+          type: boolean
+        paid:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, referredName, eligible, paid, createdAt]
+
+    JackpotInfo:
+      type: object
+      properties:
+        userTickets:
+          type: integer
+        totalTickets:
+          type: integer
+        nextDrawDate:
+          type: ["string", "null"]
+        lastWinner:
+          type: ["string", "null"]
+      required: [userTickets, totalTickets]
+
+    TierProgress:
+      type: object
+      properties:
+        currentTier:
+          type: integer
+        currentTierName:
+          type: string
+        totalRecharged:
+          type: number
+        nextTierAt:
+          type: ["number", "null"]
+        progress:
+          type: number
+        tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tier"
+      required: [currentTier, currentTierName, totalRecharged, progress, tiers]
+
+    Tier:
+      type: object
+      properties:
+        level:
+          type: integer
+        name:
+          type: string
+        requiredAmount:
+          type: number
+        reward:
+          type: string
+        unlocked:
+          type: boolean
+      required: [level, name, requiredAmount, reward, unlocked]
