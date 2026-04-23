@@ -25,6 +25,7 @@ const WHEEL_REWARDS: WheelReward[] = [
   { type: "points", label: "+50 points", value: 50, probability: 0.015 },
   { type: "deezer", label: "Lien Deezer Premium", value: null, probability: 0.005 },
   { type: "points", label: "+100 points", value: 100, probability: 0.003 },
+  { type: "jackpot", label: "JACKPOT 20€", value: 20, probability: 0 },
 ];
 
 function spinWheel(): WheelReward {

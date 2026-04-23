@@ -31,128 +31,43 @@ import { toast } from "sonner";
 type Reward = {
   type: string;
   label: string;
+  short: string;
   probability: number;
   icon: React.ElementType;
   color: string;
   bg: string;
-  segment: string;
+  fill: string;
+  text: string;
 };
 
 const REWARDS: Reward[] = [
-  {
-    type: "nothing",
-    label: "Rien",
-    probability: 60.2,
-    icon: XCircle,
-    color: "text-muted-foreground",
-    bg: "bg-muted/20",
-    segment: "#1f2937",
-  },
-  {
-    type: "balance_05",
-    label: "+0.50€",
-    probability: 12,
-    icon: Wallet,
-    color: "text-green-400",
-    bg: "bg-green-500/10",
-    segment: "#065f46",
-  },
-  {
-    type: "balance_1",
-    label: "+1.00€",
-    probability: 8,
-    icon: Wallet,
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    segment: "#047857",
-  },
-  {
-    type: "balance_5",
-    label: "+5.00€",
-    probability: 4,
-    icon: Wallet,
-    color: "text-cyan-400",
-    bg: "bg-cyan-500/10",
-    segment: "#0891b2",
-  },
-  {
-    type: "coupon_percent",
-    label: "Coupon -5%",
-    probability: 5,
-    icon: Percent,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    segment: "#1d4ed8",
-  },
-  {
-    type: "coupon_amount",
-    label: "Coupon -3€",
-    probability: 3.5,
-    icon: Tag,
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10",
-    segment: "#4338ca",
-  },
-  {
-    type: "free_spin",
-    label: "Relance gratuite",
-    probability: 3,
-    icon: RefreshCw,
-    color: "text-violet-400",
-    bg: "bg-violet-500/10",
-    segment: "#7c3aed",
-  },
-  {
-    type: "points_10",
-    label: "+10 pts",
-    probability: 2,
-    icon: Star,
-    color: "text-yellow-400",
-    bg: "bg-yellow-500/10",
-    segment: "#b45309",
-  },
-  {
-    type: "points_50",
-    label: "+50 pts",
-    probability: 1.5,
-    icon: Trophy,
-    color: "text-orange-400",
-    bg: "bg-orange-500/10",
-    segment: "#c2410c",
-  },
-  {
-    type: "deezer",
-    label: "Deezer Premium",
-    probability: 0.5,
-    icon: Music2,
-    color: "text-pink-400",
-    bg: "bg-pink-500/10",
-    segment: "#be185d",
-  },
-  {
-    type: "points_100",
-    label: "+100 pts",
-    probability: 0.3,
-    icon: Gift,
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
-    segment: "#9f1239",
-  },
+  { type: "nothing",        label: "Rien",            short: "Rien",     probability: 60.2,  icon: XCircle,   color: "text-zinc-400",     bg: "bg-zinc-500/10",     fill: "#3f3f46", text: "#a1a1aa" },
+  { type: "balance_05",     label: "+0.50€",          short: "0,50€",    probability: 12,    icon: Wallet,    color: "text-green-400",    bg: "bg-green-500/10",    fill: "#16a34a", text: "#fff"     },
+  { type: "coupon_percent", label: "Coupon -5%",      short: "-5%",      probability: 5,     icon: Percent,   color: "text-blue-400",     bg: "bg-blue-500/10",     fill: "#2563eb", text: "#fff"     },
+  { type: "balance_1",      label: "+1.00€",          short: "1€",       probability: 8,     icon: Wallet,    color: "text-emerald-400",  bg: "bg-emerald-500/10",  fill: "#059669", text: "#fff"     },
+  { type: "points_10",      label: "+10 pts",         short: "10 pts",   probability: 2,     icon: Star,      color: "text-yellow-400",   bg: "bg-yellow-500/10",   fill: "#ca8a04", text: "#fff"     },
+  { type: "balance_5",      label: "+5.00€",          short: "5€",       probability: 4,     icon: Wallet,    color: "text-cyan-400",     bg: "bg-cyan-500/10",     fill: "#0891b2", text: "#fff"     },
+  { type: "free_spin",      label: "Relance",         short: "Relance",  probability: 3,     icon: RefreshCw, color: "text-violet-400",   bg: "bg-violet-500/10",   fill: "#7c3aed", text: "#fff"     },
+  { type: "coupon_amount",  label: "Coupon -3€",      short: "-3€",      probability: 3.5,   icon: Tag,       color: "text-indigo-400",   bg: "bg-indigo-500/10",   fill: "#4f46e5", text: "#fff"     },
+  { type: "points_50",      label: "+50 pts",         short: "50 pts",   probability: 1.5,   icon: Trophy,    color: "text-orange-400",   bg: "bg-orange-500/10",   fill: "#ea580c", text: "#fff"     },
+  { type: "deezer",         label: "Deezer Premium",  short: "Deezer",   probability: 0.5,   icon: Music2,    color: "text-pink-400",     bg: "bg-pink-500/10",     fill: "#db2777", text: "#fff"     },
+  { type: "points_100",     label: "+100 pts",        short: "100 pts",  probability: 0.3,   icon: Gift,      color: "text-rose-400",     bg: "bg-rose-500/10",     fill: "#e11d48", text: "#fff"     },
+  { type: "jackpot",        label: "JACKPOT 20€",     short: "JACKPOT",  probability: 0.01,  icon: Trophy,    color: "text-amber-300",    bg: "bg-amber-500/10",    fill: "#f59e0b", text: "#000"     },
 ];
 
-function buildConicGradient() {
-  let deg = 0;
-  const parts: string[] = [];
-  for (const r of REWARDS) {
-    const slice = (r.probability / 100) * 360;
-    parts.push(`${r.segment} ${deg}deg ${deg + slice}deg`);
-    deg += slice;
-  }
-  if (deg < 360) parts.push(`#1f2937 ${deg}deg 360deg`);
-  return `conic-gradient(from 0deg, ${parts.join(", ")})`;
-}
+const SEG = 360 / REWARDS.length; // 30°
+const R = 140; // wheel radius
 
-const CONIC = buildConicGradient();
+// SVG arc for a slice
+function slicePath(index: number) {
+  const start = index * SEG - 90;
+  const end = (index + 1) * SEG - 90;
+  const x1 = R * Math.cos((start * Math.PI) / 180);
+  const y1 = R * Math.sin((start * Math.PI) / 180);
+  const x2 = R * Math.cos((end * Math.PI) / 180);
+  const y2 = R * Math.sin((end * Math.PI) / 180);
+  return `M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+}
 
 function formatTime(hours: number | null | undefined) {
   if (!hours) return "";
@@ -170,19 +85,37 @@ export default function Wheel() {
   const [result, setResult] = useState<{ reward: string; message: string; rewardType: string } | null>(null);
   const [rotation, setRotation] = useState(0);
 
-  const totalSpins = (status?.freeSpins ?? 0) + (status?.canSpin && (status?.freeSpins ?? 0) === 0 ? 1 : 0);
-  const availableSpins = status?.canSpin ? Math.max(1, status?.freeSpins ?? 1) : (status?.freeSpins ?? 0);
+  const availableSpins = status?.canSpin
+    ? Math.max(1, status?.freeSpins ?? 1)
+    : status?.freeSpins ?? 0;
 
   const handleSpin = async () => {
     if (!status?.canSpin || spinning) return;
     setSpinning(true);
     setResult(null);
 
-    const newRotation = rotation + 1800 + Math.random() * 360;
-    setRotation(newRotation);
-
     try {
       const res = await spinWheel.mutateAsync();
+      // Find reward index for deterministic landing
+      const idx = REWARDS.findIndex((r) => {
+        if (res.rewardType === "nothing") return r.type === "nothing";
+        if (res.rewardType === "balance") return r.label === res.reward;
+        if (res.rewardType === "free_spin") return r.type === "free_spin";
+        if (res.rewardType === "points") return r.label === res.reward;
+        if (res.rewardType === "coupon_percent") return r.type === "coupon_percent";
+        if (res.rewardType === "coupon_amount") return r.type === "coupon_amount";
+        if (res.rewardType === "deezer") return r.type === "deezer";
+        if (res.rewardType === "jackpot") return r.type === "jackpot";
+        return false;
+      });
+      const targetIdx = idx >= 0 ? idx : 0;
+      // pointer at top, segment center is at idx*SEG + SEG/2 (clockwise from top)
+      const targetAngle = targetIdx * SEG + SEG / 2;
+      const baseFullSpins = 6 * 360;
+      const currentMod = ((rotation % 360) + 360) % 360;
+      const newRotation = rotation + baseFullSpins - currentMod - targetAngle;
+      setRotation(newRotation);
+
       setTimeout(() => {
         setResult({ reward: res.reward, message: res.message, rewardType: res.rewardType });
         setSpinning(false);
@@ -195,7 +128,7 @@ export default function Wheel() {
         } else {
           toast("Pas de chance cette fois-ci !");
         }
-      }, 3000);
+      }, 4200);
     } catch (e: unknown) {
       setSpinning(false);
       const msg = (e as { data?: { error?: string } })?.data?.error;
@@ -212,6 +145,7 @@ export default function Wheel() {
       if (result?.rewardType === "coupon_percent") return r.type === "coupon_percent";
       if (result?.rewardType === "coupon_amount") return r.type === "coupon_amount";
       if (result?.rewardType === "deezer") return r.type === "deezer";
+      if (result?.rewardType === "jackpot") return r.type === "jackpot";
       return false;
     }) ?? REWARDS[0];
 
@@ -227,18 +161,19 @@ export default function Wheel() {
         <h1 className="text-lg font-bold text-white">Roue de la Destinée</h1>
       </div>
 
-      <div className="flex-1 flex flex-col items-center p-4 gap-5 overflow-y-auto pb-8">
+      <div className="flex-1 flex flex-col items-center p-4 gap-5 overflow-y-auto pb-8 relative">
         {/* Background glow */}
-        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-purple-600/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-violet-600/15 rounded-full blur-[120px] pointer-events-none" />
+        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none" />
 
         {/* Spin counter */}
         <div className="w-full max-w-sm z-10">
           {isLoading ? (
             <div className="h-16 rounded-2xl bg-muted/20 animate-pulse" />
           ) : (
-            <div className={`flex items-center justify-between rounded-2xl border px-5 py-3.5 ${
+            <div className={`flex items-center justify-between rounded-2xl border px-5 py-3.5 backdrop-blur-md ${
               status?.canSpin
-                ? "bg-violet-500/10 border-violet-500/30"
+                ? "bg-violet-500/10 border-violet-500/30 shadow-[0_0_20px_rgba(139,92,246,0.15)]"
                 : "bg-muted/20 border-border/40"
             }`}>
               <div className="flex items-center gap-3">
@@ -260,30 +195,103 @@ export default function Wheel() {
                   <span className="font-mono font-bold">{formatTime(status.hoursUntilNextSpin)}</span>
                 </div>
               ) : status?.canSpin ? (
-                <span className="text-xs text-violet-400 font-medium">Prêt !</span>
+                <span className="text-xs text-violet-400 font-bold uppercase tracking-wider">Prêt !</span>
               ) : null}
             </div>
           )}
         </div>
 
-        {/* Wheel */}
-        <div className="relative w-64 h-64 z-10 shrink-0">
-          <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-20 drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="#a855f7">
-              <path d="M12 2L2 22H22L12 2Z" />
+        {/* SVG Wheel */}
+        <div className="relative w-[320px] h-[340px] z-10 shrink-0 flex items-center justify-center">
+          {/* Outer glow ring */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500/30 via-pink-500/20 to-amber-400/20 blur-2xl" />
+
+          {/* Pointer (top) */}
+          <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
+            <svg width="36" height="42" viewBox="0 0 36 42">
+              <defs>
+                <linearGradient id="pointerGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#fef3c7" />
+                  <stop offset="50%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#d97706" />
+                </linearGradient>
+              </defs>
+              <path d="M18 38 L4 4 L32 4 Z" fill="url(#pointerGrad)" stroke="#78350f" strokeWidth="2" strokeLinejoin="round" />
+              <circle cx="18" cy="10" r="2.5" fill="#fff8" />
             </svg>
           </div>
 
-          <div
-            className="w-full h-full rounded-full border-4 border-violet-500/40 overflow-hidden shadow-[0_0_40px_rgba(168,85,247,0.35)] relative"
-            style={{
-              transition: spinning ? "transform 3s cubic-bezier(0.15, 0.85, 0.35, 1)" : "none",
-              transform: `rotate(${rotation}deg)`,
-              background: CONIC,
-            }}
-          >
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 bg-[#0a0c14] rounded-full border-2 border-violet-500/30 z-10 flex items-center justify-center shadow-inner">
-              <div className="w-5 h-5 bg-violet-500 rounded-full shadow-[0_0_12px_rgba(168,85,247,0.8)]" />
+          {/* Wheel container */}
+          <div className="relative w-[320px] h-[320px] rounded-full overflow-hidden">
+            {/* Outer decorative ring with LED dots */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 p-[6px] shadow-[0_0_30px_rgba(245,158,11,0.4),inset_0_2px_8px_rgba(0,0,0,0.4)]">
+              <div className="w-full h-full rounded-full bg-[#0a0c14] p-[3px] relative overflow-hidden">
+                {/* The spinning wheel */}
+                <svg
+                  viewBox="-150 -150 300 300"
+                  className="w-full h-full"
+                  style={{
+                    transition: spinning ? "transform 4s cubic-bezier(0.17, 0.67, 0.21, 1)" : "none",
+                    transform: `rotate(${rotation}deg)`,
+                  }}
+                >
+                  {REWARDS.map((reward, i) => {
+                    const midAngle = i * SEG + SEG / 2 - 90; // -90 to start from top
+                    const labelR = 95;
+                    const tx = labelR * Math.cos((midAngle * Math.PI) / 180);
+                    const ty = labelR * Math.sin((midAngle * Math.PI) / 180);
+                    // Rotate text so it reads outward from center
+                    const textRotation = midAngle + 90;
+                    return (
+                      <g key={reward.type}>
+                        <path d={slicePath(i)} fill={reward.fill} stroke="#0a0c14" strokeWidth="1.5" />
+                        <text
+                          x={tx}
+                          y={ty}
+                          fill={reward.text}
+                          fontSize="11"
+                          fontWeight="800"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          transform={`rotate(${textRotation} ${tx} ${ty})`}
+                          style={{ letterSpacing: "0.5px" }}
+                        >
+                          {reward.short}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* LED dots around outer edge (static, not rotating) */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const angle = (i * 360) / 24;
+                    const r = 145;
+                    const x = r * Math.cos(((angle - 90) * Math.PI) / 180);
+                    const y = r * Math.sin(((angle - 90) * Math.PI) / 180);
+                    return (
+                      <div
+                        key={i}
+                        className={`absolute w-2 h-2 rounded-full ${
+                          spinning && i % 2 === 0 ? "bg-amber-300 shadow-[0_0_6px_rgba(252,211,77,0.9)]" : "bg-amber-500/70 shadow-[0_0_4px_rgba(245,158,11,0.6)]"
+                        }`}
+                        style={{
+                          left: `calc(50% + ${x}px - 4px)`,
+                          top: `calc(50% + ${y}px - 4px)`,
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Center hub */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-16 h-16 rounded-full bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-[0_0_20px_rgba(245,158,11,0.6),inset_0_2px_4px_rgba(255,255,255,0.4)] flex items-center justify-center border-2 border-amber-200/40">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0a0c14] to-[#1a1d2e] flex items-center justify-center border border-amber-500/30">
+                <Sparkles className={`w-6 h-6 text-amber-300 ${spinning ? "animate-spin" : ""}`} />
+              </div>
             </div>
           </div>
         </div>
@@ -291,7 +299,7 @@ export default function Wheel() {
         {/* Result or Spin Button */}
         <div className="w-full max-w-sm z-10">
           {result ? (
-            <Card className="bg-card/90 border-violet-500/40 animate-in zoom-in-95 duration-300 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+            <Card className="bg-card/90 border-violet-500/40 animate-in zoom-in-95 duration-300 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
               <CardContent className="p-5 text-center">
                 {(() => {
                   const reward = getResultReward();
@@ -316,7 +324,7 @@ export default function Wheel() {
             </Card>
           ) : (
             <Button
-              className="w-full h-14 text-lg font-bold bg-gradient-to-r from-violet-600 to-pink-600 hover:opacity-90 shadow-[0_0_20px_rgba(139,92,246,0.4)] border-none rounded-2xl"
+              className="w-full h-14 text-lg font-black bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:opacity-90 shadow-[0_0_25px_rgba(139,92,246,0.5)] border-none rounded-2xl uppercase tracking-wider"
               onClick={handleSpin}
               disabled={isLoading || !status?.canSpin || spinning}
             >
@@ -326,10 +334,10 @@ export default function Wheel() {
                 </span>
               ) : status?.canSpin ? (
                 <span className="flex items-center gap-2">
-                  <Zap className="w-5 h-5" /> Lancer la Roue
+                  <Zap className="w-5 h-5" /> Lancer
                 </span>
               ) : (
-                <span className="flex items-center gap-2 text-muted-foreground text-base">
+                <span className="flex items-center gap-2 text-muted-foreground text-base normal-case tracking-normal">
                   <Clock className="w-4 h-4" /> Revenez plus tard
                 </span>
               )}
@@ -345,12 +353,17 @@ export default function Wheel() {
           <div className="grid grid-cols-2 gap-2">
             {REWARDS.map((reward) => {
               const Icon = reward.icon;
+              const isJackpot = reward.type === "jackpot";
               return (
                 <div
                   key={reward.type}
-                  className={`flex items-center gap-2.5 rounded-xl border border-white/5 ${reward.bg} px-3 py-2.5`}
+                  className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 ${
+                    isJackpot
+                      ? "border-amber-400/60 bg-gradient-to-r from-amber-500/20 to-amber-600/10 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+                      : `border-white/5 ${reward.bg}`
+                  }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center shrink-0`}>
+                  <div className="w-8 h-8 rounded-lg bg-black/20 flex items-center justify-center shrink-0">
                     <Icon className={`w-4 h-4 ${reward.color}`} />
                   </div>
                   <div className="min-w-0">
