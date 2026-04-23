@@ -37,22 +37,23 @@ type Reward = {
   color: string;
   bg: string;
   fill: string;
-  text: string;
+  iconColor: string;
+  glow: string;
 };
 
 const REWARDS: Reward[] = [
-  { type: "nothing",        label: "Rien",            short: "Rien",     probability: 60.2,  icon: XCircle,   color: "text-zinc-400",     bg: "bg-zinc-500/10",     fill: "#3f3f46", text: "#a1a1aa" },
-  { type: "balance_05",     label: "+0.50€",          short: "0,50€",    probability: 12,    icon: Wallet,    color: "text-green-400",    bg: "bg-green-500/10",    fill: "#16a34a", text: "#fff"     },
-  { type: "coupon_percent", label: "Coupon -5%",      short: "-5%",      probability: 5,     icon: Percent,   color: "text-blue-400",     bg: "bg-blue-500/10",     fill: "#2563eb", text: "#fff"     },
-  { type: "balance_1",      label: "+1.00€",          short: "1€",       probability: 8,     icon: Wallet,    color: "text-emerald-400",  bg: "bg-emerald-500/10",  fill: "#059669", text: "#fff"     },
-  { type: "points_10",      label: "+10 pts",         short: "10 pts",   probability: 2,     icon: Star,      color: "text-yellow-400",   bg: "bg-yellow-500/10",   fill: "#ca8a04", text: "#fff"     },
-  { type: "balance_5",      label: "+5.00€",          short: "5€",       probability: 4,     icon: Wallet,    color: "text-cyan-400",     bg: "bg-cyan-500/10",     fill: "#0891b2", text: "#fff"     },
-  { type: "free_spin",      label: "Relance",         short: "Relance",  probability: 3,     icon: RefreshCw, color: "text-violet-400",   bg: "bg-violet-500/10",   fill: "#7c3aed", text: "#fff"     },
-  { type: "coupon_amount",  label: "Coupon -3€",      short: "-3€",      probability: 3.5,   icon: Tag,       color: "text-indigo-400",   bg: "bg-indigo-500/10",   fill: "#4f46e5", text: "#fff"     },
-  { type: "points_50",      label: "+50 pts",         short: "50 pts",   probability: 1.5,   icon: Trophy,    color: "text-orange-400",   bg: "bg-orange-500/10",   fill: "#ea580c", text: "#fff"     },
-  { type: "deezer",         label: "Deezer Premium",  short: "Deezer",   probability: 0.5,   icon: Music2,    color: "text-pink-400",     bg: "bg-pink-500/10",     fill: "#db2777", text: "#fff"     },
-  { type: "points_100",     label: "+100 pts",        short: "100 pts",  probability: 0.3,   icon: Gift,      color: "text-rose-400",     bg: "bg-rose-500/10",     fill: "#e11d48", text: "#fff"     },
-  { type: "jackpot",        label: "JACKPOT 20€",     short: "JACKPOT",  probability: 0.01,  icon: Trophy,    color: "text-amber-300",    bg: "bg-amber-500/10",    fill: "#f59e0b", text: "#000"     },
+  { type: "nothing",        label: "Rien",           short: "Rien",     probability: 60.2,  icon: XCircle,   color: "text-zinc-400",     bg: "bg-zinc-500/10",     fill: "#27272a", iconColor: "#71717a", glow: "rgba(161,161,170,0.5)" },
+  { type: "balance_05",     label: "+0.50€",         short: "0,50€",    probability: 12,    icon: Wallet,    color: "text-green-400",    bg: "bg-green-500/10",    fill: "#15803d", iconColor: "#86efac", glow: "rgba(74,222,128,0.95)"  },
+  { type: "coupon_percent", label: "Coupon -5%",     short: "-5%",      probability: 5,     icon: Percent,   color: "text-blue-400",     bg: "bg-blue-500/10",     fill: "#1d4ed8", iconColor: "#93c5fd", glow: "rgba(96,165,250,0.95)"  },
+  { type: "balance_1",      label: "+1.00€",         short: "1€",       probability: 8,     icon: Wallet,    color: "text-emerald-400",  bg: "bg-emerald-500/10",  fill: "#047857", iconColor: "#6ee7b7", glow: "rgba(52,211,153,0.95)"  },
+  { type: "points_10",      label: "+10 pts",        short: "10 pts",   probability: 2,     icon: Star,      color: "text-yellow-400",   bg: "bg-yellow-500/10",   fill: "#a16207", iconColor: "#fde047", glow: "rgba(250,204,21,0.95)"  },
+  { type: "balance_5",      label: "+5.00€",         short: "5€",       probability: 4,     icon: Wallet,    color: "text-cyan-400",     bg: "bg-cyan-500/10",     fill: "#0e7490", iconColor: "#67e8f9", glow: "rgba(34,211,238,0.95)"  },
+  { type: "free_spin",      label: "Relance",        short: "Relance",  probability: 3,     icon: RefreshCw, color: "text-violet-400",   bg: "bg-violet-500/10",   fill: "#6d28d9", iconColor: "#c4b5fd", glow: "rgba(167,139,250,0.95)" },
+  { type: "coupon_amount",  label: "Coupon -3€",     short: "-3€",      probability: 3.5,   icon: Tag,       color: "text-indigo-400",   bg: "bg-indigo-500/10",   fill: "#4338ca", iconColor: "#a5b4fc", glow: "rgba(129,140,248,0.95)" },
+  { type: "points_50",      label: "+50 pts",        short: "50 pts",   probability: 1.5,   icon: Trophy,    color: "text-orange-400",   bg: "bg-orange-500/10",   fill: "#c2410c", iconColor: "#fdba74", glow: "rgba(251,146,60,0.95)"  },
+  { type: "deezer",         label: "Deezer Premium", short: "Deezer",   probability: 0.5,   icon: Music2,    color: "text-pink-400",     bg: "bg-pink-500/10",     fill: "#be185d", iconColor: "#f9a8d4", glow: "rgba(244,114,182,0.95)" },
+  { type: "points_100",     label: "+100 pts",       short: "100 pts",  probability: 0.3,   icon: Gift,      color: "text-rose-400",     bg: "bg-rose-500/10",     fill: "#be123c", iconColor: "#fda4af", glow: "rgba(251,113,133,0.95)" },
+  { type: "jackpot",        label: "JACKPOT 20€",    short: "JACKPOT",  probability: 0.01,  icon: Trophy,    color: "text-amber-300",    bg: "bg-amber-500/10",    fill: "#d97706", iconColor: "#fef3c7", glow: "rgba(252,211,77,1)"     },
 ];
 
 const SEG = 360 / REWARDS.length; // 30°
@@ -226,42 +227,77 @@ export default function Wheel() {
             {/* Outer decorative ring with LED dots */}
             <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-500 via-amber-600 to-amber-700 p-[6px] shadow-[0_0_30px_rgba(245,158,11,0.4),inset_0_2px_8px_rgba(0,0,0,0.4)]">
               <div className="w-full h-full rounded-full bg-[#0a0c14] p-[3px] relative overflow-hidden">
-                {/* The spinning wheel */}
-                <svg
-                  viewBox="-150 -150 300 300"
-                  className="w-full h-full"
+                {/* The spinning wheel — both SVG slices and icon overlay rotate together */}
+                <div
+                  className="absolute inset-0"
                   style={{
                     transition: spinning ? "transform 4s cubic-bezier(0.17, 0.67, 0.21, 1)" : "none",
                     transform: `rotate(${rotation}deg)`,
                   }}
                 >
-                  {REWARDS.map((reward, i) => {
-                    const midAngle = i * SEG + SEG / 2 - 90; // -90 to start from top
-                    const labelR = 95;
-                    const tx = labelR * Math.cos((midAngle * Math.PI) / 180);
-                    const ty = labelR * Math.sin((midAngle * Math.PI) / 180);
-                    // Rotate text so it reads outward from center
-                    const textRotation = midAngle + 90;
-                    return (
+                  <svg viewBox="-150 -150 300 300" className="w-full h-full block">
+                    <defs>
+                      {/* Subtle radial sheen on each slice */}
+                      <radialGradient id="sheen" cx="0.5" cy="0.3" r="0.7">
+                        <stop offset="0%" stopColor="rgba(255,255,255,0.18)" />
+                        <stop offset="100%" stopColor="rgba(0,0,0,0.25)" />
+                      </radialGradient>
+                    </defs>
+                    {REWARDS.map((reward, i) => (
                       <g key={reward.type}>
                         <path d={slicePath(i)} fill={reward.fill} stroke="#0a0c14" strokeWidth="1.5" />
-                        <text
-                          x={tx}
-                          y={ty}
-                          fill={reward.text}
-                          fontSize="11"
-                          fontWeight="800"
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          transform={`rotate(${textRotation} ${tx} ${ty})`}
-                          style={{ letterSpacing: "0.5px" }}
-                        >
-                          {reward.short}
-                        </text>
+                        <path d={slicePath(i)} fill="url(#sheen)" opacity="0.55" />
                       </g>
-                    );
-                  })}
-                </svg>
+                    ))}
+                  </svg>
+
+                  {/* Icon overlay — same rotation as slices, icons themselves counter-rotate to face outward */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {REWARDS.map((reward, i) => {
+                      const midAngle = i * SEG + SEG / 2 - 90; // -90 to start from top
+                      const iconR = 102; // distance from center in SVG units
+                      const tx = iconR * Math.cos((midAngle * Math.PI) / 180);
+                      const ty = iconR * Math.sin((midAngle * Math.PI) / 180);
+                      const Icon = reward.icon;
+                      const isJackpot = reward.type === "jackpot";
+                      // Icons are positioned in % of container so they scale with the wheel size.
+                      // SVG viewBox is 300 wide → 1 svg unit = 100/300 = 0.333% of container.
+                      const xPct = 50 + (tx / 300) * 100;
+                      const yPct = 50 + (ty / 300) * 100;
+                      // Counter-rotate so icon points "outward" (radially)
+                      const iconTilt = midAngle + 90;
+                      return (
+                        <div
+                          key={reward.type}
+                          className="absolute"
+                          style={{
+                            left: `${xPct}%`,
+                            top: `${yPct}%`,
+                            transform: `translate(-50%, -50%) rotate(${iconTilt}deg)`,
+                          }}
+                        >
+                          <div
+                            className={`flex items-center justify-center rounded-full ${isJackpot ? "w-9 h-9" : "w-8 h-8"}`}
+                            style={{
+                              background: isJackpot
+                                ? "radial-gradient(circle, rgba(254,243,199,0.35) 0%, rgba(252,211,77,0.15) 60%, transparent 100%)"
+                                : "transparent",
+                            }}
+                          >
+                            <Icon
+                              className={isJackpot ? "w-7 h-7" : "w-6 h-6"}
+                              strokeWidth={2.5}
+                              style={{
+                                color: reward.iconColor,
+                                filter: `drop-shadow(0 0 3px ${reward.glow}) drop-shadow(0 0 7px ${reward.glow})${isJackpot ? ` drop-shadow(0 0 14px ${reward.glow})` : ""}`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* LED dots around outer edge (static, not rotating) */}
                 <div className="absolute inset-0 pointer-events-none">
