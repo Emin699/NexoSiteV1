@@ -26,6 +26,31 @@ export interface Product {
   price: number;
   deliveryType: ProductDeliveryType;
   inStock: boolean;
+  /** @nullable */
+  imageUrl?: string | null;
+}
+
+export type AdminProductBodyDeliveryType =
+  (typeof AdminProductBodyDeliveryType)[keyof typeof AdminProductBodyDeliveryType];
+
+export const AdminProductBodyDeliveryType = {
+  auto: "auto",
+  manual: "manual",
+} as const;
+
+export interface AdminProductBody {
+  name: string;
+  category: string;
+  description: string;
+  price: number;
+  deliveryType: AdminProductBodyDeliveryType;
+  inStock: boolean;
+  /** @nullable */
+  imageUrl?: string | null;
+}
+
+export interface UploadResponse {
+  url: string;
 }
 
 export interface User {

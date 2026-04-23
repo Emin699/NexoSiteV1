@@ -30,6 +30,7 @@ export const GetProductsResponseItem = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  imageUrl: zod.string().nullish(),
 });
 export const GetProductsResponse = zod.array(GetProductsResponseItem);
 
@@ -49,6 +50,72 @@ export const GetProductResponse = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  imageUrl: zod.string().nullish(),
+});
+
+/**
+ * @summary List all products (admin)
+ */
+export const AdminGetProductsResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  emoji: zod.string(),
+  category: zod.string(),
+  description: zod.string(),
+  price: zod.number(),
+  deliveryType: zod.enum(["auto", "manual"]),
+  inStock: zod.boolean(),
+  imageUrl: zod.string().nullish(),
+});
+export const AdminGetProductsResponse = zod.array(AdminGetProductsResponseItem);
+
+/**
+ * @summary Create a new product
+ */
+export const AdminCreateProductBody = zod.object({
+  name: zod.string(),
+  category: zod.string(),
+  description: zod.string(),
+  price: zod.number(),
+  deliveryType: zod.enum(["auto", "manual"]),
+  inStock: zod.boolean(),
+  imageUrl: zod.string().nullish(),
+});
+
+/**
+ * @summary Update a product
+ */
+export const AdminUpdateProductParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateProductBody = zod.object({
+  name: zod.string(),
+  category: zod.string(),
+  description: zod.string(),
+  price: zod.number(),
+  deliveryType: zod.enum(["auto", "manual"]),
+  inStock: zod.boolean(),
+  imageUrl: zod.string().nullish(),
+});
+
+export const AdminUpdateProductResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  emoji: zod.string(),
+  category: zod.string(),
+  description: zod.string(),
+  price: zod.number(),
+  deliveryType: zod.enum(["auto", "manual"]),
+  inStock: zod.boolean(),
+  imageUrl: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a product
+ */
+export const AdminDeleteProductParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

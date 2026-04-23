@@ -12,6 +12,7 @@ export const productsTable = pgTable("products", {
   deliveryType: text("delivery_type").notNull().default("manual"),
   inStock: boolean("in_stock").notNull().default(true),
   digitalContent: text("digital_content"),
+  imageUrl: text("image_url"),
 });
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({ id: true });

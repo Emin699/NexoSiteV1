@@ -10,6 +10,7 @@ import loyaltyRouter from "./loyalty";
 import referralRouter from "./referral";
 import jackpotRouter from "./jackpot";
 import tiersRouter from "./tiers";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(loyaltyRouter);
 router.use(referralRouter);
 router.use(jackpotRouter);
 router.use(tiersRouter);
+router.use(adminRouter);
 
 export default router;

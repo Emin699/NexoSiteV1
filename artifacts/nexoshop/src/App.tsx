@@ -15,6 +15,7 @@ import Loyalty from "@/pages/loyalty";
 import Jackpot from "@/pages/jackpot";
 import Tiers from "@/pages/tiers";
 import Referral from "@/pages/referral";
+import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ function AppContent() {
         <Route path="/jackpot" component={Jackpot} />
         <Route path="/tiers" component={Tiers} />
         <Route path="/referral" component={Referral} />
+        <Route path="/admin" component={Admin} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

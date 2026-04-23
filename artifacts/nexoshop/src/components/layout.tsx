@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Wallet, User, Store } from "lucide-react";
+import { ShoppingCart, Wallet, User, Store, ShieldCheck } from "lucide-react";
 import { useGetMe, useGetCart } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,12 +12,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isHome = location === "/";
   const isCart = location === "/cart";
   const isWallet = location === "/wallet";
-  const isProfile = location.startsWith("/profile") || 
+  const isAdmin = location === "/admin";
+  const isProfile = !isAdmin && (location.startsWith("/profile") || 
                     location === "/wheel" || 
                     location === "/loyalty" || 
                     location === "/jackpot" || 
                     location === "/tiers" || 
-                    location === "/referral";
+                    location === "/referral");
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background text-foreground pb-16">
@@ -81,7 +82,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isProfile ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
           >
             <User className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Profile</span>
+            <span className="text-[10px] font-medium">Profil</span>
+          </Link>
+
+          <Link 
+            href="/admin" 
+            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isAdmin ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
+          >
+            <ShieldCheck className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Admin</span>
           </Link>
         </div>
       </nav>

@@ -29,6 +29,8 @@ tags:
     description: Referral program
   - name: jackpot
     description: Jackpot lottery
+  - name: admin
+    description: Admin panel operations
 
 paths:
   /healthz:
@@ -85,6 +87,78 @@ paths:
                 $ref: "#/components/schemas/Product"
         "404":
           description: Not found
+
+  /admin/products:
+    get:
+      operationId: adminGetProducts
+      tags: [admin]
+      summary: List all products (admin)
+      responses:
+        "200":
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: adminCreateProduct
+      tags: [admin]
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductBody"
+      responses:
+        "201":
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+
+  /admin/products/{id}:
+    put:
+      operationId: adminUpdateProduct
+      tags: [admin]
+      summary: Update a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductBody"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Not found
+    delete:
+      operationId: adminDeleteProduct
+      tags: [admin]
+      summary: Delete a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /users/me:
     get:
@@ -452,7 +526,36 @@ components:
           enum: [auto, manual]
         inStock:
           type: boolean
+        imageUrl:
+          type: ["string", "null"]
       required: [id, name, emoji, category, description, price, deliveryType, inStock]
+
+    AdminProductBody:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        deliveryType:
+          type: string
+          enum: [auto, manual]
+        inStock:
+          type: boolean
+        imageUrl:
+          type: ["string", "null"]
+      required: [name, category, description, price, deliveryType, inStock]
+
+    UploadResponse:
+      type: object
+      properties:
+        url:
+          type: string
+      required: [url]
 
     User:
       type: object

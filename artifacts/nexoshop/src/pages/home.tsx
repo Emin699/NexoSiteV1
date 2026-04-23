@@ -20,8 +20,6 @@ import {
   Cpu,
   Sparkles,
   LayoutGrid,
-  CheckCircle2,
-  Clock,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
@@ -56,11 +54,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   Spécial: "from-amber-500/20 to-yellow-500/10 text-amber-400",
 };
 
-function ProductIcon({ category }: { category: string }) {
+function ProductIcon({ category, imageUrl }: { category: string; imageUrl?: string | null }) {
   const Icon = CATEGORY_ICONS[category] ?? LayoutGrid;
   const colors = CATEGORY_COLORS[category] ?? "from-primary/20 to-secondary/10 text-primary";
+  if (imageUrl) {
+    return (
+      <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 shrink-0">
+        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+      </div>
+    );
+  }
   return (
-    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center shadow-inner border border-white/5`}>
+    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center shadow-inner border border-white/5 shrink-0`}>
       <Icon className="w-6 h-6" />
     </div>
   );
@@ -161,7 +166,7 @@ export default function Home() {
             >
               <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between space-y-0">
                 <div className="flex items-center gap-3">
-                  <ProductIcon category={product.category} />
+                  <ProductIcon category={product.category} imageUrl={product.imageUrl} />
                   <div>
                     <h3 className="font-bold text-base leading-tight">{product.name}</h3>
                     <Badge
@@ -179,29 +184,10 @@ export default function Home() {
                 </div>
               </CardHeader>
 
-              <CardContent className="p-4 pt-2 pb-0">
+              <CardContent className="p-4 pt-2 pb-2">
                 <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">
                   {product.description}
                 </p>
-                <div className="mt-3 mb-1">
-                  {product.deliveryType === "auto" ? (
-                    <Badge
-                      variant="secondary"
-                      className="text-[10px] uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/20 gap-1"
-                    >
-                      <CheckCircle2 className="w-3 h-3" />
-                      Auto
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="secondary"
-                      className="text-[10px] uppercase tracking-wider bg-orange-500/10 text-orange-400 border border-orange-500/20 gap-1"
-                    >
-                      <Clock className="w-3 h-3" />
-                      Manuel
-                    </Badge>
-                  )}
-                </div>
               </CardContent>
 
               <CardFooter className="p-4 flex gap-2">
