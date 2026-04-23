@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout";
 
 // Pages
 import Home from "@/pages/home";
+import ProductDetail from "@/pages/product-detail";
 import Cart from "@/pages/cart";
 import Wallet from "@/pages/wallet";
 import Profile from "@/pages/profile";
@@ -43,6 +44,7 @@ function AppContent() {
     <Layout>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/product/:id" component={ProductDetail} />
         <Route path="/cart" component={Cart} />
         <Route path="/wallet" component={Wallet} />
         <Route path="/profile" component={Profile} />

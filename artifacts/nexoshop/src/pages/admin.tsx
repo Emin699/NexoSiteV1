@@ -6,6 +6,9 @@ import {
   useAdminDeleteProduct,
   getAdminGetProductsQueryKey,
 } from "@workspace/api-client-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AdminLogs } from "@/components/admin-logs";
+import { AdminUsers } from "@/components/admin-users";
 import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -184,7 +187,7 @@ export default function Admin() {
   );
 
   return (
-    <div className="flex flex-col gap-6 p-4 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
+    <div className="flex flex-col gap-4 p-4 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
@@ -192,13 +195,30 @@ export default function Admin() {
         </div>
         <div>
           <h2 className="text-xl font-bold">Panel Admin</h2>
-          <p className="text-xs text-muted-foreground">Gestion des produits</p>
+          <p className="text-xs text-muted-foreground">Boutique · Logs · Utilisateurs</p>
         </div>
-        <Button size="sm" onClick={openCreate} className="ml-auto bg-primary hover:bg-primary/90">
-          <Plus className="w-4 h-4 mr-1" />
-          Nouveau
-        </Button>
       </div>
+
+      <Tabs defaultValue="products" className="w-full">
+        <TabsList className="grid grid-cols-3 w-full bg-card border border-border/50">
+          <TabsTrigger value="products" className="text-xs">Produits</TabsTrigger>
+          <TabsTrigger value="logs" className="text-xs">Logs</TabsTrigger>
+          <TabsTrigger value="users" className="text-xs">Utilisateurs</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="logs" className="mt-4">
+          <AdminLogs />
+        </TabsContent>
+
+        <TabsContent value="users" className="mt-4">
+          <AdminUsers />
+        </TabsContent>
+
+        <TabsContent value="products" className="mt-4 flex flex-col gap-4">
+          <Button size="sm" onClick={openCreate} className="w-full bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-1" />
+            Nouveau produit
+          </Button>
 
       {/* Search */}
       <div className="relative">
@@ -291,6 +311,9 @@ export default function Admin() {
           ))}
         </div>
       )}
+
+        </TabsContent>
+      </Tabs>
 
       {/* Edit / Create Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

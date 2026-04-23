@@ -164,7 +164,8 @@ export default function Home() {
           products?.map((product) => (
             <Card
               key={product.id}
-              className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-colors"
+              className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => setLocation(`/product/${product.id}`)}
             >
               <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between space-y-0">
                 <div className="flex items-center gap-3">
@@ -197,7 +198,7 @@ export default function Home() {
                   variant="outline"
                   size="sm"
                   className="flex-1 bg-card hover:bg-primary/10 hover:text-primary border-border"
-                  onClick={() => handleAddToCart(product.id)}
+                  onClick={(e) => { e.stopPropagation(); handleAddToCart(product.id); }}
                   disabled={!product.inStock}
                 >
                   <ShoppingCart className="w-4 h-4 mr-2" />
@@ -206,7 +207,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/20 border-none"
-                  onClick={() => handleBuyNow(product.id, product.name)}
+                  onClick={(e) => { e.stopPropagation(); handleBuyNow(product.id, product.name); }}
                   disabled={!product.inStock}
                 >
                   <Zap className="w-4 h-4 mr-2" />
