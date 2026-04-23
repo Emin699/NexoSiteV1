@@ -19,6 +19,9 @@ import type {
 import type {
   AddToCartBody,
   AdminProductBody,
+  AuthLoginBody,
+  AuthRegisterBody,
+  AuthResponse,
   BuyProductBody,
   CartSummary,
   CheckoutBody,
@@ -35,6 +38,9 @@ import type {
   Product,
   ReferralInfo,
   RegisterUserBody,
+  ReviewBody,
+  ReviewItem,
+  ReviewResponse,
   TierProgress,
   Transaction,
   User,
@@ -123,6 +129,353 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Register with email and password
+ */
+export const getAuthRegisterUrl = () => {
+  return `/api/auth/register`;
+};
+
+export const authRegister = async (
+  authRegisterBody: AuthRegisterBody,
+  options?: RequestInit,
+): Promise<AuthResponse> => {
+  return customFetch<AuthResponse>(getAuthRegisterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(authRegisterBody),
+  });
+};
+
+export const getAuthRegisterMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authRegister>>,
+    TError,
+    { data: BodyType<AuthRegisterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof authRegister>>,
+  TError,
+  { data: BodyType<AuthRegisterBody> },
+  TContext
+> => {
+  const mutationKey = ["authRegister"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof authRegister>>,
+    { data: BodyType<AuthRegisterBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return authRegister(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AuthRegisterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authRegister>>
+>;
+export type AuthRegisterMutationBody = BodyType<AuthRegisterBody>;
+export type AuthRegisterMutationError = ErrorType<void>;
+
+/**
+ * @summary Register with email and password
+ */
+export const useAuthRegister = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authRegister>>,
+    TError,
+    { data: BodyType<AuthRegisterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof authRegister>>,
+  TError,
+  { data: BodyType<AuthRegisterBody> },
+  TContext
+> => {
+  return useMutation(getAuthRegisterMutationOptions(options));
+};
+
+/**
+ * @summary Login with email and password
+ */
+export const getAuthLoginUrl = () => {
+  return `/api/auth/login`;
+};
+
+export const authLogin = async (
+  authLoginBody: AuthLoginBody,
+  options?: RequestInit,
+): Promise<AuthResponse> => {
+  return customFetch<AuthResponse>(getAuthLoginUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(authLoginBody),
+  });
+};
+
+export const getAuthLoginMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authLogin>>,
+    TError,
+    { data: BodyType<AuthLoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof authLogin>>,
+  TError,
+  { data: BodyType<AuthLoginBody> },
+  TContext
+> => {
+  const mutationKey = ["authLogin"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof authLogin>>,
+    { data: BodyType<AuthLoginBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return authLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AuthLoginMutationResult = NonNullable<
+  Awaited<ReturnType<typeof authLogin>>
+>;
+export type AuthLoginMutationBody = BodyType<AuthLoginBody>;
+export type AuthLoginMutationError = ErrorType<void>;
+
+/**
+ * @summary Login with email and password
+ */
+export const useAuthLogin = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof authLogin>>,
+    TError,
+    { data: BodyType<AuthLoginBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof authLogin>>,
+  TError,
+  { data: BodyType<AuthLoginBody> },
+  TContext
+> => {
+  return useMutation(getAuthLoginMutationOptions(options));
+};
+
+/**
+ * @summary Submit a review after purchase
+ */
+export const getSubmitReviewUrl = () => {
+  return `/api/reviews`;
+};
+
+export const submitReview = async (
+  reviewBody: ReviewBody,
+  options?: RequestInit,
+): Promise<ReviewResponse> => {
+  return customFetch<ReviewResponse>(getSubmitReviewUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reviewBody),
+  });
+};
+
+export const getSubmitReviewMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitReview>>,
+    TError,
+    { data: BodyType<ReviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitReview>>,
+  TError,
+  { data: BodyType<ReviewBody> },
+  TContext
+> => {
+  const mutationKey = ["submitReview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitReview>>,
+    { data: BodyType<ReviewBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return submitReview(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitReview>>
+>;
+export type SubmitReviewMutationBody = BodyType<ReviewBody>;
+export type SubmitReviewMutationError = ErrorType<void>;
+
+/**
+ * @summary Submit a review after purchase
+ */
+export const useSubmitReview = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitReview>>,
+    TError,
+    { data: BodyType<ReviewBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitReview>>,
+  TError,
+  { data: BodyType<ReviewBody> },
+  TContext
+> => {
+  return useMutation(getSubmitReviewMutationOptions(options));
+};
+
+/**
+ * @summary Get reviews for a product
+ */
+export const getGetProductReviewsUrl = (productId: number) => {
+  return `/api/reviews/product/${productId}`;
+};
+
+export const getProductReviews = async (
+  productId: number,
+  options?: RequestInit,
+): Promise<ReviewItem[]> => {
+  return customFetch<ReviewItem[]>(getGetProductReviewsUrl(productId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProductReviewsQueryKey = (productId: number) => {
+  return [`/api/reviews/product/${productId}`] as const;
+};
+
+export const getGetProductReviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProductReviews>>,
+  TError = ErrorType<unknown>,
+>(
+  productId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductReviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProductReviewsQueryKey(productId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProductReviews>>
+  > = ({ signal }) =>
+    getProductReviews(productId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!productId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProductReviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProductReviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProductReviews>>
+>;
+export type GetProductReviewsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get reviews for a product
+ */
+
+export function useGetProductReviews<
+  TData = Awaited<ReturnType<typeof getProductReviews>>,
+  TError = ErrorType<unknown>,
+>(
+  productId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getProductReviews>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProductReviewsQueryOptions(productId, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

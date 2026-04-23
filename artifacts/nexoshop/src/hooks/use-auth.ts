@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useRegisterUser } from "@workspace/api-client-react";
 
 const USER_ID_KEY = "nexoshop_user_id";
+const USER_EMAIL_KEY = "nexoshop_email";
+const USER_NAME_KEY = "nexoshop_name";
 
-// We monkey patch fetch locally to add X-User-Id since setAuthTokenGetter 
-// only handles Authorization: Bearer token and the API needs X-User-Id
 const originalFetch = window.fetch;
 window.fetch = async (input, init) => {
   const userId = localStorage.getItem(USER_ID_KEY);
@@ -16,34 +15,38 @@ window.fetch = async (input, init) => {
   return originalFetch(input, init);
 };
 
+export function storeAuth(userId: number, firstName: string, email: string) {
+  localStorage.setItem(USER_ID_KEY, String(userId));
+  localStorage.setItem(USER_NAME_KEY, firstName);
+  localStorage.setItem(USER_EMAIL_KEY, email);
+}
+
+export function clearAuth() {
+  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(USER_NAME_KEY);
+  localStorage.removeItem(USER_EMAIL_KEY);
+}
+
 export function useAuth() {
   const [isReady, setIsReady] = useState(false);
-  const registerUser = useRegisterUser();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      const storedId = localStorage.getItem(USER_ID_KEY);
-      
-      if (!storedId) {
-        try {
-          const user = await registerUser.mutateAsync({
-            data: {
-              firstName: "Demo",
-              username: null,
-            }
-          });
-          localStorage.setItem(USER_ID_KEY, user.id.toString());
-        } catch (e) {
-          console.error("Failed to register demo user", e);
-        }
-      }
-      
-      document.documentElement.classList.add("dark");
-      setIsReady(true);
-    };
-
-    initializeAuth();
+    const userId = localStorage.getItem(USER_ID_KEY);
+    document.documentElement.classList.add("dark");
+    if (userId) setIsAuthenticated(true);
+    setIsReady(true);
   }, []);
 
-  return { isReady };
+  const handleAuth = (userId: number, firstName: string, email: string) => {
+    storeAuth(userId, firstName, email);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    clearAuth();
+    setIsAuthenticated(false);
+  };
+
+  return { isReady, isAuthenticated, handleAuth, handleLogout };
 }

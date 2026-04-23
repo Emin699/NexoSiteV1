@@ -53,6 +53,51 @@ export interface UploadResponse {
   url: string;
 }
 
+export interface AuthRegisterBody {
+  email: string;
+  password: string;
+  firstName: string;
+}
+
+export interface AuthLoginBody {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  userId: number;
+  firstName: string;
+  email: string;
+}
+
+export interface ReviewBody {
+  productId: number;
+  /** @nullable */
+  orderId?: number | null;
+  /**
+   * @minimum 1
+   * @maximum 5
+   */
+  rating: number;
+  comment: string;
+}
+
+export interface ReviewResponse {
+  id: number;
+  message: string;
+  bonusSpin: boolean;
+}
+
+export interface ReviewItem {
+  id: number;
+  userId: number;
+  firstName: string;
+  productId: number;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export interface User {
   id: number;
   /** @nullable */

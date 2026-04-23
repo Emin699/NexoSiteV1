@@ -11,6 +11,8 @@ import referralRouter from "./referral";
 import jackpotRouter from "./jackpot";
 import tiersRouter from "./tiers";
 import adminRouter from "./admin";
+import authRouter from "./auth";
+import reviewsRouter from "./reviews";
 
 const router: IRouter = Router();
 
@@ -26,5 +28,7 @@ router.use(referralRouter);
 router.use(jackpotRouter);
 router.use(tiersRouter);
 router.use(adminRouter);
+router.use(authRouter);
+router.use(reviewsRouter);
 
 export default router;

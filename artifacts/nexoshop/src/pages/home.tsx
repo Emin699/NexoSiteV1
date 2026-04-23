@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGetProducts, useAddToCart, useBuyProduct } from "@workspace/api-client-react";
+import { ReviewModal } from "@/components/review-modal";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState("Tout");
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [pendingReview, setPendingReview] = useState<{ productId: number; productName: string } | null>(null);
 
   const { data: products, isLoading } = useGetProducts({
     category: activeCategory === "Tout" ? undefined : activeCategory,
@@ -92,11 +94,11 @@ export default function Home() {
     }
   };
 
-  const handleBuyNow = async (productId: number) => {
+  const handleBuyNow = async (productId: number, productName: string) => {
     try {
       await buyProduct.mutateAsync({ data: { productId } });
       toast.success("Achat réussi !");
-      setLocation("/profile");
+      setPendingReview({ productId, productName });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : undefined;
       toast.error(msg || "Solde insuffisant ou erreur lors de l'achat");
@@ -204,7 +206,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/20 border-none"
-                  onClick={() => handleBuyNow(product.id)}
+                  onClick={() => handleBuyNow(product.id, product.name)}
                   disabled={!product.inStock}
                 >
                   <Zap className="w-4 h-4 mr-2" />
@@ -215,6 +217,15 @@ export default function Home() {
           ))
         )}
       </div>
+
+      {pendingReview && (
+        <ReviewModal
+          open={true}
+          onClose={() => setPendingReview(null)}
+          productId={pendingReview.productId}
+          productName={pendingReview.productName}
+        />
+      )}
     </div>
   );
 }

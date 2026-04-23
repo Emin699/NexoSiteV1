@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { useGetMe, useGetMeStats } from "@workspace/api-client-react";
+import { clearAuth } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -92,10 +93,13 @@ export default function Profile() {
               <span className="font-medium text-sm text-muted-foreground">Support & FAQ</span>
             </div>
           </div>
-          <div className="flex items-center justify-between p-4 hover:bg-muted/20 transition-colors cursor-pointer">
+          <div
+            className="flex items-center justify-between p-4 hover:bg-red-500/10 transition-colors cursor-pointer"
+            onClick={() => { clearAuth(); window.location.reload(); }}
+          >
             <div className="flex items-center gap-3">
-              <LogOut className="w-5 h-5 text-muted-foreground" />
-              <span className="font-medium text-sm text-muted-foreground">Déconnexion</span>
+              <LogOut className="w-5 h-5 text-red-400" />
+              <span className="font-medium text-sm text-red-400">Déconnexion</span>
             </div>
           </div>
         </div>

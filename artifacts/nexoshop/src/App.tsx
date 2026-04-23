@@ -16,22 +16,27 @@ import Jackpot from "@/pages/jackpot";
 import Tiers from "@/pages/tiers";
 import Referral from "@/pages/referral";
 import Admin from "@/pages/admin";
+import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
 function AppContent() {
-  const { isReady } = useAuth();
+  const { isReady, isAuthenticated, handleAuth } = useAuth();
 
   if (!isReady) {
     return (
       <div className="min-h-[100dvh] w-full flex items-center justify-center bg-background text-foreground">
         <div className="animate-pulse flex flex-col items-center">
           <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4" />
-          <p className="font-mono text-sm text-muted-foreground">Initializing NexoShop...</p>
+          <p className="font-mono text-sm text-muted-foreground">Chargement...</p>
         </div>
       </div>
     );
+  }
+
+  if (!isAuthenticated) {
+    return <AuthPage onAuth={handleAuth} />;
   }
 
   return (

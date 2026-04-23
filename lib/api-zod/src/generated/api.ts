@@ -15,6 +15,67 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Register with email and password
+ */
+export const AuthRegisterBody = zod.object({
+  email: zod.string(),
+  password: zod.string(),
+  firstName: zod.string(),
+});
+
+export const AuthRegisterResponse = zod.object({
+  userId: zod.number(),
+  firstName: zod.string(),
+  email: zod.string(),
+});
+
+/**
+ * @summary Login with email and password
+ */
+export const AuthLoginBody = zod.object({
+  email: zod.string(),
+  password: zod.string(),
+});
+
+export const AuthLoginResponse = zod.object({
+  userId: zod.number(),
+  firstName: zod.string(),
+  email: zod.string(),
+});
+
+/**
+ * @summary Submit a review after purchase
+ */
+export const submitReviewBodyRatingMax = 5;
+
+export const SubmitReviewBody = zod.object({
+  productId: zod.number(),
+  orderId: zod.number().nullish(),
+  rating: zod.number().min(1).max(submitReviewBodyRatingMax),
+  comment: zod.string(),
+});
+
+/**
+ * @summary Get reviews for a product
+ */
+export const GetProductReviewsParams = zod.object({
+  productId: zod.coerce.number(),
+});
+
+export const GetProductReviewsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  firstName: zod.string(),
+  productId: zod.number(),
+  rating: zod.number(),
+  comment: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetProductReviewsResponse = zod.array(
+  GetProductReviewsResponseItem,
+);
+
+/**
  * @summary Get all products
  */
 export const GetProductsQueryParams = zod.object({

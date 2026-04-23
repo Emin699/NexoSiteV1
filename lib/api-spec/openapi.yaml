@@ -31,6 +31,10 @@ tags:
     description: Jackpot lottery
   - name: admin
     description: Admin panel operations
+  - name: auth
+    description: Authentication
+  - name: reviews
+    description: Product reviews
 
 paths:
   /healthz:
@@ -45,6 +49,92 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: authRegister
+      tags: [auth]
+      summary: Register with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRegisterBody"
+      responses:
+        "200":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+        "409":
+          description: Email already used
+
+  /auth/login:
+    post:
+      operationId: authLogin
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /reviews:
+    post:
+      operationId: submitReview
+      tags: [reviews]
+      summary: Submit a review after purchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewBody"
+      responses:
+        "201":
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewResponse"
+        "400":
+          description: Invalid input or already reviewed
+
+  /reviews/product/{productId}:
+    get:
+      operationId: getProductReviews
+      tags: [reviews]
+      summary: Get reviews for a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReviewItem"
 
   /products:
     get:
@@ -556,6 +646,82 @@ components:
         url:
           type: string
       required: [url]
+
+    AuthRegisterBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        firstName:
+          type: string
+      required: [email, password, firstName]
+
+    AuthLoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+        firstName:
+          type: string
+        email:
+          type: string
+      required: [userId, firstName, email]
+
+    ReviewBody:
+      type: object
+      properties:
+        productId:
+          type: integer
+        orderId:
+          type: ["integer", "null"]
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+      required: [productId, rating, comment]
+
+    ReviewResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        message:
+          type: string
+        bonusSpin:
+          type: boolean
+      required: [id, message, bonusSpin]
+
+    ReviewItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        firstName:
+          type: string
+        productId:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+        createdAt:
+          type: string
+      required: [id, userId, firstName, productId, rating, comment, createdAt]
 
     User:
       type: object
