@@ -1,6 +1,7 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { Layout } from "@/components/layout";
@@ -68,6 +69,25 @@ function App() {
           <AppContent />
         </WouterRouter>
         <Toaster />
+        <SonnerToaster
+          position="top-center"
+          theme="dark"
+          richColors
+          closeButton
+          duration={3500}
+          expand
+          toastOptions={{
+            style: {
+              background: "rgba(17, 20, 32, 0.95)",
+              border: "1px solid rgba(139, 92, 246, 0.35)",
+              color: "#f4f4f5",
+              backdropFilter: "blur(12px)",
+              boxShadow: "0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(139, 92, 246, 0.15)",
+              fontWeight: 500,
+            },
+            className: "font-sans",
+          }}
+        />
       </TooltipProvider>
     </QueryClientProvider>
   );
