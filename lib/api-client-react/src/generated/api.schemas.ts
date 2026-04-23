@@ -68,6 +68,20 @@ export interface AuthResponse {
   userId: number;
   firstName: string;
   email: string;
+  needsVerification?: boolean;
+}
+
+export interface VerifyEmailBody {
+  userId: number;
+  code: string;
+}
+
+export interface ResendCodeBody {
+  userId: number;
+}
+
+export interface SimpleOk {
+  ok: boolean;
 }
 
 export interface ReviewBody {

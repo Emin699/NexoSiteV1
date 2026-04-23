@@ -27,6 +27,33 @@ export const AuthRegisterResponse = zod.object({
   userId: zod.number(),
   firstName: zod.string(),
   email: zod.string(),
+  needsVerification: zod.boolean().optional(),
+});
+
+/**
+ * @summary Verify email with code
+ */
+export const AuthVerifyEmailBody = zod.object({
+  userId: zod.number(),
+  code: zod.string(),
+});
+
+export const AuthVerifyEmailResponse = zod.object({
+  userId: zod.number(),
+  firstName: zod.string(),
+  email: zod.string(),
+  needsVerification: zod.boolean().optional(),
+});
+
+/**
+ * @summary Resend verification code
+ */
+export const AuthResendCodeBody = zod.object({
+  userId: zod.number(),
+});
+
+export const AuthResendCodeResponse = zod.object({
+  ok: zod.boolean(),
 });
 
 /**
@@ -41,6 +68,7 @@ export const AuthLoginResponse = zod.object({
   userId: zod.number(),
   firstName: zod.string(),
   email: zod.string(),
+  needsVerification: zod.boolean().optional(),
 });
 
 /**

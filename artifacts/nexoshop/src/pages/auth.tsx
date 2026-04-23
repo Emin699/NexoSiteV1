@@ -1,60 +1,127 @@
-import { useState } from "react";
-import { useAuthRegister, useAuthLogin } from "@workspace/api-client-react";
+import { useState, useEffect } from "react";
+import { useAuthRegister, useAuthLogin, useAuthVerifyEmail, useAuthResendCode } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Lock, User, Eye, EyeOff, ShoppingBag } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ShoppingBag, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
 
 interface AuthPageProps {
   onAuth: (userId: number, firstName: string, email: string) => void;
 }
 
+type Mode = "login" | "register" | "verify";
+
 export default function AuthPage({ onAuth }: AuthPageProps) {
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Verification state
+  const [pendingUserId, setPendingUserId] = useState<number | null>(null);
+  const [pendingFirstName, setPendingFirstName] = useState("");
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   const authRegister = useAuthRegister();
   const authLogin = useAuthLogin();
+  const authVerify = useAuthVerifyEmail();
+  const authResend = useAuthResendCode();
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const goToVerify = (userId: number, name: string, mail: string) => {
+    setPendingUserId(userId);
+    setPendingFirstName(name);
+    setPendingEmail(mail);
+    setCode("");
+    setResendCooldown(60);
+    setMode("verify");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (tab === "register") {
+      if (mode === "register") {
         if (!firstName.trim()) {
           toast.error("Le prénom est requis");
           return;
         }
-        const res = await authRegister.mutateAsync({
-          data: { email, password, firstName },
-        });
-        onAuth(res.userId, res.firstName, res.email);
-        toast.success(`Bienvenue ${res.firstName} !`);
-      } else {
-        const res = await authLogin.mutateAsync({
-          data: { email, password },
-        });
-        onAuth(res.userId, res.firstName, res.email);
-        toast.success(`Bon retour ${res.firstName} !`);
+        const res = await authRegister.mutateAsync({ data: { email, password, firstName } });
+        if (res.needsVerification) {
+          toast.success("Code envoyé sur ton email !");
+          goToVerify(res.userId, res.firstName, res.email);
+        } else {
+          onAuth(res.userId, res.firstName, res.email);
+          toast.success(`Bienvenue ${res.firstName} !`);
+        }
+      } else if (mode === "login") {
+        const res = await authLogin.mutateAsync({ data: { email, password } });
+        if (res.needsVerification) {
+          toast.message("Vérifie ton email pour continuer");
+          goToVerify(res.userId, res.firstName, res.email);
+        } else {
+          onAuth(res.userId, res.firstName, res.email);
+          toast.success(`Bon retour ${res.firstName} !`);
+        }
       }
     } catch (e: unknown) {
-      const msg =
-        (e as { data?: { error?: string } })?.data?.error ||
-        (tab === "login" ? "Email ou mot de passe incorrect" : "Erreur lors de l'inscription");
+      const errData = (e as { data?: { error?: string; needsVerification?: boolean; userId?: number; firstName?: string; email?: string } })?.data;
+      // Login of unverified user → 403 with verification info
+      if (errData?.needsVerification && errData.userId) {
+        toast.message("Vérifie ton email pour continuer");
+        goToVerify(errData.userId, errData.firstName ?? "", errData.email ?? email);
+        return;
+      }
+      const msg = errData?.error || (mode === "login" ? "Email ou mot de passe incorrect" : "Erreur lors de l'inscription");
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingUserId || code.length !== 6) {
+      toast.error("Saisis les 6 chiffres reçus par email");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await authVerify.mutateAsync({ data: { userId: pendingUserId, code } });
+      onAuth(res.userId, res.firstName, res.email);
+      toast.success(`Bienvenue ${res.firstName} ! Email vérifié 🎉`);
+    } catch (e: unknown) {
+      const msg = (e as { data?: { error?: string } })?.data?.error || "Code incorrect";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!pendingUserId || resendCooldown > 0) return;
+    try {
+      await authResend.mutateAsync({ data: { userId: pendingUserId } });
+      toast.success("Nouveau code envoyé !");
+      setResendCooldown(60);
+    } catch (e: unknown) {
+      const msg = (e as { data?: { error?: string } })?.data?.error || "Impossible d'envoyer le code";
+      toast.error(msg);
+    }
+  };
+
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center bg-background text-foreground px-4">
-      {/* Background glow */}
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center bg-background text-foreground px-4 py-6">
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-secondary/10 rounded-full blur-[80px]" />
@@ -64,7 +131,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-3">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
-            <ShoppingBag className="w-8 h-8 text-white" />
+            {mode === "verify" ? <ShieldCheck className="w-8 h-8 text-white" /> : <ShoppingBag className="w-8 h-8 text-white" />}
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
@@ -74,119 +141,185 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
           </div>
         </div>
 
-        {/* Card */}
         <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-xl">
-          {/* Tabs */}
-          <div className="flex rounded-xl bg-muted/30 p-1 mb-6 gap-1">
-            {(["login", "register"] as const).map((t) => (
+          {mode === "verify" ? (
+            <form onSubmit={handleVerify} className="flex flex-col gap-4">
               <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  tab === t
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                type="button"
+                onClick={() => setMode("login")}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground -mt-1 mb-1 self-start"
               >
-                {t === "login" ? "Connexion" : "Inscription"}
+                <ArrowLeft className="w-3.5 h-3.5" /> Retour
               </button>
-            ))}
-          </div>
+              <div className="text-center mb-1">
+                <h2 className="text-lg font-bold">Vérifie ton email</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Code envoyé à <span className="text-primary font-medium">{pendingEmail}</span>
+                </p>
+              </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {tab === "register" && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="firstName" className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Prénom
+                <Label htmlFor="code" className="text-xs text-muted-foreground uppercase tracking-wider">
+                  Code à 6 chiffres
                 </Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="Votre prénom"
-                    className="pl-9 bg-background border-border/60 focus:border-primary"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required={tab === "register"}
-                    autoComplete="given-name"
-                  />
+                <Input
+                  id="code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="\d{6}"
+                  maxLength={6}
+                  placeholder="000000"
+                  className="text-center text-2xl font-mono tracking-[0.5em] font-bold bg-background border-border/60 focus:border-primary h-14"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  autoFocus
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading || code.length !== 6}
+                className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/20 border-none h-11 font-semibold"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Vérification...
+                  </span>
+                ) : (
+                  "Vérifier"
+                )}
+              </Button>
+
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendCooldown > 0}
+                className="flex items-center justify-center gap-1.5 text-xs text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed mt-1"
+              >
+                <RefreshCw className="w-3 h-3" />
+                {resendCooldown > 0 ? `Renvoyer le code dans ${resendCooldown}s` : "Renvoyer le code"}
+              </button>
+
+              <p className="text-[11px] text-muted-foreground/70 text-center mt-1">
+                Pense à vérifier tes spams si tu ne reçois rien.
+              </p>
+            </form>
+          ) : (
+            <>
+              <div className="flex rounded-xl bg-muted/30 p-1 mb-6 gap-1">
+                {(["login", "register"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setMode(t)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      mode === t
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t === "login" ? "Connexion" : "Inscription"}
+                  </button>
+                ))}
+              </div>
+
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {mode === "register" && (
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="firstName" className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Prénom
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="firstName"
+                        type="text"
+                        placeholder="Votre prénom"
+                        className="pl-9 bg-background border-border/60 focus:border-primary"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required={mode === "register"}
+                        autoComplete="given-name"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="vous@exemple.com"
+                      className="pl-9 bg-background border-border/60 focus:border-primary"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email" className="text-xs text-muted-foreground uppercase tracking-wider">
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="vous@exemple.com"
-                  className="pl-9 bg-background border-border/60 focus:border-primary"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
-              </div>
-            </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Mot de passe
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder={mode === "register" ? "6 caractères minimum" : "Votre mot de passe"}
+                      className="pl-9 pr-10 bg-background border-border/60 focus:border-primary"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete={mode === "register" ? "new-password" : "current-password"}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password" className="text-xs text-muted-foreground uppercase tracking-wider">
-                Mot de passe
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder={tab === "register" ? "6 caractères minimum" : "Votre mot de passe"}
-                  className="pl-9 pr-10 bg-background border-border/60 focus:border-primary"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete={tab === "register" ? "new-password" : "current-password"}
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowPassword(!showPassword)}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/20 border-none h-11 font-semibold mt-1"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      {mode === "login" ? "Connexion..." : "Inscription..."}
+                    </span>
+                  ) : mode === "login" ? (
+                    "Se connecter"
+                  ) : (
+                    "Créer mon compte"
+                  )}
+                </Button>
+              </form>
+
+              <p className="text-center text-xs text-muted-foreground mt-4">
+                {mode === "login" ? "Pas encore de compte ? " : "Déjà inscrit ? "}
+                <button
+                  className="text-primary hover:underline"
+                  onClick={() => setMode(mode === "login" ? "register" : "login")}
+                >
+                  {mode === "login" ? "S'inscrire" : "Se connecter"}
                 </button>
-              </div>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/20 border-none h-11 font-semibold mt-1"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {tab === "login" ? "Connexion..." : "Inscription..."}
-                </span>
-              ) : tab === "login" ? (
-                "Se connecter"
-              ) : (
-                "Créer mon compte"
-              )}
-            </Button>
-          </form>
-
-          <p className="text-center text-xs text-muted-foreground mt-4">
-            {tab === "login" ? "Pas encore de compte ? " : "Déjà inscrit ? "}
-            <button
-              className="text-primary hover:underline"
-              onClick={() => setTab(tab === "login" ? "register" : "login")}
-            >
-              {tab === "login" ? "S'inscrire" : "Se connecter"}
-            </button>
-          </p>
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

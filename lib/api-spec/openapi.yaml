@@ -73,6 +73,48 @@ paths:
         "409":
           description: Email already used
 
+  /auth/verify-email:
+    post:
+      operationId: authVerifyEmail
+      tags: [auth]
+      summary: Verify email with code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailBody"
+      responses:
+        "200":
+          description: Verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid code
+
+  /auth/resend-code:
+    post:
+      operationId: authResendCode
+      tags: [auth]
+      summary: Resend verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendCodeBody"
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleOk"
+        "400":
+          description: Bad request
+
   /auth/login:
     post:
       operationId: authLogin
@@ -676,7 +718,32 @@ components:
           type: string
         email:
           type: string
+        needsVerification:
+          type: boolean
       required: [userId, firstName, email]
+
+    VerifyEmailBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+        code:
+          type: string
+      required: [userId, code]
+
+    ResendCodeBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+      required: [userId]
+
+    SimpleOk:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required: [ok]
 
     ReviewBody:
       type: object

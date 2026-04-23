@@ -17,6 +17,9 @@ export const usersTable = pgTable("users", {
   lastSpinAt: timestamp("last_spin_at", { withTimezone: true }),
   jackpotTickets: integer("jackpot_tickets").notNull().default(0),
   referredBy: integer("referred_by"),
+  emailVerified: integer("email_verified").notNull().default(0),
+  verificationCode: text("verification_code"),
+  verificationCodeExpiresAt: timestamp("verification_code_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
