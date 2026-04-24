@@ -43,3 +43,12 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **File d'attente**: `GET /orders/pending-count` renvoie le nombre global de pending. Si ≥5, le dialog post-checkout client affiche un avertissement "file chargée".
 - **Page /orders** ("Commandes passées"): toutes les commandes du user, accessible depuis profil → menu, badge statut (Livrée/En cours), bouton "Voir" pour voir credentials/image dans dialog avec lightbox.
 - **Tables**: `products.digitalContent` (text), `products.digitalImageUrl` (text). `orders.productEmoji` (default 🛍️), `orders.deliveryImageUrl` (text).
+
+## NexoShop — Système de tickets / Support
+
+- **Schéma**: `tickets` (id serial, userId, category=support|question|replacement, subcategory=basic_fit|other (NULL si non-replacement), subject, body initial, formData JSON, status=open|closed, lastReplyBy=user|admin, createdAt, updatedAt) + `ticket_messages` (ticketId FK, authorId, authorRole=user|admin, body, createdAt).
+- **API user**: `GET /tickets` (mes tickets), `GET /tickets/:id` (détail+messages), `POST /tickets` (create — body validation + subcategory obligatoire si replacement), `POST /tickets/:id/messages` (reply, 403 si fermé).
+- **API admin**: `GET /admin/tickets?status=open|closed|all` (validé, 400 sinon), `GET /admin/tickets/:id`, `POST /admin/tickets/:id/messages` (403 si fermé, transaction `FOR UPDATE` anti-TOCTOU), `POST /admin/tickets/:id/status` (open/closed).
+- **Frontend**: `pages/support.tsx` (3 boutons + dialog catégorie, replacement → choix Basic Fit/Autre puis form dynamique), `pages/support-ticket.tsx` (vue chat, polling 15s), `components/admin-tickets.tsx` (liste filtrable + dialog admin avec reply + close/rouvrir).
+- **Champs Basic Fit**: nom, prénom, dateNaissance, dateAchat, dernierMail (tous obligatoires). **Autre**: nomProduit, identifiant (obligatoires) + autresInfos (optionnel). Sauvegardés dans `tickets.formData` JSON, affichés dans card "Infos transmises".
+- **Notif visuelle**: pastille violette à côté du ticket si `lastReplyBy=admin` (côté user) ou `lastReplyBy=user` (côté admin).

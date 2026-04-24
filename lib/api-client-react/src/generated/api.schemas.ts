@@ -567,6 +567,129 @@ export interface TierProgress {
   tiers: Tier[];
 }
 
+export interface TicketSummary {
+  id: number;
+  category: string;
+  /** @nullable */
+  subcategory?: string | null;
+  subject: string;
+  status: string;
+  lastReplyBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketMessage {
+  id: number;
+  authorRole: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
+/**
+ * @nullable
+ */
+export type TicketDetailFormData = { [key: string]: string } | null;
+
+export interface TicketDetail {
+  id: number;
+  category: string;
+  /** @nullable */
+  subcategory?: string | null;
+  subject: string;
+  status: string;
+  /** @nullable */
+  formData?: TicketDetailFormData;
+  lastReplyBy: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: TicketMessage[];
+}
+
+export interface AdminTicketSummary {
+  id: number;
+  userId: number;
+  /** @nullable */
+  userEmail?: string | null;
+  userName: string;
+  category: string;
+  /** @nullable */
+  subcategory?: string | null;
+  subject: string;
+  status: string;
+  lastReplyBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AdminTicketDetail = TicketDetail & {
+  userId: number;
+  /** @nullable */
+  userEmail?: string | null;
+  userName: string;
+};
+
+export type CreateTicketBodyCategory =
+  (typeof CreateTicketBodyCategory)[keyof typeof CreateTicketBodyCategory];
+
+export const CreateTicketBodyCategory = {
+  support: "support",
+  question: "question",
+  replacement: "replacement",
+} as const;
+
+/**
+ * @nullable
+ */
+export type CreateTicketBodySubcategory =
+  | (typeof CreateTicketBodySubcategory)[keyof typeof CreateTicketBodySubcategory]
+  | null;
+
+export const CreateTicketBodySubcategory = {
+  basic_fit: "basic_fit",
+  other: "other",
+} as const;
+
+export type CreateTicketBodyFormData = { [key: string]: string };
+
+export interface CreateTicketBody {
+  category: CreateTicketBodyCategory;
+  /** @nullable */
+  subcategory?: CreateTicketBodySubcategory;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  subject: string;
+  /**
+   * @minLength 1
+   * @maxLength 5000
+   */
+  body: string;
+  formData?: CreateTicketBodyFormData;
+}
+
+export interface TicketMessageBody {
+  /**
+   * @minLength 1
+   * @maxLength 5000
+   */
+  body: string;
+}
+
+export type UpdateTicketStatusBodyStatus =
+  (typeof UpdateTicketStatusBodyStatus)[keyof typeof UpdateTicketStatusBodyStatus];
+
+export const UpdateTicketStatusBodyStatus = {
+  open: "open",
+  closed: "closed",
+} as const;
+
+export interface UpdateTicketStatusBody {
+  status: UpdateTicketStatusBodyStatus;
+}
+
 export type GetProductsParams = {
   category?: string;
 };
@@ -574,3 +697,16 @@ export type GetProductsParams = {
 export type AdminGetLogsParams = {
   limit?: number;
 };
+
+export type AdminGetTicketsParams = {
+  status?: AdminGetTicketsStatus;
+};
+
+export type AdminGetTicketsStatus =
+  (typeof AdminGetTicketsStatus)[keyof typeof AdminGetTicketsStatus];
+
+export const AdminGetTicketsStatus = {
+  open: "open",
+  closed: "closed",
+  all: "all",
+} as const;

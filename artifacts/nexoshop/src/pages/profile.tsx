@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   User, Settings, ChevronRight, Gift, Coins, 
   Crown, Ticket, Users, ShoppingBag, CreditCard,
-  LogOut, ShieldAlert, MessageSquare, Package
+  LogOut, ShieldAlert, MessageSquare, Package, LifeBuoy
 } from "lucide-react";
 
 export default function Profile() {
@@ -22,6 +22,7 @@ export default function Profile() {
     { href: "/tiers", icon: Crown, label: "Niveaux VIP", color: "text-amber-500", bg: "bg-amber-500/10" },
     { href: "/referral", icon: Users, label: "Parrainage", color: "text-blue-500", bg: "bg-blue-500/10" },
     { href: "/reviews", icon: MessageSquare, label: "Avis clients", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { href: "/support", icon: LifeBuoy, label: "Support & Tickets", color: "text-pink-500", bg: "bg-pink-500/10" },
   ];
 
   if (isLoadingUser || isLoadingStats) {

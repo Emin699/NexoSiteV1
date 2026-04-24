@@ -798,6 +798,190 @@ export const AdminGetLogsResponse = zod.object({
 });
 
 /**
+ * @summary List the current user's tickets
+ */
+export const GetMyTicketsResponseItem = zod.object({
+  id: zod.number(),
+  category: zod.string(),
+  subcategory: zod.string().nullish(),
+  subject: zod.string(),
+  status: zod.string(),
+  lastReplyBy: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const GetMyTicketsResponse = zod.array(GetMyTicketsResponseItem);
+
+/**
+ * @summary Create a new support ticket
+ */
+export const createTicketBodySubjectMax = 200;
+
+export const createTicketBodyBodyMax = 5000;
+
+export const CreateTicketBody = zod.object({
+  category: zod.enum(["support", "question", "replacement"]),
+  subcategory: zod
+    .union([zod.literal("basic_fit"), zod.literal("other"), zod.literal(null)])
+    .nullish(),
+  subject: zod.string().min(1).max(createTicketBodySubjectMax),
+  body: zod.string().min(1).max(createTicketBodyBodyMax),
+  formData: zod.record(zod.string(), zod.string()).optional(),
+});
+
+/**
+ * @summary Get one of my tickets with messages
+ */
+export const GetTicketParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetTicketResponse = zod.object({
+  id: zod.number(),
+  category: zod.string(),
+  subcategory: zod.string().nullish(),
+  subject: zod.string(),
+  status: zod.string(),
+  formData: zod.record(zod.string(), zod.string()).nullish(),
+  lastReplyBy: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+  messages: zod.array(
+    zod.object({
+      id: zod.number(),
+      authorRole: zod.string(),
+      authorName: zod.string(),
+      body: zod.string(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Reply to one of my tickets
+ */
+export const PostTicketMessageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const postTicketMessageBodyBodyMax = 5000;
+
+export const PostTicketMessageBody = zod.object({
+  body: zod.string().min(1).max(postTicketMessageBodyBodyMax),
+});
+
+/**
+ * @summary List all tickets
+ */
+export const AdminGetTicketsQueryParams = zod.object({
+  status: zod.enum(["open", "closed", "all"]).optional(),
+});
+
+export const AdminGetTicketsResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.number(),
+  userEmail: zod.string().nullish(),
+  userName: zod.string(),
+  category: zod.string(),
+  subcategory: zod.string().nullish(),
+  subject: zod.string(),
+  status: zod.string(),
+  lastReplyBy: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const AdminGetTicketsResponse = zod.array(AdminGetTicketsResponseItem);
+
+/**
+ * @summary Get a ticket with messages (admin)
+ */
+export const AdminGetTicketParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminGetTicketResponse = zod
+  .object({
+    id: zod.number(),
+    category: zod.string(),
+    subcategory: zod.string().nullish(),
+    subject: zod.string(),
+    status: zod.string(),
+    formData: zod.record(zod.string(), zod.string()).nullish(),
+    lastReplyBy: zod.string(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+    messages: zod.array(
+      zod.object({
+        id: zod.number(),
+        authorRole: zod.string(),
+        authorName: zod.string(),
+        body: zod.string(),
+        createdAt: zod.string(),
+      }),
+    ),
+  })
+  .and(
+    zod.object({
+      userId: zod.number(),
+      userEmail: zod.string().nullish(),
+      userName: zod.string(),
+    }),
+  );
+
+/**
+ * @summary Reply to a ticket (admin)
+ */
+export const AdminPostTicketMessageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const adminPostTicketMessageBodyBodyMax = 5000;
+
+export const AdminPostTicketMessageBody = zod.object({
+  body: zod.string().min(1).max(adminPostTicketMessageBodyBodyMax),
+});
+
+/**
+ * @summary Update ticket status (open / closed)
+ */
+export const AdminUpdateTicketStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateTicketStatusBody = zod.object({
+  status: zod.enum(["open", "closed"]),
+});
+
+export const AdminUpdateTicketStatusResponse = zod
+  .object({
+    id: zod.number(),
+    category: zod.string(),
+    subcategory: zod.string().nullish(),
+    subject: zod.string(),
+    status: zod.string(),
+    formData: zod.record(zod.string(), zod.string()).nullish(),
+    lastReplyBy: zod.string(),
+    createdAt: zod.string(),
+    updatedAt: zod.string(),
+    messages: zod.array(
+      zod.object({
+        id: zod.number(),
+        authorRole: zod.string(),
+        authorName: zod.string(),
+        body: zod.string(),
+        createdAt: zod.string(),
+      }),
+    ),
+  })
+  .and(
+    zod.object({
+      userId: zod.number(),
+      userEmail: zod.string().nullish(),
+      userName: zod.string(),
+    }),
+  );
+
+/**
  * @summary Spin the wheel of destiny
  */
 export const SpinWheelResponse = zod.object({

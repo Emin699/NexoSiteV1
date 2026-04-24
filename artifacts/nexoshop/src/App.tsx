@@ -21,6 +21,8 @@ import ReviewsPage from "@/pages/reviews";
 import OrdersPage from "@/pages/orders";
 import Admin from "@/pages/admin";
 import AuthPage from "@/pages/auth";
+import Support from "@/pages/support";
+import SupportTicketDetail from "@/pages/support-ticket";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -58,6 +60,8 @@ function AppContent() {
         <Route path="/referral" component={Referral} />
         <Route path="/reviews" component={ReviewsPage} />
         <Route path="/orders" component={OrdersPage} />
+        <Route path="/support" component={Support} />
+        <Route path="/support/:id" component={SupportTicketDetail} />
         <Route path="/admin" component={Admin} />
         <Route component={NotFound} />
       </Switch>

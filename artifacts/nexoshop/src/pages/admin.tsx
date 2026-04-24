@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AdminLogs } from "@/components/admin-logs";
 import { AdminUsers } from "@/components/admin-users";
 import { AdminOrders } from "@/components/admin-orders";
+import { AdminTickets } from "@/components/admin-tickets";
 import { Textarea } from "@/components/ui/textarea";
 import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -290,15 +291,20 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="grid grid-cols-4 w-full bg-card border border-border/50">
-          <TabsTrigger value="products" className="text-xs">Produits</TabsTrigger>
-          <TabsTrigger value="orders" className="text-xs">Commandes</TabsTrigger>
-          <TabsTrigger value="logs" className="text-xs">Logs</TabsTrigger>
-          <TabsTrigger value="users" className="text-xs">Users</TabsTrigger>
+        <TabsList className="grid grid-cols-5 w-full bg-card border border-border/50">
+          <TabsTrigger value="products" className="text-[10px] px-1">Produits</TabsTrigger>
+          <TabsTrigger value="orders" className="text-[10px] px-1">Commandes</TabsTrigger>
+          <TabsTrigger value="tickets" className="text-[10px] px-1">Tickets</TabsTrigger>
+          <TabsTrigger value="logs" className="text-[10px] px-1">Logs</TabsTrigger>
+          <TabsTrigger value="users" className="text-[10px] px-1">Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="mt-4">
           <AdminOrders />
+        </TabsContent>
+
+        <TabsContent value="tickets" className="mt-4">
+          <AdminTickets />
         </TabsContent>
 
         <TabsContent value="logs" className="mt-4">

@@ -35,6 +35,8 @@ tags:
     description: Authentication
   - name: reviews
     description: Product reviews
+  - name: tickets
+    description: Customer support tickets
 
 paths:
   /healthz:
@@ -819,6 +821,189 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminLogsResponse"
+
+  /tickets:
+    get:
+      operationId: getMyTickets
+      tags: [tickets]
+      summary: List the current user's tickets
+      responses:
+        "200":
+          description: Tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TicketSummary"
+    post:
+      operationId: createTicket
+      tags: [tickets]
+      summary: Create a new support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketBody"
+      responses:
+        "201":
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          description: Invalid input
+
+  /tickets/{id}:
+    get:
+      operationId: getTicket
+      tags: [tickets]
+      summary: Get one of my tickets with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ticket detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "404":
+          description: Not found
+
+  /tickets/{id}/messages:
+    post:
+      operationId: postTicketMessage
+      tags: [tickets]
+      summary: Reply to one of my tickets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketMessageBody"
+      responses:
+        "201":
+          description: Message posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          description: Invalid input
+        "403":
+          description: Ticket closed
+        "404":
+          description: Not found
+
+  /admin/tickets:
+    get:
+      operationId: adminGetTickets
+      tags: [admin]
+      summary: List all tickets
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [open, closed, all]
+      responses:
+        "200":
+          description: Tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminTicketSummary"
+
+  /admin/tickets/{id}:
+    get:
+      operationId: adminGetTicket
+      tags: [admin]
+      summary: Get a ticket with messages (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ticket detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTicketDetail"
+        "404":
+          description: Not found
+
+  /admin/tickets/{id}/messages:
+    post:
+      operationId: adminPostTicketMessage
+      tags: [admin]
+      summary: Reply to a ticket (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketMessageBody"
+      responses:
+        "201":
+          description: Message posted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTicketDetail"
+        "404":
+          description: Not found
+
+  /admin/tickets/{id}/status:
+    patch:
+      operationId: adminUpdateTicketStatus
+      tags: [admin]
+      summary: Update ticket status (open / closed)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketStatusBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminTicketDetail"
+        "404":
+          description: Not found
 
   /wheel/spin:
     post:
@@ -1807,3 +1992,148 @@ components:
         unlocked:
           type: boolean
       required: [level, name, requiredAmount, reward, unlocked]
+
+    TicketSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+        subcategory:
+          type: ["string", "null"]
+        subject:
+          type: string
+        status:
+          type: string
+        lastReplyBy:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, category, subject, status, lastReplyBy, createdAt, updatedAt]
+
+    TicketMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        authorRole:
+          type: string
+        authorName:
+          type: string
+        body:
+          type: string
+        createdAt:
+          type: string
+      required: [id, authorRole, authorName, body, createdAt]
+
+    TicketDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+        subcategory:
+          type: ["string", "null"]
+        subject:
+          type: string
+        status:
+          type: string
+        formData:
+          type: ["object", "null"]
+          additionalProperties:
+            type: string
+        lastReplyBy:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketMessage"
+      required: [id, category, subject, status, lastReplyBy, createdAt, updatedAt, messages]
+
+    AdminTicketSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userEmail:
+          type: ["string", "null"]
+        userName:
+          type: string
+        category:
+          type: string
+        subcategory:
+          type: ["string", "null"]
+        subject:
+          type: string
+        status:
+          type: string
+        lastReplyBy:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required: [id, userId, userName, category, subject, status, lastReplyBy, createdAt, updatedAt]
+
+    AdminTicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/TicketDetail"
+        - type: object
+          properties:
+            userId:
+              type: integer
+            userEmail:
+              type: ["string", "null"]
+            userName:
+              type: string
+          required: [userId, userName]
+
+    CreateTicketBody:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [support, question, replacement]
+        subcategory:
+          type: ["string", "null"]
+          enum: [basic_fit, other, null]
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 200
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        formData:
+          type: object
+          additionalProperties:
+            type: string
+      required: [category, subject, body]
+
+    TicketMessageBody:
+      type: object
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 5000
+      required: [body]
+
+    UpdateTicketStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [open, closed]
+      required: [status]
