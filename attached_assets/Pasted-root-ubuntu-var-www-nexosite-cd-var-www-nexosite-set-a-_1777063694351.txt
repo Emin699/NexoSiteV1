@@ -1,0 +1,61 @@
+root@ubuntu:/var/www/nexosite# cd /var/www/nexosite && set -a && source .env && set +a && git pull && pnpm install && pnpm --filter @workspace/api-spec run codegen && pnpm -r build && pnpm --filter @workspace/db run push --force && pm2 restart nexosite-api --update-env
+Username for 'https://github.com': Emin699
+Password for 'https://Emin699@github.com':
+remote: Enumerating objects: 16, done.
+remote: Counting objects: 100% (16/16), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 11 (delta 7), reused 11 (delta 7), pack-reused 0 (from 0)
+Unpacking objects: 100% (11/11), 4.09 KiB | 1.36 MiB/s, done.
+From https://github.com/Emin699/NexoSiteV1
+   e0e55cd..c1799c2  main       -> origin/main
+Updating e0e55cd..c1799c2
+Fast-forward
+ artifacts/mockup-sandbox/package.json                                       |  2 +-
+ ...oot-ubuntu-cd-var-www-nexosite-set-a-source-env-set-a-_1777063427816.txt | 77 +++++++++++++++++++++++++++++++++++++
+ ...oot-ubuntu-var-www-nexosite-cd-var-www-nexosite-set-a-_1777063522489.txt | 42 ++++++++++++++++++++
+ 3 files changed, 120 insertions(+), 1 deletion(-)
+ create mode 100644 attached_assets/Pasted-root-ubuntu-cd-var-www-nexosite-set-a-source-env-set-a-_1777063427816.txt
+ create mode 100644 attached_assets/Pasted-root-ubuntu-var-www-nexosite-cd-var-www-nexosite-set-a-_1777063522489.txt
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm…
+└─ Done in 11ms
+Done in 1s using pnpm v10.33.0
+
+> @workspace/api-spec@0.0.0 codegen /var/www/nexosite/lib/api-spec
+> orval --config ./orval.config.ts && pnpm -w run typecheck:libs
+
+🍻 orval v8.5.3 - A swagger client generator for typescript
+api-client-react Cleaning output folder
+🎉 api-client-react - Your OpenAPI spec has been converted into ready to use orval!
+zod Cleaning output folder
+🎉 zod - Your OpenAPI spec has been converted into ready to use orval!
+
+> workspace@0.0.0 typecheck:libs /var/www/nexosite
+> tsc --build
+
+Scope: 8 of 9 workspace projects
+artifacts/mockup-sandbox build$ echo 'mockup-sandbox is dev-only, skipping production build'
+│ mockup-sandbox is dev-only, skipping production build
+└─ Done in 20ms
+artifacts/api-server build$ node ./build.mjs
+└─ Running...
+artifacts/nexoshop build$ vite build --config vite.config.ts
+│ failed to load config from /var/www/nexosite/artifacts/nexoshop/vite.config.ts
+│ error during build:
+│ Error: BASE_PATH environment variable is required but was not provided.
+│     at file:///var/www/nexosite/artifacts/nexoshop/node_modules/.vite-temp/vite.config.ts.timestamp-1777063670422-3…
+│     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+│     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+│     at async loadConfigFromBundledFile (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_j…
+│     at async bundleAndLoadConfigFile (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jit…
+│     at async loadConfigFromFile (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6…
+│     at async resolveConfig (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_li…
+│     at async createBuilder (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_li…
+│     at async CAC.<anonymous> (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_…
+└─ Failed in 370ms at /var/www/nexosite/artifacts/nexoshop
+/var/www/nexosite/artifacts/nexoshop:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/nexoshop@0.0.0 build: `vite build --config vite.config.ts`
+Exit status 1
+root@ubuntu:/var/www/nexosite#
