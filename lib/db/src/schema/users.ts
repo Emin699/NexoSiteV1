@@ -21,6 +21,7 @@ export const usersTable = pgTable("users", {
   verificationCode: text("verification_code"),
   verificationCodeExpiresAt: timestamp("verification_code_expires_at", { withTimezone: true }),
   isAdmin: integer("is_admin").notNull().default(0),
+  isBanned: integer("is_banned").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

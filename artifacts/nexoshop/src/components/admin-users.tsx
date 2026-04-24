@@ -21,6 +21,10 @@ import {
   Minus,
   Mail,
   ShoppingBag,
+  Ban,
+  Trash2,
+  ShieldCheck,
+  ShieldOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +39,8 @@ type AdminUser = {
   jackpotTickets: number;
   purchaseCount: number;
   totalRecharged: number;
+  isAdmin: boolean;
+  isBanned: boolean;
   createdAt: string;
 };
 
@@ -59,6 +65,15 @@ export function AdminUsers() {
   const [adjustDelta, setAdjustDelta] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Delete confirmation dialog state
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  // Ban toggle state
+  const [banningId, setBanningId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -86,6 +101,76 @@ export function AdminUsers() {
     setAdjustDelta("");
     setAdjustReason("");
     setAdjustOpen(true);
+  };
+
+  const toggleBan = async (user: AdminUser) => {
+    if (user.isAdmin) {
+      toast.error("Impossible de bannir un administrateur");
+      return;
+    }
+    const action = user.isBanned ? "débannir" : "bannir";
+    if (!confirm(`Voulez-vous vraiment ${action} ${user.firstName} (${user.email || `#${user.id}`}) ?`)) {
+      return;
+    }
+    setBanningId(user.id);
+    try {
+      const token = localStorage.getItem("nexoshop_token") || "";
+      const res = await fetch(`/api/admin/users/${user.id}/ban`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ ban: !user.isBanned }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Erreur");
+      }
+      toast.success(user.isBanned ? `${user.firstName} a été débanni` : `${user.firstName} a été banni`);
+      load();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setBanningId(null);
+    }
+  };
+
+  const openDelete = (user: AdminUser) => {
+    if (user.isAdmin) {
+      toast.error("Impossible de supprimer un administrateur");
+      return;
+    }
+    setDeleteUser(user);
+    setDeleteConfirm("");
+    setDeleteOpen(true);
+  };
+
+  const submitDelete = async () => {
+    if (!deleteUser) return;
+    if (deleteConfirm !== "SUPPRIMER") {
+      toast.error("Tapez SUPPRIMER pour confirmer");
+      return;
+    }
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem("nexoshop_token") || "";
+      const res = await fetch(`/api/admin/users/${deleteUser.id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Erreur");
+      }
+      toast.success(`${deleteUser.firstName} a été supprimé`);
+      setDeleteOpen(false);
+      load();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erreur");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const submitAdjust = async (sign: 1 | -1) => {
@@ -181,7 +266,10 @@ export function AdminUsers() {
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map((user) => (
-            <Card key={user.id} className="bg-card/50 border-border/50">
+            <Card
+              key={user.id}
+              className={`bg-card/50 border-border/50 ${user.isBanned ? "ring-1 ring-red-500/40" : ""}`}
+            >
               <CardContent className="p-3">
                 {/* Header */}
                 <div className="flex items-center gap-2.5 mb-3">
@@ -191,7 +279,19 @@ export function AdminUsers() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate">{user.firstName}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="font-bold text-sm truncate">{user.firstName}</p>
+                      {user.isAdmin && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-bold uppercase">
+                          Admin
+                        </span>
+                      )}
+                      {user.isBanned && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-bold uppercase">
+                          Banni
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-muted-foreground flex items-center gap-1 truncate">
                       <Mail className="w-3 h-3 shrink-0" />
                       {user.email || "—"} · ID #{user.id}
@@ -234,6 +334,41 @@ export function AdminUsers() {
                     );
                   })}
                 </div>
+
+                {/* Modération - Bannir / Supprimer */}
+                {!user.isAdmin && (
+                  <div className="grid grid-cols-2 gap-1.5 mt-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={
+                        user.isBanned
+                          ? "h-8 text-xs border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+                          : "h-8 text-xs border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+                      }
+                      onClick={() => toggleBan(user)}
+                      disabled={banningId === user.id}
+                    >
+                      {user.isBanned ? (
+                        <>
+                          <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Débannir
+                        </>
+                      ) : (
+                        <>
+                          <Ban className="w-3.5 h-3.5 mr-1" /> Bannir
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs border-red-500/40 text-red-300 hover:bg-red-500/10"
+                      onClick={() => openDelete(user)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Supprimer
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -307,6 +442,57 @@ export function AdminUsers() {
               disabled={submitting || !adjustDelta}
             >
               <Plus className="w-4 h-4 mr-1" /> Ajouter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <ShieldOff className="w-5 h-5" /> Supprimer définitivement
+            </DialogTitle>
+          </DialogHeader>
+          {deleteUser && (
+            <div className="space-y-3">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-xs">
+                <p className="font-bold text-red-300 mb-1">⚠️ Action irréversible</p>
+                <p className="text-muted-foreground">
+                  Le compte de <span className="font-bold text-foreground">{deleteUser.firstName}</span>{" "}
+                  ({deleteUser.email || `#${deleteUser.id}`}) ainsi que toutes ses données (commandes,
+                  recharges, transactions, panier, avis) seront supprimés.
+                </p>
+              </div>
+              <div>
+                <Label className="text-xs">
+                  Pour confirmer, tapez <span className="font-mono font-bold text-red-400">SUPPRIMER</span>
+                </Label>
+                <Input
+                  value={deleteConfirm}
+                  onChange={(e) => setDeleteConfirm(e.target.value)}
+                  placeholder="SUPPRIMER"
+                  className="bg-card font-mono"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="flex-row gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setDeleteOpen(false)}
+              disabled={deleting}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="flex-1 bg-red-600 hover:bg-red-700"
+              onClick={submitDelete}
+              disabled={deleting || deleteConfirm !== "SUPPRIMER"}
+            >
+              <Trash2 className="w-4 h-4 mr-1" /> Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>

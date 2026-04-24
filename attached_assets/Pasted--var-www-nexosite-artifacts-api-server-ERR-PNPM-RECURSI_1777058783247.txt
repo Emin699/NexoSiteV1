@@ -1,0 +1,56 @@
+/var/www/nexosite/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 admin: `node --enable-source-maps ./dist/admin-cli.mjs list`
+Exit status 1
+root@ubuntu:/var/www/nexosite# pnpm --filter @workspace/api-server run admin list
+
+> @workspace/api-server@0.0.0 admin /var/www/nexosite/artifacts/api-server
+> node --enable-source-maps ./dist/admin-cli.mjs list
+
+node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module '/var/www/nexosite/artifacts/api-server/dist/admin-cli.mjs'
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Function._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.22.2
+/var/www/nexosite/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 admin: `node --enable-source-maps ./dist/admin-cli.mjs list`
+Exit status 1
+root@ubuntu:/var/www/nexosite# pnpm --filter @workspace/api-server run admin add Nexxoshop01@gmail.com
+
+> @workspace/api-server@0.0.0 admin /var/www/nexosite/artifacts/api-server
+> node --enable-source-maps ./dist/admin-cli.mjs add Nexxoshop01@gmail.com
+
+node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module '/var/www/nexosite/artifacts/api-server/dist/admin-cli.mjs'
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Function._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+    at node:internal/main/run_main_module:36:49 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v22.22.2
+/var/www/nexosite/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 admin: `node --enable-source-maps ./dist/admin-cli.mjs add Nexxoshop01@gmail.com`
+Exit status 1
+root@ubuntu:/var/www/nexosite#

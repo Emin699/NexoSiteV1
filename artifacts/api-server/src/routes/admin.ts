@@ -2,7 +2,19 @@ import { Router, type IRouter } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { db, productsTable, usersTable, transactionsTable, ordersTable, jackpotDrawsTable } from "@workspace/db";
+import {
+  db,
+  productsTable,
+  usersTable,
+  transactionsTable,
+  ordersTable,
+  jackpotDrawsTable,
+  cartItemsTable,
+  reviewsTable,
+  wheelSpinsTable,
+  paypalRechargesTable,
+  cryptoRechargesTable,
+} from "@workspace/db";
 import { eq, desc, sql, gt } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "../middlewares/userAuth.js";
@@ -181,9 +193,55 @@ router.get("/admin/users", async (_req, res): Promise<void> => {
       jackpotTickets: u.jackpotTickets,
       purchaseCount: u.purchaseCount,
       totalRecharged: Number(u.totalRecharged),
+      isAdmin: u.isAdmin === 1,
+      isBanned: u.isBanned === 1,
       createdAt: u.createdAt.toISOString(),
     }))
   );
+});
+
+// ============ BAN / UNBAN USER ============
+const BanSchema = z.object({ ban: z.boolean() });
+
+router.post("/admin/users/:id/ban", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid user ID" }); return; }
+  if (id === req.userId) { res.status(400).json({ error: "Vous ne pouvez pas vous bannir vous-même" }); return; }
+
+  const parsed = BanSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+  if (!target) { res.status(404).json({ error: "Utilisateur introuvable" }); return; }
+  if (target.isAdmin === 1) { res.status(400).json({ error: "Impossible de bannir un administrateur" }); return; }
+
+  const newValue = parsed.data.ban ? 1 : 0;
+  await db.update(usersTable).set({ isBanned: newValue }).where(eq(usersTable.id, id));
+  res.json({ id, isBanned: newValue === 1 });
+});
+
+// ============ DELETE USER ============
+router.delete("/admin/users/:id", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid user ID" }); return; }
+  if (id === req.userId) { res.status(400).json({ error: "Vous ne pouvez pas vous supprimer vous-même" }); return; }
+
+  const [target] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+  if (!target) { res.status(404).json({ error: "Utilisateur introuvable" }); return; }
+  if (target.isAdmin === 1) { res.status(400).json({ error: "Impossible de supprimer un administrateur" }); return; }
+
+  await db.transaction(async (tx) => {
+    await tx.delete(cartItemsTable).where(eq(cartItemsTable.userId, id));
+    await tx.delete(reviewsTable).where(eq(reviewsTable.userId, id));
+    await tx.delete(wheelSpinsTable).where(eq(wheelSpinsTable.userId, id));
+    await tx.delete(transactionsTable).where(eq(transactionsTable.userId, id));
+    await tx.delete(paypalRechargesTable).where(eq(paypalRechargesTable.userId, id));
+    await tx.delete(cryptoRechargesTable).where(eq(cryptoRechargesTable.userId, id));
+    await tx.delete(ordersTable).where(eq(ordersTable.userId, id));
+    await tx.delete(usersTable).where(eq(usersTable.id, id));
+  });
+
+  res.json({ id, deleted: true });
 });
 
 // ============ ADJUST USER ============
