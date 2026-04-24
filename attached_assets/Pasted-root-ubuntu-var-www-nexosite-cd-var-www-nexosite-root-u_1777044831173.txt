@@ -1,0 +1,87 @@
+root@ubuntu:/var/www/nexosite# cd /var/www/nexosite
+root@ubuntu:/var/www/nexosite# git pull
+Username for 'https://github.com': Emin699
+Password for 'https://Emin699@github.com':
+Already up to date.
+root@ubuntu:/var/www/nexosite# grep -n "rejectUnauthorized" lib/db/src/index.ts
+19:  ssl: { rejectUnauthorized: false },
+root@ubuntu:/var/www/nexosite# rm -rf artifacts/api-server/dist
+pnpm --filter @workspace/api-server run build
+
+> @workspace/api-server@0.0.0 build /var/www/nexosite/artifacts/api-server
+> node ./build.mjs
+
+
+  dist/index.mjs                       4.2mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.0kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   6.9mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           203.9kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 321ms
+root@ubuntu:/var/www/nexosite# grep -c "rejectUnauthorized" artifacts/api-server/dist/index.mjs
+6
+root@ubuntu:/var/www/nexosite# set -a; source .env; set +a
+pm2 delete nexosite-api
+pm2 start "pnpm --filter @workspace/api-server run start" --name nexosite-api --cwd /var/www/nexosite --update-env
+pm2 save
+[PM2] Applying action deleteProcessId on app [nexosite-api](ids: [ 5 ])
+[PM2] [nexosite-api](5) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 187.3mb  │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Starting /usr/bin/bash in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 187.3mb  │
+│ 6  │ nexosite-api       │ fork     │ 0    │ online    │ 0%       │ 1.6mb    │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+root@ubuntu:/var/www/nexosite# pm2 logs nexosite-api --lines 10 --nostream
+[TAILING] Tailing last 10 lines for [nexosite-api] process (change the value with --lines option)
+/root/.pm2/logs/nexosite-api-error.log last 10 lines:
+6|nexosite |     at NodePgPreparedQuery.queryWithCache (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)
+6|nexosite |     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+6|nexosite |     at async <anonymous> (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)
+6|nexosite |     at async <anonymous> (/var/www/nexosite/artifacts/api-server/src/routes/products.ts:26:16)
+6|nexosite | Error: Failed query: select "id", "email_verified" from "users" where "users"."email" = $1
+6|nexosite | params: nexxoshop01@gmail.com
+6|nexosite |     at NodePgPreparedQuery.queryWithCache (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)
+6|nexosite |     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+6|nexosite |     at async <anonymous> (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)
+6|nexosite |     at async <anonymous> (/var/www/nexosite/artifacts/api-server/src/routes/auth.ts:50:22)
+
+/root/.pm2/logs/nexosite-api-out.log last 10 lines:
+6|nexosite |  500\n    at onResFinished (/var/www/nexosite/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:115:39)\n    at ServerResponse.onResponseComplete (/var/www/nexosite/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:178:14)\n    at ServerResponse.emit (node:events:531:35)\n    at onFinish (node:_http_outgoing:1084:10)\n    at callback (node:internal/streams/writable:766:21)\n    at afterWrite (node:internal/streams/writable:710:5)\n    at afterWriteTick (node:internal/streams/writable:696:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:88:21)"},"responseTime":747,"msg":"request errored"}
+6|nexosite | {"level":30,"time":1777044601690,"pid":64657,"hostname":"ubuntu","req":{"id":2,"method":"POST","url":"/api/auth/register"},"res":{"statusCode":500},"err":{"type":"Error","message":"failed with status code 500","stack":"Error: failed with status code 500\n    at onResFinished (/var/www/nexosite/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:115:39)\n    at ServerResponse.onResponseComplete (/var/www/nexosite/node_modules/.pnpm/pino-http@10.5.0/node_modules/pino-http/logger.js:178:14)\n    at ServerResponse.emit (node:events:531:35)\n    at onFinish (node:_http_outgoing:1084:10)\n    at callback (node:internal/streams/writable:766:21)\n    at afterWrite (node:internal/streams/writable:710:5)\n    at afterWriteTick (node:internal/streams/writable:696:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:88:21)"},"responseTime":858,"msg":"request errored"}
+6|nexosite | /var/www/nexosite/artifacts/api-server:
+6|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+6|nexosite | Command failed with signal "SIGINT"
+6|nexosite |
+6|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+6|nexosite | > node --enable-source-maps ./dist/index.mjs
+6|nexosite |
+6|nexosite | {"level":30,"time":1777044788296,"pid":64773,"hostname":"ubuntu","port":3001,"msg":"Server listening"}
+
+root@ubuntu:/var/www/nexosite# curl -s http://localhost:3001/api/products | head -c 300
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Internal Server Error</pre>
+</body>
+</html>
+root@ubuntu:/var/www/nexosite#
