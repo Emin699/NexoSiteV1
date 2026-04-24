@@ -1,0 +1,58 @@
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+root@ubuntu:/var/www/nexosite# cd /var/www/nexosite
+root@ubuntu:/var/www/nexosite# cp .env .env.backup-$(date +%H%M%S)
+root@ubuntu:/var/www/nexosite# sed -i '/^RESEND_API_KEY=/d' .env
+sed -i '/^RESEND_FROM_EMAIL=/d' .env
+root@ubuntu:/var/www/nexosite# echo 'RESEND_API_KEY="re_A3u67yr3_35kJi8f3x9wxFyiSo1cYHgkW"' >> .env
+echo 'RESEND_FROM_EMAIL="NexoShop <noreply@nexoshop69.com>"' >> .env
+root@ubuntu:/var/www/nexosite# grep -c "^RESEND_API_KEY" .env
+grep -c "^RESEND_FROM_EMAIL" .env
+1
+1
+root@ubuntu:/var/www/nexosite# set -a; source .env; set +a
+pm2 delete nexosite-api
+pm2 start "pnpm --filter @workspace/api-server run start" --name nexosite-api --cwd /var/www/nexosite --update-env
+pm2 save
+[PM2] Applying action deleteProcessId on app [nexosite-api](ids: [ 7 ])
+[PM2] [nexosite-api](7) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 188.3mb  │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Starting /usr/bin/bash in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 188.3mb  │
+│ 8  │ nexosite-api       │ fork     │ 0    │ online    │ 0%       │ 640.0kb  │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+root@ubuntu:/var/www/nexosite# sleep 3
+pm2 env 7 2>/dev/null | grep -E "^RESEND_API_KEY" | head -c 30
+echo ""
+
+root@ubuntu:/var/www/nexosite# > /root/.pm2/logs/nexosite-api-error.log
+> /root/.pm2/logs/nexosite-api-out.log
+psql "$DATABASE_URL" -c "DELETE FROM users WHERE email='eminozer5858@gmail.com';"
+DELETE 1
+root@ubuntu:/var/www/nexosite# curl -s -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"eminozer5858@gmail.com","password":"Test1234!","firstName":"Test"}'
+echo ""
+echo "===== LOG OUT ====="
+tail -20 /root/.pm2/logs/nexosite-api-out.log | grep -A 2 -i "verification\|resend\|err" | head -30
+{"userId":3,"firstName":"Test","email":"eminozer5858@gmail.com","needsVerification":true}
+===== LOG OUT =====
+root@ubuntu:/var/www/nexosite# curl -s -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"eminozer5858@gmail.com","password":"Test1234!","firstName":"Test"}'
+echo ""
+echo "===== LOG OUT ====="
+tail -20 /root/.pm2/logs/nexosite-api-out.log | grep -A 2 -i "verification\|resend\|err" | head -30
+{"userId":3,"firstName":"Test","email":"eminozer5858@gmail.com","needsVerification":true}
+===== LOG OUT =====
+root@ubuntu:/var/www/nexosite#
