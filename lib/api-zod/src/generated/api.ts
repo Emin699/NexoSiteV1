@@ -154,6 +154,22 @@ export const GetProductsResponseItem = zod.object({
   digitalImageUrl: zod.string().nullish(),
   requiresCustomerInfo: zod.boolean(),
   customerInfoFields: zod.array(zod.string()),
+  variants: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      durationDays: zod.number().nullable(),
+      price: zod.number(),
+      sortOrder: zod.number(),
+      isActive: zod.boolean(),
+      stockCount: zod
+        .number()
+        .describe(
+          "Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable.",
+        ),
+    }),
+  ),
 });
 export const GetProductsResponse = zod.array(GetProductsResponseItem);
 
@@ -178,6 +194,22 @@ export const GetProductResponse = zod.object({
   digitalImageUrl: zod.string().nullish(),
   requiresCustomerInfo: zod.boolean(),
   customerInfoFields: zod.array(zod.string()),
+  variants: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      durationDays: zod.number().nullable(),
+      price: zod.number(),
+      sortOrder: zod.number(),
+      isActive: zod.boolean(),
+      stockCount: zod
+        .number()
+        .describe(
+          "Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable.",
+        ),
+    }),
+  ),
 });
 
 /**
@@ -197,6 +229,22 @@ export const AdminGetProductsResponseItem = zod.object({
   digitalImageUrl: zod.string().nullish(),
   requiresCustomerInfo: zod.boolean(),
   customerInfoFields: zod.array(zod.string()),
+  variants: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      durationDays: zod.number().nullable(),
+      price: zod.number(),
+      sortOrder: zod.number(),
+      isActive: zod.boolean(),
+      stockCount: zod
+        .number()
+        .describe(
+          "Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable.",
+        ),
+    }),
+  ),
 });
 export const AdminGetProductsResponse = zod.array(AdminGetProductsResponseItem);
 
@@ -252,6 +300,22 @@ export const AdminUpdateProductResponse = zod.object({
   digitalImageUrl: zod.string().nullish(),
   requiresCustomerInfo: zod.boolean(),
   customerInfoFields: zod.array(zod.string()),
+  variants: zod.array(
+    zod.object({
+      id: zod.number(),
+      productId: zod.number(),
+      name: zod.string(),
+      durationDays: zod.number().nullable(),
+      price: zod.number(),
+      sortOrder: zod.number(),
+      isActive: zod.boolean(),
+      stockCount: zod
+        .number()
+        .describe(
+          "Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable.",
+        ),
+    }),
+  ),
 });
 
 /**
@@ -259,6 +323,134 @@ export const AdminUpdateProductResponse = zod.object({
  */
 export const AdminDeleteProductParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary List variants of a product
+ */
+export const AdminListVariantsParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminListVariantsResponseItem = zod.object({
+  id: zod.number(),
+  productId: zod.number(),
+  name: zod.string(),
+  durationDays: zod.number().nullable(),
+  price: zod.number(),
+  sortOrder: zod.number(),
+  isActive: zod.boolean(),
+  stockCount: zod
+    .number()
+    .describe(
+      "Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable.",
+    ),
+});
+export const AdminListVariantsResponse = zod.array(
+  AdminListVariantsResponseItem,
+);
+
+/**
+ * @summary Create a variant
+ */
+export const AdminCreateVariantParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminCreateVariantBody = zod.object({
+  name: zod.string(),
+  durationDays: zod.number().nullish(),
+  price: zod.number(),
+  sortOrder: zod.number().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+/**
+ * @summary Update a variant
+ */
+export const AdminUpdateVariantParams = zod.object({
+  id: zod.coerce.number(),
+  variantId: zod.coerce.number(),
+});
+
+export const AdminUpdateVariantBody = zod.object({
+  name: zod.string(),
+  durationDays: zod.number().nullish(),
+  price: zod.number(),
+  sortOrder: zod.number().optional(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateVariantResponse = zod.object({
+  id: zod.number(),
+  productId: zod.number(),
+  name: zod.string(),
+  durationDays: zod.number().nullable(),
+  price: zod.number(),
+  sortOrder: zod.number(),
+  isActive: zod.boolean(),
+  stockCount: zod
+    .number()
+    .describe(
+      "Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable.",
+    ),
+});
+
+/**
+ * @summary Delete a variant (and its stock)
+ */
+export const AdminDeleteVariantParams = zod.object({
+  id: zod.coerce.number(),
+  variantId: zod.coerce.number(),
+});
+
+/**
+ * @summary List stock items of a variant
+ */
+export const AdminListStockParams = zod.object({
+  id: zod.coerce.number(),
+  variantId: zod.coerce.number(),
+});
+
+export const AdminListStockResponseItem = zod.object({
+  id: zod.number(),
+  variantId: zod.number(),
+  content: zod.string(),
+  status: zod.enum(["available", "sold"]),
+  soldOrderId: zod.number().nullable(),
+  soldAt: zod.string().nullable(),
+  createdAt: zod.string(),
+});
+export const AdminListStockResponse = zod.array(AdminListStockResponseItem);
+
+/**
+ * @summary Add stock items in bulk (paste codes)
+ */
+export const AdminAddStockBulkParams = zod.object({
+  id: zod.coerce.number(),
+  variantId: zod.coerce.number(),
+});
+
+export const AdminAddStockBulkBody = zod.object({
+  codes: zod
+    .array(zod.string())
+    .describe(
+      "Liste de codes\/comptes (un par ligne côté UI). Chaque entrée devient un stock_item available.",
+    ),
+});
+
+export const AdminAddStockBulkResponse = zod.object({
+  added: zod.number(),
+  available: zod.number(),
+});
+
+/**
+ * @summary Delete a stock item (only if status=available)
+ */
+export const AdminDeleteStockItemParams = zod.object({
+  id: zod.coerce.number(),
+  variantId: zod.coerce.number(),
+  stockId: zod.coerce.number(),
 });
 
 /**
@@ -324,11 +516,17 @@ export const GetCartResponse = zod.object({
     zod.object({
       id: zod.number(),
       productId: zod.number(),
+      variantId: zod.number().nullish(),
+      variantName: zod.string().nullish(),
       productName: zod.string(),
       productEmoji: zod.string(),
       price: zod.number(),
       quantity: zod.number(),
       deliveryType: zod.string(),
+      stockAvailable: zod
+        .number()
+        .nullish()
+        .describe("Stock restant pour la variante (null si pas de variante)"),
     }),
   ),
   subtotal: zod.number(),
@@ -343,6 +541,7 @@ export const GetCartResponse = zod.object({
  */
 export const AddToCartBody = zod.object({
   productId: zod.number(),
+  variantId: zod.number().nullish(),
   quantity: zod.number().optional(),
 });
 
@@ -351,11 +550,17 @@ export const AddToCartResponse = zod.object({
     zod.object({
       id: zod.number(),
       productId: zod.number(),
+      variantId: zod.number().nullish(),
+      variantName: zod.string().nullish(),
       productName: zod.string(),
       productEmoji: zod.string(),
       price: zod.number(),
       quantity: zod.number(),
       deliveryType: zod.string(),
+      stockAvailable: zod
+        .number()
+        .nullish()
+        .describe("Stock restant pour la variante (null si pas de variante)"),
     }),
   ),
   subtotal: zod.number(),
@@ -373,11 +578,17 @@ export const ClearCartResponse = zod.object({
     zod.object({
       id: zod.number(),
       productId: zod.number(),
+      variantId: zod.number().nullish(),
+      variantName: zod.string().nullish(),
       productName: zod.string(),
       productEmoji: zod.string(),
       price: zod.number(),
       quantity: zod.number(),
       deliveryType: zod.string(),
+      stockAvailable: zod
+        .number()
+        .nullish()
+        .describe("Stock restant pour la variante (null si pas de variante)"),
     }),
   ),
   subtotal: zod.number(),
@@ -399,11 +610,17 @@ export const RemoveFromCartResponse = zod.object({
     zod.object({
       id: zod.number(),
       productId: zod.number(),
+      variantId: zod.number().nullish(),
+      variantName: zod.string().nullish(),
       productName: zod.string(),
       productEmoji: zod.string(),
       price: zod.number(),
       quantity: zod.number(),
       deliveryType: zod.string(),
+      stockAvailable: zod
+        .number()
+        .nullish()
+        .describe("Stock restant pour la variante (null si pas de variante)"),
     }),
   ),
   subtotal: zod.number(),

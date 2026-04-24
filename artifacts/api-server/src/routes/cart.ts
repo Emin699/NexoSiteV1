@@ -1,6 +1,17 @@
 import { Router, type IRouter } from "express";
-import { db, cartItemsTable, productsTable, couponsTable, usersTable, ordersTable, transactionsTable, referralsTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import {
+  db,
+  cartItemsTable,
+  productsTable,
+  productVariantsTable,
+  stockItemsTable,
+  couponsTable,
+  usersTable,
+  ordersTable,
+  transactionsTable,
+  referralsTable,
+} from "@workspace/db";
+import { eq, and, sql, isNull, desc, asc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
 import { REFERRAL_REWARD_EUR, REFERRAL_CAP_EUR } from "../lib/referral-config";
 import {
@@ -23,11 +34,14 @@ const AUTO_DISCOUNT_RATE = 0.05;
 type CartItemRow = {
   id: number;
   productId: number;
+  variantId: number | null;
   quantity: number;
-  name: string;
-  emoji: string;
-  price: string;
-  deliveryType: string;
+  productName: string;
+  productEmoji: string;
+  productPrice: string;
+  productDeliveryType: string;
+  variantName: string | null;
+  variantPrice: string | null;
 };
 
 async function fetchCartItems(userId: number): Promise<CartItemRow[]> {
@@ -35,15 +49,34 @@ async function fetchCartItems(userId: number): Promise<CartItemRow[]> {
     .select({
       id: cartItemsTable.id,
       productId: cartItemsTable.productId,
+      variantId: cartItemsTable.variantId,
       quantity: cartItemsTable.quantity,
-      name: productsTable.name,
-      emoji: productsTable.emoji,
-      price: productsTable.price,
-      deliveryType: productsTable.deliveryType,
+      productName: productsTable.name,
+      productEmoji: productsTable.emoji,
+      productPrice: productsTable.price,
+      productDeliveryType: productsTable.deliveryType,
+      variantName: productVariantsTable.name,
+      variantPrice: productVariantsTable.price,
     })
     .from(cartItemsTable)
     .innerJoin(productsTable, eq(cartItemsTable.productId, productsTable.id))
+    .leftJoin(productVariantsTable, eq(cartItemsTable.variantId, productVariantsTable.id))
     .where(eq(cartItemsTable.userId, userId));
+}
+
+async function stockCountsForVariants(variantIds: number[]): Promise<Map<number, number>> {
+  if (variantIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      variantId: stockItemsTable.variantId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(stockItemsTable)
+    .where(and(eq(stockItemsTable.status, "available")))
+    .groupBy(stockItemsTable.variantId);
+  return new Map(
+    rows.filter((r) => variantIds.includes(r.variantId)).map((r) => [r.variantId, Number(r.count) || 0]),
+  );
 }
 
 type CouponData = {
@@ -61,6 +94,10 @@ async function loadCouponFor(userId: number, code: string): Promise<{ coupon: Co
     return { coupon: null, reason: "Ce code n'est pas valide pour votre compte" };
   }
   return { coupon: { code: c.code, type: c.type as "percent" | "amount", value: Number(c.value) } };
+}
+
+function unitPriceFor(row: CartItemRow): number {
+  return row.variantPrice != null ? Number(row.variantPrice) : Number(row.productPrice);
 }
 
 function computeDiscount(subtotal: number, coupon: CouponData | null) {
@@ -84,7 +121,10 @@ function computeDiscount(subtotal: number, coupon: CouponData | null) {
 
 async function buildCartSummary(userId: number, requestedCoupon?: string | null) {
   const items = await fetchCartItems(userId);
-  const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
+  const subtotal = items.reduce((sum, i) => sum + unitPriceFor(i) * i.quantity, 0);
+
+  const variantIds = items.map((i) => i.variantId).filter((v): v is number => v != null);
+  const stockMap = await stockCountsForVariants(variantIds);
 
   let coupon: CouponData | null = null;
   let couponMessage: string | null = null;
@@ -101,11 +141,14 @@ async function buildCartSummary(userId: number, requestedCoupon?: string | null)
     items: items.map((i) => ({
       id: i.id,
       productId: i.productId,
-      productName: i.name,
-      productEmoji: i.emoji,
-      price: Number(i.price),
+      variantId: i.variantId,
+      variantName: i.variantName,
+      productName: i.productName,
+      productEmoji: i.productEmoji,
+      price: unitPriceFor(i),
       quantity: i.quantity,
-      deliveryType: i.deliveryType,
+      deliveryType: i.productDeliveryType,
+      stockAvailable: i.variantId != null ? (stockMap.get(i.variantId) ?? 0) : null,
     })),
     subtotal: Math.round(subtotal * 100) / 100,
     discount: finalDiscount,
@@ -129,7 +172,7 @@ router.post("/cart", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const { productId, quantity = 1 } = parsed.data;
+  const { productId, variantId, quantity = 1 } = parsed.data;
 
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
   if (!product) {
@@ -137,10 +180,33 @@ router.post("/cart", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  if (variantId != null) {
+    const [variant] = await db
+      .select()
+      .from(productVariantsTable)
+      .where(and(eq(productVariantsTable.id, variantId), eq(productVariantsTable.productId, productId)));
+    if (!variant) {
+      res.status(404).json({ error: "Variant not found" });
+      return;
+    }
+    if (!variant.isActive) {
+      res.status(400).json({ error: "Cette variante n'est plus disponible" });
+      return;
+    }
+  }
+
+  const variantCondition = variantId != null
+    ? eq(cartItemsTable.variantId, variantId)
+    : isNull(cartItemsTable.variantId);
+
   const [existing] = await db
     .select()
     .from(cartItemsTable)
-    .where(and(eq(cartItemsTable.userId, req.userId!), eq(cartItemsTable.productId, productId)));
+    .where(and(
+      eq(cartItemsTable.userId, req.userId!),
+      eq(cartItemsTable.productId, productId),
+      variantCondition,
+    ));
 
   if (existing) {
     await db
@@ -151,6 +217,7 @@ router.post("/cart", requireAuth, async (req, res): Promise<void> => {
     await db.insert(cartItemsTable).values({
       userId: req.userId!,
       productId,
+      variantId: variantId ?? null,
       quantity: Math.min(99, quantity),
     });
   }
@@ -174,9 +241,22 @@ router.delete("/cart/:productId", requireAuth, async (req, res): Promise<void> =
     return;
   }
 
-  await db
-    .delete(cartItemsTable)
-    .where(and(eq(cartItemsTable.userId, req.userId!), eq(cartItemsTable.productId, productId)));
+  // Optional variant filter via query string ?variantId=X
+  const variantQuery = typeof req.query.variantId === "string" ? parseInt(req.query.variantId, 10) : null;
+
+  if (variantQuery != null && !isNaN(variantQuery)) {
+    await db
+      .delete(cartItemsTable)
+      .where(and(
+        eq(cartItemsTable.userId, req.userId!),
+        eq(cartItemsTable.productId, productId),
+        eq(cartItemsTable.variantId, variantQuery),
+      ));
+  } else {
+    await db
+      .delete(cartItemsTable)
+      .where(and(eq(cartItemsTable.userId, req.userId!), eq(cartItemsTable.productId, productId)));
+  }
 
   const summary = await buildCartSummary(req.userId!);
   res.json(GetCartResponse.parse(summary));
@@ -231,25 +311,57 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
         .select({
           id: cartItemsTable.id,
           productId: cartItemsTable.productId,
+          variantId: cartItemsTable.variantId,
           quantity: cartItemsTable.quantity,
-          name: productsTable.name,
-          emoji: productsTable.emoji,
-          price: productsTable.price,
-          deliveryType: productsTable.deliveryType,
+          productName: productsTable.name,
+          productEmoji: productsTable.emoji,
+          productPrice: productsTable.price,
+          productDeliveryType: productsTable.deliveryType,
           digitalContent: productsTable.digitalContent,
           digitalImageUrl: productsTable.digitalImageUrl,
           requiresCustomerInfo: productsTable.requiresCustomerInfo,
           customerInfoFields: productsTable.customerInfoFields,
+          variantName: productVariantsTable.name,
+          variantPrice: productVariantsTable.price,
         })
         .from(cartItemsTable)
         .innerJoin(productsTable, eq(cartItemsTable.productId, productsTable.id))
+        .leftJoin(productVariantsTable, eq(cartItemsTable.variantId, productVariantsTable.id))
         .where(eq(cartItemsTable.userId, req.userId!));
 
       if (items.length === 0) {
         throw Object.assign(new Error("Cart is empty"), { status: 400 });
       }
 
-      const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
+      // Reserve stock_items per cart row that has variantId + deliveryType=auto.
+      // Use FOR UPDATE SKIP LOCKED so concurrent checkouts don't double-consume.
+      // Map: cartItemId -> array of stockItem rows reserved (one per quantity)
+      const reservedStockByCartItem = new Map<number, { id: number; content: string }[]>();
+      for (const item of items) {
+        const isAuto = item.productDeliveryType === "auto";
+        if (!isAuto || item.variantId == null) continue;
+
+        const reserved = await tx.execute(sql`
+          SELECT id, content FROM stock_items
+          WHERE variant_id = ${item.variantId} AND status = 'available'
+          ORDER BY id ASC
+          LIMIT ${item.quantity}
+          FOR UPDATE SKIP LOCKED
+        `);
+        const rows = (reserved as unknown as { rows: Array<{ id: number; content: string }> }).rows
+          ?? (reserved as unknown as Array<{ id: number; content: string }>);
+
+        if (!Array.isArray(rows) || rows.length < item.quantity) {
+          throw Object.assign(
+            new Error(`Stock insuffisant pour ${item.productName}${item.variantName ? ` (${item.variantName})` : ""}. Disponible : ${Array.isArray(rows) ? rows.length : 0}, demandé : ${item.quantity}.`),
+            { status: 409 },
+          );
+        }
+        reservedStockByCartItem.set(item.id, rows.map((r) => ({ id: Number(r.id), content: String(r.content) })));
+      }
+
+      const unitPrice = (it: typeof items[0]) => it.variantPrice != null ? Number(it.variantPrice) : Number(it.productPrice);
+      const subtotal = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
 
       let coupon: CouponData | null = null;
       if (couponCode && couponCode.trim()) {
@@ -293,9 +405,7 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       }
       const newBalance = Number(debited[0].balance);
 
-      // Referral reward: credit the referrer the first time this buyer makes a paid purchase.
-      // We use an atomic conditional UPDATE ... WHERE paid = false RETURNING * as our
-      // claim mechanism — only one transaction can ever flip paid=false → paid=true.
+      // Referral reward (unchanged).
       if (
         buyerBefore.purchaseCount === 0 &&
         totalCharged > 0 &&
@@ -313,8 +423,6 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
           .returning({ id: referralsTable.id });
 
         if (claimed.length > 0) {
-          // Count how much this referrer has already been paid (excluding this row,
-          // which we just flipped). Enforce the cap.
           const paidRows = await tx
             .select({ id: referralsTable.id })
             .from(referralsTable)
@@ -322,7 +430,6 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
               eq(referralsTable.referrerId, referrerId),
               eq(referralsTable.paid, true),
             ));
-          // paidRows now includes the row we just claimed, so subtract 1 to know the prior earnings.
           const priorEarned = Math.max(0, (paidRows.length - 1)) * REFERRAL_REWARD_EUR;
           const remaining = Math.max(0, REFERRAL_CAP_EUR - priorEarned);
           const reward = Math.min(REFERRAL_REWARD_EUR, remaining);
@@ -363,9 +470,13 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
           .where(eq(couponsTable.code, coupon.code));
       }
 
-      const orderRows: Array<{
+      // Build orders. For variants with stock pool, each unit consumes exactly 1 stock_item.
+      type OrderInsert = {
         userId: number;
         productId: number;
+        variantId: number | null;
+        variantName: string | null;
+        stockItemId: number | null;
         productName: string;
         productEmoji: string;
         price: string;
@@ -374,24 +485,43 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
         deliveryImageUrl: string | null;
         deliveredAt: Date | null;
         customerInfoFields: string | null;
-      }> = [];
+      };
+
+      const orderRows: OrderInsert[] = [];
       for (const item of items) {
-        const isAuto = item.deliveryType === "auto";
-        const autoContent = item.digitalContent && item.digitalContent.trim()
-          ? item.digitalContent
-          : "Votre produit a été livré automatiquement.";
+        const isAuto = item.productDeliveryType === "auto";
         const fieldsJson = item.requiresCustomerInfo && item.customerInfoFields
           ? item.customerInfoFields
           : null;
+        const reserved = reservedStockByCartItem.get(item.id) ?? [];
+        const itemUnitPrice = unitPrice(item);
+
         for (let i = 0; i < item.quantity; i++) {
+          let credentials: string | null = null;
+          let stockItemId: number | null = null;
+
+          if (isAuto) {
+            if (item.variantId != null && reserved[i]) {
+              credentials = reserved[i].content;
+              stockItemId = reserved[i].id;
+            } else if (item.digitalContent && item.digitalContent.trim()) {
+              credentials = item.digitalContent;
+            } else {
+              credentials = "Votre produit a été livré automatiquement.";
+            }
+          }
+
           orderRows.push({
             userId: req.userId!,
             productId: item.productId,
-            productName: item.name,
-            productEmoji: item.emoji,
-            price: item.price,
+            variantId: item.variantId,
+            variantName: item.variantName,
+            stockItemId,
+            productName: item.productName,
+            productEmoji: item.productEmoji,
+            price: itemUnitPrice.toFixed(2),
             status: isAuto ? "delivered" : "pending",
-            credentials: isAuto ? autoContent : null,
+            credentials,
             deliveryImageUrl: isAuto ? (item.digitalImageUrl ?? null) : null,
             deliveredAt: isAuto ? new Date() : null,
             customerInfoFields: fieldsJson,
@@ -400,6 +530,23 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       }
 
       const insertedOrders = await tx.insert(ordersTable).values(orderRows).returning();
+
+      // Mark consumed stock_items as sold and link them to their orders.
+      // Inserted orders are returned in insert order, which matches our orderRows order.
+      for (let idx = 0; idx < insertedOrders.length; idx++) {
+        const o = insertedOrders[idx];
+        const planned = orderRows[idx];
+        if (planned.stockItemId != null) {
+          await tx
+            .update(stockItemsTable)
+            .set({
+              status: "sold",
+              soldOrderId: o.id,
+              soldAt: new Date(),
+            })
+            .where(eq(stockItemsTable.id, planned.stockItemId));
+        }
+      }
 
       await tx.delete(cartItemsTable).where(eq(cartItemsTable.userId, req.userId!));
 

@@ -305,6 +305,181 @@ paths:
         "204":
           description: Deleted
 
+  /admin/products/{id}/variants:
+    get:
+      operationId: adminListVariants
+      tags: [admin]
+      summary: List variants of a product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Variants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductVariant"
+    post:
+      operationId: adminCreateVariant
+      tags: [admin]
+      summary: Create a variant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductVariantInput"
+      responses:
+        "201":
+          description: Created variant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductVariant"
+
+  /admin/products/{id}/variants/{variantId}:
+    patch:
+      operationId: adminUpdateVariant
+      tags: [admin]
+      summary: Update a variant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductVariantInput"
+      responses:
+        "200":
+          description: Updated variant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductVariant"
+        "404":
+          description: Not found
+    delete:
+      operationId: adminDeleteVariant
+      tags: [admin]
+      summary: Delete a variant (and its stock)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/products/{id}/variants/{variantId}/stock:
+    get:
+      operationId: adminListStock
+      tags: [admin]
+      summary: List stock items of a variant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Stock items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StockItem"
+    post:
+      operationId: adminAddStockBulk
+      tags: [admin]
+      summary: Add stock items in bulk (paste codes)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkStockInput"
+      responses:
+        "200":
+          description: Bulk add result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkStockResult"
+
+  /admin/products/{id}/variants/{variantId}/stock/{stockId}:
+    delete:
+      operationId: adminDeleteStockItem
+      tags: [admin]
+      summary: Delete a stock item (only if status=available)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: variantId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: stockId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "409":
+          description: Cannot delete sold stock item
+
   /users/me:
     get:
       operationId: getMe
@@ -1134,7 +1309,87 @@ components:
           type: array
           items:
             type: string
-      required: [id, name, emoji, category, description, price, deliveryType, inStock, requiresCustomerInfo, customerInfoFields]
+        variants:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductVariant"
+      required: [id, name, emoji, category, description, price, deliveryType, inStock, requiresCustomerInfo, customerInfoFields, variants]
+
+    ProductVariant:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        name:
+          type: string
+        durationDays:
+          type: ["integer", "null"]
+        price:
+          type: number
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+        stockCount:
+          type: integer
+          description: "Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable."
+      required: [id, productId, name, durationDays, price, sortOrder, isActive, stockCount]
+
+    ProductVariantInput:
+      type: object
+      properties:
+        name:
+          type: string
+        durationDays:
+          type: ["integer", "null"]
+        price:
+          type: number
+        sortOrder:
+          type: integer
+        isActive:
+          type: boolean
+      required: [name, price]
+
+    StockItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        variantId:
+          type: integer
+        content:
+          type: string
+        status:
+          type: string
+          enum: [available, sold]
+        soldOrderId:
+          type: ["integer", "null"]
+        soldAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, variantId, content, status, soldOrderId, soldAt, createdAt]
+
+    BulkStockInput:
+      type: object
+      properties:
+        codes:
+          type: array
+          items:
+            type: string
+          description: "Liste de codes/comptes (un par ligne côté UI). Chaque entrée devient un stock_item available."
+      required: [codes]
+
+    BulkStockResult:
+      type: object
+      properties:
+        added:
+          type: integer
+        available:
+          type: integer
+      required: [added, available]
 
     AdminProductBody:
       type: object
@@ -1372,6 +1627,10 @@ components:
           type: integer
         productId:
           type: integer
+        variantId:
+          type: ["integer", "null"]
+        variantName:
+          type: ["string", "null"]
         productName:
           type: string
         productEmoji:
@@ -1382,6 +1641,9 @@ components:
           type: integer
         deliveryType:
           type: string
+        stockAvailable:
+          type: ["integer", "null"]
+          description: "Stock restant pour la variante (null si pas de variante)"
       required: [id, productId, productName, productEmoji, price, quantity, deliveryType]
 
     CartSummary:
@@ -1408,6 +1670,8 @@ components:
       properties:
         productId:
           type: integer
+        variantId:
+          type: ["integer", "null"]
         quantity:
           type: integer
       required: [productId]

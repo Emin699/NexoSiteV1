@@ -33,6 +33,8 @@ import type {
   AuthLoginBody,
   AuthRegisterBody,
   AuthResponse,
+  BulkStockInput,
+  BulkStockResult,
   BuyProductBody,
   CartSummary,
   CheckoutBody,
@@ -58,6 +60,8 @@ import type {
   PendingCryptoRecharge,
   PendingOrdersCountResponse,
   Product,
+  ProductVariant,
+  ProductVariantInput,
   ReferralInfo,
   RegisterUserBody,
   ResendCodeBody,
@@ -65,6 +69,7 @@ import type {
   ReviewItem,
   ReviewResponse,
   SimpleOk,
+  StockItem,
   SubmitCustomerInfoBody,
   TicketDetail,
   TicketMessageBody,
@@ -1272,6 +1277,622 @@ export const useAdminDeleteProduct = <
   TContext
 > => {
   return useMutation(getAdminDeleteProductMutationOptions(options));
+};
+
+/**
+ * @summary List variants of a product
+ */
+export const getAdminListVariantsUrl = (id: number) => {
+  return `/api/admin/products/${id}/variants`;
+};
+
+export const adminListVariants = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ProductVariant[]> => {
+  return customFetch<ProductVariant[]>(getAdminListVariantsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListVariantsQueryKey = (id: number) => {
+  return [`/api/admin/products/${id}/variants`] as const;
+};
+
+export const getAdminListVariantsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListVariants>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListVariants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListVariantsQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminListVariants>>
+  > = ({ signal }) => adminListVariants(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListVariants>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListVariantsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListVariants>>
+>;
+export type AdminListVariantsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List variants of a product
+ */
+
+export function useAdminListVariants<
+  TData = Awaited<ReturnType<typeof adminListVariants>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListVariants>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListVariantsQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a variant
+ */
+export const getAdminCreateVariantUrl = (id: number) => {
+  return `/api/admin/products/${id}/variants`;
+};
+
+export const adminCreateVariant = async (
+  id: number,
+  productVariantInput: ProductVariantInput,
+  options?: RequestInit,
+): Promise<ProductVariant> => {
+  return customFetch<ProductVariant>(getAdminCreateVariantUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(productVariantInput),
+  });
+};
+
+export const getAdminCreateVariantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateVariant>>,
+    TError,
+    { id: number; data: BodyType<ProductVariantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminCreateVariant>>,
+  TError,
+  { id: number; data: BodyType<ProductVariantInput> },
+  TContext
+> => {
+  const mutationKey = ["adminCreateVariant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminCreateVariant>>,
+    { id: number; data: BodyType<ProductVariantInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminCreateVariant(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminCreateVariantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminCreateVariant>>
+>;
+export type AdminCreateVariantMutationBody = BodyType<ProductVariantInput>;
+export type AdminCreateVariantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a variant
+ */
+export const useAdminCreateVariant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminCreateVariant>>,
+    TError,
+    { id: number; data: BodyType<ProductVariantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminCreateVariant>>,
+  TError,
+  { id: number; data: BodyType<ProductVariantInput> },
+  TContext
+> => {
+  return useMutation(getAdminCreateVariantMutationOptions(options));
+};
+
+/**
+ * @summary Update a variant
+ */
+export const getAdminUpdateVariantUrl = (id: number, variantId: number) => {
+  return `/api/admin/products/${id}/variants/${variantId}`;
+};
+
+export const adminUpdateVariant = async (
+  id: number,
+  variantId: number,
+  productVariantInput: ProductVariantInput,
+  options?: RequestInit,
+): Promise<ProductVariant> => {
+  return customFetch<ProductVariant>(getAdminUpdateVariantUrl(id, variantId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(productVariantInput),
+  });
+};
+
+export const getAdminUpdateVariantMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateVariant>>,
+    TError,
+    { id: number; variantId: number; data: BodyType<ProductVariantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUpdateVariant>>,
+  TError,
+  { id: number; variantId: number; data: BodyType<ProductVariantInput> },
+  TContext
+> => {
+  const mutationKey = ["adminUpdateVariant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUpdateVariant>>,
+    { id: number; variantId: number; data: BodyType<ProductVariantInput> }
+  > = (props) => {
+    const { id, variantId, data } = props ?? {};
+
+    return adminUpdateVariant(id, variantId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUpdateVariantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUpdateVariant>>
+>;
+export type AdminUpdateVariantMutationBody = BodyType<ProductVariantInput>;
+export type AdminUpdateVariantMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a variant
+ */
+export const useAdminUpdateVariant = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUpdateVariant>>,
+    TError,
+    { id: number; variantId: number; data: BodyType<ProductVariantInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUpdateVariant>>,
+  TError,
+  { id: number; variantId: number; data: BodyType<ProductVariantInput> },
+  TContext
+> => {
+  return useMutation(getAdminUpdateVariantMutationOptions(options));
+};
+
+/**
+ * @summary Delete a variant (and its stock)
+ */
+export const getAdminDeleteVariantUrl = (id: number, variantId: number) => {
+  return `/api/admin/products/${id}/variants/${variantId}`;
+};
+
+export const adminDeleteVariant = async (
+  id: number,
+  variantId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteVariantUrl(id, variantId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteVariantMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteVariant>>,
+    TError,
+    { id: number; variantId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteVariant>>,
+  TError,
+  { id: number; variantId: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteVariant"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteVariant>>,
+    { id: number; variantId: number }
+  > = (props) => {
+    const { id, variantId } = props ?? {};
+
+    return adminDeleteVariant(id, variantId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteVariantMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteVariant>>
+>;
+
+export type AdminDeleteVariantMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a variant (and its stock)
+ */
+export const useAdminDeleteVariant = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteVariant>>,
+    TError,
+    { id: number; variantId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteVariant>>,
+  TError,
+  { id: number; variantId: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteVariantMutationOptions(options));
+};
+
+/**
+ * @summary List stock items of a variant
+ */
+export const getAdminListStockUrl = (id: number, variantId: number) => {
+  return `/api/admin/products/${id}/variants/${variantId}/stock`;
+};
+
+export const adminListStock = async (
+  id: number,
+  variantId: number,
+  options?: RequestInit,
+): Promise<StockItem[]> => {
+  return customFetch<StockItem[]>(getAdminListStockUrl(id, variantId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListStockQueryKey = (id: number, variantId: number) => {
+  return [`/api/admin/products/${id}/variants/${variantId}/stock`] as const;
+};
+
+export const getAdminListStockQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListStock>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  variantId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getAdminListStockQueryKey(id, variantId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListStock>>> = ({
+    signal,
+  }) => adminListStock(id, variantId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(id && variantId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListStock>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListStockQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListStock>>
+>;
+export type AdminListStockQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List stock items of a variant
+ */
+
+export function useAdminListStock<
+  TData = Awaited<ReturnType<typeof adminListStock>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  variantId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminListStock>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListStockQueryOptions(id, variantId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add stock items in bulk (paste codes)
+ */
+export const getAdminAddStockBulkUrl = (id: number, variantId: number) => {
+  return `/api/admin/products/${id}/variants/${variantId}/stock`;
+};
+
+export const adminAddStockBulk = async (
+  id: number,
+  variantId: number,
+  bulkStockInput: BulkStockInput,
+  options?: RequestInit,
+): Promise<BulkStockResult> => {
+  return customFetch<BulkStockResult>(getAdminAddStockBulkUrl(id, variantId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(bulkStockInput),
+  });
+};
+
+export const getAdminAddStockBulkMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminAddStockBulk>>,
+    TError,
+    { id: number; variantId: number; data: BodyType<BulkStockInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminAddStockBulk>>,
+  TError,
+  { id: number; variantId: number; data: BodyType<BulkStockInput> },
+  TContext
+> => {
+  const mutationKey = ["adminAddStockBulk"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminAddStockBulk>>,
+    { id: number; variantId: number; data: BodyType<BulkStockInput> }
+  > = (props) => {
+    const { id, variantId, data } = props ?? {};
+
+    return adminAddStockBulk(id, variantId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminAddStockBulkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminAddStockBulk>>
+>;
+export type AdminAddStockBulkMutationBody = BodyType<BulkStockInput>;
+export type AdminAddStockBulkMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add stock items in bulk (paste codes)
+ */
+export const useAdminAddStockBulk = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminAddStockBulk>>,
+    TError,
+    { id: number; variantId: number; data: BodyType<BulkStockInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminAddStockBulk>>,
+  TError,
+  { id: number; variantId: number; data: BodyType<BulkStockInput> },
+  TContext
+> => {
+  return useMutation(getAdminAddStockBulkMutationOptions(options));
+};
+
+/**
+ * @summary Delete a stock item (only if status=available)
+ */
+export const getAdminDeleteStockItemUrl = (
+  id: number,
+  variantId: number,
+  stockId: number,
+) => {
+  return `/api/admin/products/${id}/variants/${variantId}/stock/${stockId}`;
+};
+
+export const adminDeleteStockItem = async (
+  id: number,
+  variantId: number,
+  stockId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getAdminDeleteStockItemUrl(id, variantId, stockId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteStockItemMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteStockItem>>,
+    TError,
+    { id: number; variantId: number; stockId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteStockItem>>,
+  TError,
+  { id: number; variantId: number; stockId: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteStockItem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteStockItem>>,
+    { id: number; variantId: number; stockId: number }
+  > = (props) => {
+    const { id, variantId, stockId } = props ?? {};
+
+    return adminDeleteStockItem(id, variantId, stockId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteStockItemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteStockItem>>
+>;
+
+export type AdminDeleteStockItemMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a stock item (only if status=available)
+ */
+export const useAdminDeleteStockItem = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteStockItem>>,
+    TError,
+    { id: number; variantId: number; stockId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteStockItem>>,
+  TError,
+  { id: number; variantId: number; stockId: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteStockItemMutationOptions(options));
 };
 
 /**

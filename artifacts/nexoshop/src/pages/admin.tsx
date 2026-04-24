@@ -1,8 +1,6 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   useAdminGetProducts,
-  useAdminCreateProduct,
-  useAdminUpdateProduct,
   useAdminDeleteProduct,
   getAdminGetProductsQueryKey,
   useGetMe,
@@ -12,79 +10,25 @@ import { AdminLogs } from "@/components/admin-logs";
 import { AdminUsers } from "@/components/admin-users";
 import { AdminOrders } from "@/components/admin-orders";
 import { AdminTickets } from "@/components/admin-tickets";
-import { Textarea } from "@/components/ui/textarea";
+import { AdminProductModal } from "@/components/admin-product-modal";
 import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
   Plus,
   Pencil,
   Trash2,
   Search,
-  Upload,
-  Link as LinkIcon,
   ShieldCheck,
   Package,
   Image as ImageIcon,
-  X,
 } from "lucide-react";
 
 const CATEGORIES = ["Streaming", "Musique", "IA", "Sport", "Tech", "Spécial"];
-
-type FormState = {
-  name: string;
-  category: string;
-  description: string;
-  price: string;
-  deliveryType: "auto" | "manual";
-  inStock: boolean;
-  imageUrl: string;
-  digitalContent: string;
-  digitalImageUrl: string;
-  requiresCustomerInfo: boolean;
-  customerInfoFieldsText: string;
-};
-
-const DEFAULT_FORM: FormState = {
-  name: "",
-  category: "Streaming",
-  description: "",
-  price: "",
-  deliveryType: "manual",
-  inStock: true,
-  imageUrl: "",
-  digitalContent: "",
-  digitalImageUrl: "",
-  requiresCustomerInfo: false,
-  customerInfoFieldsText: "",
-};
-
-function parseFieldLines(text: string): string[] {
-  return text
-    .split("\n")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0);
-}
 
 export default function Admin() {
   const qc = useQueryClient();
@@ -94,146 +38,23 @@ export default function Admin() {
   const { data: products, isLoading } = useAdminGetProducts({
     query: { enabled: isAdmin, queryKey: getAdminGetProductsQueryKey() },
   });
-  const createProduct = useAdminCreateProduct();
-  const updateProduct = useAdminUpdateProduct();
   const deleteProduct = useAdminDeleteProduct();
 
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const [imageMode, setImageMode] = useState<"url" | "file">("url");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [digitalImagePreview, setDigitalImagePreview] = useState<string | null>(null);
-  const [uploadingDigital, setUploadingDigital] = useState(false);
-  const digitalFileRef = useRef<HTMLInputElement>(null);
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: getAdminGetProductsQueryKey() });
 
   const openCreate = () => {
     setEditingProduct(null);
-    setForm(DEFAULT_FORM);
-    setImagePreview(null);
     setDialogOpen(true);
   };
 
   const openEdit = (p: Product) => {
     setEditingProduct(p);
-    setForm({
-      name: p.name,
-      category: p.category,
-      description: p.description,
-      price: String(p.price),
-      deliveryType: p.deliveryType as "auto" | "manual",
-      inStock: p.inStock,
-      imageUrl: p.imageUrl ?? "",
-      digitalContent: p.digitalContent ?? "",
-      digitalImageUrl: p.digitalImageUrl ?? "",
-      requiresCustomerInfo: p.requiresCustomerInfo ?? false,
-      customerInfoFieldsText: (p.customerInfoFields ?? []).join("\n"),
-    });
-    setImagePreview(p.imageUrl ?? null);
-    setDigitalImagePreview(p.digitalImageUrl ?? null);
     setDialogOpen(true);
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const token = localStorage.getItem("nexoshop_token");
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      const { url } = await res.json();
-      setForm((f) => ({ ...f, imageUrl: url }));
-      setImagePreview(url);
-      toast.success("Image téléversée !");
-    } catch {
-      toast.error("Erreur lors du téléversement");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDigitalFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingDigital(true);
-    try {
-      const token = localStorage.getItem("nexoshop_token");
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
-      });
-      if (!res.ok) throw new Error("Upload failed");
-      const { url } = await res.json();
-      setForm((f) => ({ ...f, digitalImageUrl: url }));
-      setDigitalImagePreview(url);
-      toast.success("Image de livraison téléversée !");
-    } catch {
-      toast.error("Erreur lors du téléversement");
-    } finally {
-      setUploadingDigital(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!form.name || !form.price || !form.category) {
-      toast.error("Nom, catégorie et prix sont obligatoires");
-      return;
-    }
-    const price = parseFloat(form.price);
-    if (isNaN(price) || price <= 0) {
-      toast.error("Prix invalide");
-      return;
-    }
-
-    const fields = parseFieldLines(form.customerInfoFieldsText);
-    if (form.requiresCustomerInfo && fields.length === 0) {
-      toast.error("Ajoutez au moins un champ d'info client (un par ligne)");
-      return;
-    }
-
-    const payload = {
-      name: form.name,
-      category: form.category,
-      description: form.description,
-      price,
-      deliveryType: form.deliveryType,
-      inStock: form.inStock,
-      imageUrl: form.imageUrl || null,
-      digitalContent: form.deliveryType === "auto" ? (form.digitalContent || null) : null,
-      digitalImageUrl: form.deliveryType === "auto" ? (form.digitalImageUrl || null) : null,
-      requiresCustomerInfo: form.requiresCustomerInfo,
-      customerInfoFields: form.requiresCustomerInfo ? fields : [],
-    };
-
-    try {
-      if (editingProduct) {
-        await updateProduct.mutateAsync({ id: editingProduct.id, data: payload });
-        toast.success("Produit mis à jour !");
-      } else {
-        await createProduct.mutateAsync({ data: payload });
-        toast.success("Produit créé !");
-      }
-      invalidate();
-      setDialogOpen(false);
-    } catch {
-      toast.error("Erreur lors de l'enregistrement");
-    }
   };
 
   const handleDelete = async (p: Product) => {
@@ -416,281 +237,12 @@ export default function Admin() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit / Create Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-card border-border max-w-sm max-h-[90dvh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingProduct ? "Modifier le produit" : "Nouveau produit"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="flex flex-col gap-4 py-2">
-            {/* Image Section */}
-            <div className="flex flex-col gap-2">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">Image</Label>
-
-              {/* Preview */}
-              {imagePreview && (
-                <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border/50 bg-muted/20">
-                  <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImagePreview(null);
-                      setForm((f) => ({ ...f, imageUrl: "" }));
-                    }}
-                    className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80"
-                  >
-                    <X className="w-3 h-3 text-white" />
-                  </button>
-                </div>
-              )}
-
-              {/* Mode switch */}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setImageMode("url")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    imageMode === "url" ? "bg-primary/10 border-primary/40 text-primary" : "border-border/50 text-muted-foreground hover:bg-muted/30"
-                  }`}
-                >
-                  <LinkIcon className="w-3 h-3" />
-                  URL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setImageMode("file")}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                    imageMode === "file" ? "bg-primary/10 border-primary/40 text-primary" : "border-border/50 text-muted-foreground hover:bg-muted/30"
-                  }`}
-                >
-                  <Upload className="w-3 h-3" />
-                  Fichier
-                </button>
-              </div>
-
-              {imageMode === "url" ? (
-                <Input
-                  placeholder="https://example.com/image.jpg"
-                  value={form.imageUrl}
-                  className="bg-background border-border/60 text-sm"
-                  onChange={(e) => {
-                    setForm((f) => ({ ...f, imageUrl: e.target.value }));
-                    setImagePreview(e.target.value || null);
-                  }}
-                />
-              ) : (
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-border/60 text-sm"
-                    disabled={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {uploading ? "Téléversement..." : "Choisir une image"}
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Name */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="name" className="text-xs text-muted-foreground uppercase tracking-wider">Nom *</Label>
-              <Input
-                id="name"
-                placeholder="Netflix Premium"
-                value={form.name}
-                className="bg-background border-border/60"
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              />
-            </div>
-
-            {/* Category */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">Catégorie *</Label>
-              <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
-                <SelectTrigger className="bg-background border-border/60">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Description */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="desc" className="text-xs text-muted-foreground uppercase tracking-wider">Description</Label>
-              <Input
-                id="desc"
-                placeholder="Description courte..."
-                value={form.description}
-                className="bg-background border-border/60"
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              />
-            </div>
-
-            {/* Price */}
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="price" className="text-xs text-muted-foreground uppercase tracking-wider">Prix (€) *</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="9.99"
-                value={form.price}
-                className="bg-background border-border/60"
-                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-              />
-            </div>
-
-            {/* Delivery Type */}
-            <div className="flex flex-col gap-1.5">
-              <Label className="text-xs text-muted-foreground uppercase tracking-wider">Livraison</Label>
-              <Select
-                value={form.deliveryType}
-                onValueChange={(v) => setForm((f) => ({ ...f, deliveryType: v as "auto" | "manual" }))}
-              >
-                <SelectTrigger className="bg-background border-border/60">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  <SelectItem value="auto">Automatique</SelectItem>
-                  <SelectItem value="manual">Manuelle</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground">
-                {form.deliveryType === "auto"
-                  ? "Le client reçoit le contenu ci-dessous immédiatement après l'achat."
-                  : "Tu enverras la commande manuellement depuis l'onglet « Commandes »."}
-              </p>
-            </div>
-
-            {/* Auto delivery content (only shown for auto) */}
-            {form.deliveryType === "auto" && (
-              <div className="flex flex-col gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-primary" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                    Contenu de livraison automatique
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground">Texte affiché au client</Label>
-                  <Textarea
-                    placeholder="Identifiants, lien, code, instructions détaillées..."
-                    value={form.digitalContent}
-                    className="bg-background border-border/60 min-h-[100px] text-sm"
-                    onChange={(e) => setForm((f) => ({ ...f, digitalContent: e.target.value }))}
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground">Image (optionnel)</Label>
-                  {digitalImagePreview && (
-                    <div className="relative w-full h-28 rounded-lg overflow-hidden border border-border/50 bg-muted/20">
-                      <img src={digitalImagePreview} alt="" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDigitalImagePreview(null);
-                          setForm((f) => ({ ...f, digitalImageUrl: "" }));
-                        }}
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80"
-                      >
-                        <X className="w-3 h-3 text-white" />
-                      </button>
-                    </div>
-                  )}
-                  <input
-                    ref={digitalFileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleDigitalFileChange}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-border/60 text-sm"
-                    disabled={uploadingDigital}
-                    onClick={() => digitalFileRef.current?.click()}
-                  >
-                    <Upload className="w-3.5 h-3.5 mr-2" />
-                    {uploadingDigital
-                      ? "Téléversement..."
-                      : digitalImagePreview
-                      ? "Changer l'image"
-                      : "Ajouter une image"}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Customer info request */}
-            <div className="flex flex-col gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-semibold">Demander des infos client</Label>
-                <Switch
-                  checked={form.requiresCustomerInfo}
-                  onCheckedChange={(v) => setForm((f) => ({ ...f, requiresCustomerInfo: v }))}
-                />
-              </div>
-              <p className="text-[10px] text-muted-foreground">
-                Le client paiera d'abord, puis pourra remplir les champs ci-dessous depuis sa commande.
-              </p>
-              {form.requiresCustomerInfo && (
-                <div className="flex flex-col gap-1.5">
-                  <Label className="text-xs text-muted-foreground">Champs (un par ligne)</Label>
-                  <Textarea
-                    placeholder={"Nom\nEmail\nDate de naissance"}
-                    value={form.customerInfoFieldsText}
-                    className="bg-background border-border/60 min-h-[90px] text-sm"
-                    onChange={(e) => setForm((f) => ({ ...f, customerInfoFieldsText: e.target.value }))}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* In Stock */}
-            <div className="flex items-center justify-between py-1">
-              <Label className="text-sm">En stock</Label>
-              <Switch
-                checked={form.inStock}
-                onCheckedChange={(v) => setForm((f) => ({ ...f, inStock: v }))}
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="gap-2 mt-2">
-            <Button variant="outline" className="flex-1 border-border" onClick={() => setDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button
-              className="flex-1 bg-primary hover:bg-primary/90"
-              onClick={handleSubmit}
-              disabled={createProduct.isPending || updateProduct.isPending}
-            >
-              {editingProduct ? "Enregistrer" : "Créer"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AdminProductModal
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        editingProduct={editingProduct}
+        onSaved={invalidate}
+      />
     </div>
   );
 }

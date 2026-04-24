@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, productsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, productsTable, productVariantsTable, stockItemsTable } from "@workspace/db";
+import { eq, and, asc, sql, inArray } from "drizzle-orm";
 import {
   GetProductsQueryParams,
   GetProductsResponse,
@@ -17,6 +17,58 @@ function parseProductFields(raw: string | null): string[] {
   } catch {
     return [];
   }
+}
+
+type VariantOut = {
+  id: number;
+  productId: number;
+  name: string;
+  durationDays: number | null;
+  price: number;
+  sortOrder: number;
+  isActive: boolean;
+  stockCount: number;
+};
+
+async function loadVariantsByProductIds(productIds: number[]): Promise<Map<number, VariantOut[]>> {
+  const result = new Map<number, VariantOut[]>();
+  if (productIds.length === 0) return result;
+
+  const variants = await db
+    .select()
+    .from(productVariantsTable)
+    .where(and(inArray(productVariantsTable.productId, productIds), eq(productVariantsTable.isActive, true)))
+    .orderBy(asc(productVariantsTable.sortOrder), asc(productVariantsTable.id));
+
+  if (variants.length === 0) return result;
+
+  const variantIds = variants.map((v) => v.id);
+  const counts = await db
+    .select({
+      variantId: stockItemsTable.variantId,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(stockItemsTable)
+    .where(and(inArray(stockItemsTable.variantId, variantIds), eq(stockItemsTable.status, "available")))
+    .groupBy(stockItemsTable.variantId);
+  const byVariant = new Map(counts.map((c) => [c.variantId, Number(c.count) || 0]));
+
+  for (const v of variants) {
+    const out: VariantOut = {
+      id: v.id,
+      productId: v.productId,
+      name: v.name,
+      durationDays: v.durationDays,
+      price: Number(v.price),
+      sortOrder: v.sortOrder,
+      isActive: v.isActive,
+      stockCount: byVariant.get(v.id) ?? 0,
+    };
+    const arr = result.get(v.productId) ?? [];
+    arr.push(out);
+    result.set(v.productId, arr);
+  }
+  return result;
 }
 
 router.get("/products", async (req, res): Promise<void> => {
@@ -36,6 +88,8 @@ router.get("/products", async (req, res): Promise<void> => {
     products = await db.select().from(productsTable);
   }
 
+  const variantsByProduct = await loadVariantsByProductIds(products.map((p) => p.id));
+
   res.json(
     GetProductsResponse.parse(
       products.map((p) => {
@@ -44,6 +98,7 @@ router.get("/products", async (req, res): Promise<void> => {
           ...rest,
           price: Number(p.price),
           customerInfoFields: parseProductFields(p.customerInfoFields),
+          variants: variantsByProduct.get(p.id) ?? [],
         };
       })
     )
@@ -69,12 +124,15 @@ router.get("/products/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const variantsByProduct = await loadVariantsByProductIds([product.id]);
+
   const { digitalContent: _dc, digitalImageUrl: _di, ...rest } = product;
   res.json(
     GetProductResponse.parse({
       ...rest,
       price: Number(product.price),
       customerInfoFields: parseProductFields(product.customerInfoFields),
+      variants: variantsByProduct.get(product.id) ?? [],
     })
   );
 });

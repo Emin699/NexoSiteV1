@@ -17,6 +17,19 @@ export const ProductDeliveryType = {
   manual: "manual",
 } as const;
 
+export interface ProductVariant {
+  id: number;
+  productId: number;
+  name: string;
+  /** @nullable */
+  durationDays: number | null;
+  price: number;
+  sortOrder: number;
+  isActive: boolean;
+  /** Nombre de stock_items disponibles (status=available). Pour livraison manuelle, valeur 0 mais variante toujours achetable. */
+  stockCount: number;
+}
+
 export interface Product {
   id: number;
   name: string;
@@ -34,6 +47,46 @@ export interface Product {
   digitalImageUrl?: string | null;
   requiresCustomerInfo: boolean;
   customerInfoFields: string[];
+  variants: ProductVariant[];
+}
+
+export interface ProductVariantInput {
+  name: string;
+  /** @nullable */
+  durationDays?: number | null;
+  price: number;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+export type StockItemStatus =
+  (typeof StockItemStatus)[keyof typeof StockItemStatus];
+
+export const StockItemStatus = {
+  available: "available",
+  sold: "sold",
+} as const;
+
+export interface StockItem {
+  id: number;
+  variantId: number;
+  content: string;
+  status: StockItemStatus;
+  /** @nullable */
+  soldOrderId: number | null;
+  /** @nullable */
+  soldAt: string | null;
+  createdAt: string;
+}
+
+export interface BulkStockInput {
+  /** Liste de codes/comptes (un par ligne côté UI). Chaque entrée devient un stock_item available. */
+  codes: string[];
+}
+
+export interface BulkStockResult {
+  added: number;
+  available: number;
 }
 
 export type AdminProductBodyDeliveryType =
@@ -183,11 +236,20 @@ export interface RegisterUserBody {
 export interface CartItem {
   id: number;
   productId: number;
+  /** @nullable */
+  variantId?: number | null;
+  /** @nullable */
+  variantName?: string | null;
   productName: string;
   productEmoji: string;
   price: number;
   quantity: number;
   deliveryType: string;
+  /**
+   * Stock restant pour la variante (null si pas de variante)
+   * @nullable
+   */
+  stockAvailable?: number | null;
 }
 
 export interface CartSummary {
@@ -202,6 +264,8 @@ export interface CartSummary {
 
 export interface AddToCartBody {
   productId: number;
+  /** @nullable */
+  variantId?: number | null;
   quantity?: number;
 }
 

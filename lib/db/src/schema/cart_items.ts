@@ -6,6 +6,7 @@ export const cartItemsTable = pgTable("cart_items", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   productId: integer("product_id").notNull(),
+  variantId: integer("variant_id"),
   quantity: integer("quantity").notNull().default(1),
   addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
 });

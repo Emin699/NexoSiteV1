@@ -44,6 +44,14 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Page /orders** ("Commandes passées"): toutes les commandes du user, accessible depuis profil → menu, badge statut (Livrée/En cours), bouton "Voir" pour voir credentials/image dans dialog avec lightbox.
 - **Tables**: `products.digitalContent` (text), `products.digitalImageUrl` (text). `orders.productEmoji` (default 🛍️), `orders.deliveryImageUrl` (text).
 
+## NexoShop — Variantes & pool de stock (style MySellAuth)
+
+- **Tables**: `product_variants` (id, productId, name, durationDays nullable, price numeric, sortOrder, isActive) + `stock_items` (id, variantId, content, status=available|sold, soldOrderId, soldAt). Index UNIQUE `stock_items_variant_content_uniq` sur `(variantId, content)` (anti-doublon).
+- **Cart/Checkout**: `cart_items.variantId` + `orders.variantId/variantName/stockItemId`. Si une variante est sélectionnée et `deliveryType=auto`, le checkout consomme 1 row `stock_items` via `SELECT ... FOR UPDATE SKIP LOCKED LIMIT N` puis `UPDATE status='sold'` dans la même transaction (pas de double consommation en concurrent).
+- **Routes admin**: `/admin/products/:id/variants[...]` + `/admin/products/:id/variants/:variantId/stock[...]`. Toutes les routes vérifient via `ensureVariantInProduct(productId, variantId)` que la variante appartient bien au produit (anti cross-product). Bulk POST stock dédoublonne en payload + utilise `ON CONFLICT DO NOTHING`.
+- **Backward compat**: les produits sans variantes utilisent toujours le `digitalContent` legacy.
+- **Admin UI**: `components/admin-product-modal.tsx` avec 3 onglets (Infos / Variantes / Stock). Onglets Variantes/Stock désactivés tant que le produit n'est pas sauvegardé. Ajout rapide variantes par boutons preset (1/3/6/12 mois) + custom. Stock : selecteur de variante, bulk paste (1 code/ligne), liste avec suppression individuelle, stats Disponibles/Vendus en temps réel.
+
 ## NexoShop — Système de tickets / Support
 
 - **Schéma**: `tickets` (id serial, userId, category=support|question|replacement, subcategory=basic_fit|other (NULL si non-replacement), subject, body initial, formData JSON, status=open|closed, lastReplyBy=user|admin, createdAt, updatedAt) + `ticket_messages` (ticketId FK, authorId, authorRole=user|admin, body, createdAt).
