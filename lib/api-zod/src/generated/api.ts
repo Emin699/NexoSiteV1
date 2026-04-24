@@ -146,6 +146,8 @@ export const GetProductsResponseItem = zod.object({
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
+  requiresCustomerInfo: zod.boolean(),
+  customerInfoFields: zod.array(zod.string()),
 });
 export const GetProductsResponse = zod.array(GetProductsResponseItem);
 
@@ -168,6 +170,8 @@ export const GetProductResponse = zod.object({
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
+  requiresCustomerInfo: zod.boolean(),
+  customerInfoFields: zod.array(zod.string()),
 });
 
 /**
@@ -185,6 +189,8 @@ export const AdminGetProductsResponseItem = zod.object({
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
+  requiresCustomerInfo: zod.boolean(),
+  customerInfoFields: zod.array(zod.string()),
 });
 export const AdminGetProductsResponse = zod.array(AdminGetProductsResponseItem);
 
@@ -201,6 +207,8 @@ export const AdminCreateProductBody = zod.object({
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
+  requiresCustomerInfo: zod.boolean().optional(),
+  customerInfoFields: zod.array(zod.string()).optional(),
 });
 
 /**
@@ -220,6 +228,8 @@ export const AdminUpdateProductBody = zod.object({
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
+  requiresCustomerInfo: zod.boolean().optional(),
+  customerInfoFields: zod.array(zod.string()).optional(),
 });
 
 export const AdminUpdateProductResponse = zod.object({
@@ -234,6 +244,8 @@ export const AdminUpdateProductResponse = zod.object({
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
+  requiresCustomerInfo: zod.boolean(),
+  customerInfoFields: zod.array(zod.string()),
 });
 
 /**
@@ -429,6 +441,8 @@ export const CheckoutResponse = zod.object({
       credentials: zod.string().nullish(),
       deliveryImageUrl: zod.string().nullish(),
       deliveredAt: zod.string().nullish(),
+      customerInfoFields: zod.array(zod.string()),
+      customerInfo: zod.record(zod.string(), zod.string()).nullish(),
       createdAt: zod.string(),
     }),
   ),
@@ -448,6 +462,8 @@ export const GetOrdersResponseItem = zod.object({
   credentials: zod.string().nullish(),
   deliveryImageUrl: zod.string().nullish(),
   deliveredAt: zod.string().nullish(),
+  customerInfoFields: zod.array(zod.string()),
+  customerInfo: zod.record(zod.string(), zod.string()).nullish(),
   createdAt: zod.string(),
 });
 export const GetOrdersResponse = zod.array(GetOrdersResponseItem);
@@ -468,6 +484,8 @@ export const BuyProductResponse = zod.object({
   credentials: zod.string().nullish(),
   deliveryImageUrl: zod.string().nullish(),
   deliveredAt: zod.string().nullish(),
+  customerInfoFields: zod.array(zod.string()),
+  customerInfo: zod.record(zod.string(), zod.string()).nullish(),
   createdAt: zod.string(),
 });
 
@@ -641,6 +659,8 @@ export const AdminGetPendingOrdersResponse = zod.object({
       createdAt: zod.string(),
       digitalContent: zod.string().nullish(),
       digitalImageUrl: zod.string().nullish(),
+      customerInfoFields: zod.array(zod.string()),
+      customerInfo: zod.record(zod.string(), zod.string()).nullish(),
     }),
   ),
 });
@@ -666,6 +686,33 @@ export const AdminDeliverOrderResponse = zod.object({
   credentials: zod.string().nullish(),
   deliveryImageUrl: zod.string().nullish(),
   deliveredAt: zod.string().nullish(),
+  customerInfoFields: zod.array(zod.string()),
+  customerInfo: zod.record(zod.string(), zod.string()).nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Submit customer info for an order that requires it
+ */
+export const SubmitOrderCustomerInfoParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SubmitOrderCustomerInfoBody = zod.object({
+  info: zod.record(zod.string(), zod.string()),
+});
+
+export const SubmitOrderCustomerInfoResponse = zod.object({
+  id: zod.number(),
+  productName: zod.string(),
+  productEmoji: zod.string(),
+  price: zod.number(),
+  status: zod.enum(["pending", "delivered", "cancelled"]),
+  credentials: zod.string().nullish(),
+  deliveryImageUrl: zod.string().nullish(),
+  deliveredAt: zod.string().nullish(),
+  customerInfoFields: zod.array(zod.string()),
+  customerInfo: zod.record(zod.string(), zod.string()).nullish(),
   createdAt: zod.string(),
 });
 

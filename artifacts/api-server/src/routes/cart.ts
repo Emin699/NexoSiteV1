@@ -235,6 +235,8 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
           deliveryType: productsTable.deliveryType,
           digitalContent: productsTable.digitalContent,
           digitalImageUrl: productsTable.digitalImageUrl,
+          requiresCustomerInfo: productsTable.requiresCustomerInfo,
+          customerInfoFields: productsTable.customerInfoFields,
         })
         .from(cartItemsTable)
         .innerJoin(productsTable, eq(cartItemsTable.productId, productsTable.id))
@@ -304,12 +306,16 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
         credentials: string | null;
         deliveryImageUrl: string | null;
         deliveredAt: Date | null;
+        customerInfoFields: string | null;
       }> = [];
       for (const item of items) {
         const isAuto = item.deliveryType === "auto";
         const autoContent = item.digitalContent && item.digitalContent.trim()
           ? item.digitalContent
           : "Votre produit a été livré automatiquement.";
+        const fieldsJson = item.requiresCustomerInfo && item.customerInfoFields
+          ? item.customerInfoFields
+          : null;
         for (let i = 0; i < item.quantity; i++) {
           orderRows.push({
             userId: req.userId!,
@@ -321,6 +327,7 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
             credentials: isAuto ? autoContent : null,
             deliveryImageUrl: isAuto ? (item.digitalImageUrl ?? null) : null,
             deliveredAt: isAuto ? new Date() : null,
+            customerInfoFields: fieldsJson,
           });
         }
       }
@@ -332,6 +339,32 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       return { insertedOrders, totalCharged, newBalance };
     });
 
+    const parseFields = (raw: string | null): string[] => {
+      if (!raw) return [];
+      try {
+        const v = JSON.parse(raw);
+        return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+      } catch {
+        return [];
+      }
+    };
+    const parseInfo = (raw: string | null): Record<string, string> | null => {
+      if (!raw) return null;
+      try {
+        const v = JSON.parse(raw);
+        if (v && typeof v === "object" && !Array.isArray(v)) {
+          const out: Record<string, string> = {};
+          for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+            if (typeof val === "string") out[k] = val;
+          }
+          return out;
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    };
+
     const orders = result.insertedOrders.map((o) => ({
       id: o.id,
       productName: o.productName,
@@ -341,6 +374,8 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       credentials: o.credentials,
       deliveryImageUrl: o.deliveryImageUrl,
       deliveredAt: o.deliveredAt?.toISOString() ?? null,
+      customerInfoFields: parseFields(o.customerInfoFields),
+      customerInfo: parseInfo(o.customerInfo),
       createdAt: o.createdAt.toISOString(),
     }));
 

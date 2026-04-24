@@ -7,6 +7,7 @@ import {
   useValidateCoupon,
   useCheckout,
   useGetPendingOrdersCount,
+  useSubmitOrderCustomerInfo,
   getGetCartQueryKey,
   getGetMeQueryKey,
   getGetMeStatsQueryKey,
@@ -17,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +26,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Trash2, ShoppingCart, Tag, CreditCard, ChevronLeft, CheckCircle2, Clock, Package, AlertCircle } from "lucide-react";
+import { Trash2, ShoppingCart, Tag, CreditCard, ChevronLeft, CheckCircle2, Clock, Package, AlertCircle, ClipboardList, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -36,6 +38,8 @@ type CheckoutOrder = {
   status: string;
   credentials?: string | null;
   deliveryImageUrl?: string | null;
+  customerInfoFields?: string[];
+  customerInfo?: Record<string, string> | null;
 };
 
 export default function Cart() {
@@ -55,6 +59,42 @@ export default function Cart() {
 
   const [resultOpen, setResultOpen] = useState(false);
   const [resultOrders, setResultOrders] = useState<CheckoutOrder[]>([]);
+  const submitInfo = useSubmitOrderCustomerInfo();
+  const [infoOrder, setInfoOrder] = useState<CheckoutOrder | null>(null);
+  const [infoValues, setInfoValues] = useState<Record<string, string>>({});
+
+  const openInfoDialog = (order: CheckoutOrder) => {
+    setInfoOrder(order);
+    const initial: Record<string, string> = {};
+    for (const f of order.customerInfoFields ?? []) {
+      initial[f] = order.customerInfo?.[f] ?? "";
+    }
+    setInfoValues(initial);
+  };
+
+  const handleSubmitInfo = async () => {
+    if (!infoOrder) return;
+    const fields = infoOrder.customerInfoFields ?? [];
+    for (const f of fields) {
+      if (!(infoValues[f] ?? "").trim()) {
+        toast.error(`Le champ "${f}" est obligatoire`);
+        return;
+      }
+    }
+    try {
+      await submitInfo.mutateAsync({ id: infoOrder.id, data: { info: infoValues } });
+      toast.success("Infos envoyées !");
+      setResultOrders((arr) =>
+        arr.map((o) =>
+          o.id === infoOrder.id ? { ...o, customerInfo: { ...infoValues } } : o
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: getGetOrdersQueryKey() });
+      setInfoOrder(null);
+    } catch {
+      toast.error("Erreur lors de l'envoi");
+    }
+  };
 
   const handleRemove = async (productId: number) => {
     try {
@@ -276,29 +316,49 @@ export default function Cart() {
                         <Package className="w-3.5 h-3.5" />
                         Livré immédiatement ({auto.length})
                       </div>
-                      {auto.map((o) => (
-                        <div key={o.id} className="rounded-xl bg-green-500/5 border border-green-500/20 p-3 flex flex-col gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">{o.productEmoji}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm">{o.productName}</p>
-                              <p className="text-[10px] text-muted-foreground">Commande #{o.id}</p>
+                      {auto.map((o) => {
+                        const needsInfo = (o.customerInfoFields?.length ?? 0) > 0;
+                        const submitted = needsInfo && !!o.customerInfo && Object.keys(o.customerInfo).length > 0;
+                        return (
+                          <div key={o.id} className="rounded-xl bg-green-500/5 border border-green-500/20 p-3 flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{o.productEmoji}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm">{o.productName}</p>
+                                <p className="text-[10px] text-muted-foreground">Commande #{o.id}</p>
+                              </div>
                             </div>
+                            {o.credentials && (
+                              <div className="rounded-lg bg-background/60 border border-border/40 p-2.5 text-xs whitespace-pre-wrap break-words font-mono">
+                                {o.credentials}
+                              </div>
+                            )}
+                            {o.deliveryImageUrl && (
+                              <img
+                                src={o.deliveryImageUrl}
+                                alt=""
+                                className="w-full max-h-48 object-contain rounded-lg border border-border/40"
+                              />
+                            )}
+                            {needsInfo && (
+                              <Button
+                                size="sm"
+                                variant={submitted ? "outline" : "default"}
+                                className={`h-8 ${submitted
+                                  ? "border-green-500/40 text-green-400 hover:bg-green-500/10"
+                                  : "bg-amber-500 hover:bg-amber-600 text-black font-semibold"}`}
+                                onClick={() => openInfoDialog(o)}
+                              >
+                                {submitted ? (
+                                  <><Check className="w-3.5 h-3.5 mr-1.5" />Modifier mes infos</>
+                                ) : (
+                                  <><ClipboardList className="w-3.5 h-3.5 mr-1.5" />Compléter mes infos</>
+                                )}
+                              </Button>
+                            )}
                           </div>
-                          {o.credentials && (
-                            <div className="rounded-lg bg-background/60 border border-border/40 p-2.5 text-xs whitespace-pre-wrap break-words font-mono">
-                              {o.credentials}
-                            </div>
-                          )}
-                          {o.deliveryImageUrl && (
-                            <img
-                              src={o.deliveryImageUrl}
-                              alt=""
-                              className="w-full max-h-48 object-contain rounded-lg border border-border/40"
-                            />
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -309,17 +369,39 @@ export default function Cart() {
                         <Clock className="w-3.5 h-3.5" />
                         En cours de préparation ({manual.length})
                       </div>
-                      {manual.map((o) => (
-                        <div key={o.id} className="rounded-xl bg-amber-500/5 border border-amber-500/20 p-3 flex items-center gap-3">
-                          <span className="text-xl">{o.productEmoji}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">{o.productName}</p>
-                            <p className="text-[10px] text-muted-foreground">
-                              Commande <span className="font-mono">#{o.id}</span>
-                            </p>
+                      {manual.map((o) => {
+                        const needsInfo = (o.customerInfoFields?.length ?? 0) > 0;
+                        const submitted = needsInfo && !!o.customerInfo && Object.keys(o.customerInfo).length > 0;
+                        return (
+                          <div key={o.id} className="rounded-xl bg-amber-500/5 border border-amber-500/20 p-3 flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">{o.productEmoji}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm truncate">{o.productName}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  Commande <span className="font-mono">#{o.id}</span>
+                                </p>
+                              </div>
+                            </div>
+                            {needsInfo && (
+                              <Button
+                                size="sm"
+                                variant={submitted ? "outline" : "default"}
+                                className={`h-8 ${submitted
+                                  ? "border-green-500/40 text-green-400 hover:bg-green-500/10"
+                                  : "bg-amber-500 hover:bg-amber-600 text-black font-semibold"}`}
+                                onClick={() => openInfoDialog(o)}
+                              >
+                                {submitted ? (
+                                  <><Check className="w-3.5 h-3.5 mr-1.5" />Modifier mes infos</>
+                                ) : (
+                                  <><ClipboardList className="w-3.5 h-3.5 mr-1.5" />Compléter mes infos</>
+                                )}
+                              </Button>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <p className="text-xs text-muted-foreground px-1">
                         {queueCount >= QUEUE_THRESHOLD
                           ? `⏳ La file d'attente est chargée (${queueCount} commandes). Ta livraison peut prendre un peu plus de temps que d'habitude.`
@@ -338,6 +420,61 @@ export default function Cart() {
               onClick={closeResult}
             >
               Voir mes commandes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer info form sub-dialog */}
+      <Dialog open={!!infoOrder} onOpenChange={(o) => { if (!o) setInfoOrder(null); }}>
+        <DialogContent className="bg-card border-border max-w-sm max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-amber-500" />
+              <div className="flex-1 min-w-0">
+                <p className="truncate">Vos infos pour cette commande</p>
+                <p className="text-[10px] text-muted-foreground font-normal mt-0.5">
+                  #{infoOrder?.id} · {infoOrder?.productName}
+                </p>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Le vendeur a besoin de ces informations pour préparer votre commande.
+            </p>
+            {(infoOrder?.customerInfoFields ?? []).map((field) => (
+              <div key={field} className="flex flex-col gap-1.5">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider">
+                  {field} *
+                </Label>
+                <Input
+                  value={infoValues[field] ?? ""}
+                  onChange={(e) =>
+                    setInfoValues((v) => ({ ...v, [field]: e.target.value }))
+                  }
+                  className="bg-background border-border/60"
+                  placeholder={field}
+                />
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="gap-2 mt-2">
+            <Button
+              variant="outline"
+              className="flex-1 border-border"
+              onClick={() => setInfoOrder(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+              onClick={handleSubmitInfo}
+              disabled={submitInfo.isPending}
+            >
+              {submitInfo.isPending ? "Envoi..." : "Envoyer"}
             </Button>
           </DialogFooter>
         </DialogContent>

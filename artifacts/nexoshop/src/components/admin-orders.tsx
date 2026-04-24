@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Send, Clock, Upload, X, Image as ImageIcon, Inbox } from "lucide-react";
+import { Send, Clock, Upload, X, Image as ImageIcon, Inbox, ClipboardList, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 type PendingOrder = {
@@ -32,6 +32,8 @@ type PendingOrder = {
   createdAt: string;
   digitalContent?: string | null;
   digitalImageUrl?: string | null;
+  customerInfoFields?: string[];
+  customerInfo?: Record<string, string> | null;
 };
 
 export function AdminOrders() {
@@ -128,39 +130,83 @@ export function AdminOrders() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {items.map((order) => (
-            <Card key={order.id} className="bg-card/60 border-amber-500/20">
-              <CardContent className="p-3 flex flex-col gap-2.5">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-xl shrink-0">
-                    {order.productEmoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-sm truncate">{order.productName}</p>
-                      <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-amber-500/40 text-amber-500">
-                        #{order.id}
-                      </Badge>
+          {items.map((order) => {
+            const fields = order.customerInfoFields ?? [];
+            const info = order.customerInfo ?? null;
+            const needsInfo = fields.length > 0;
+            const infoComplete = needsInfo && info && fields.every((f) => (info[f] ?? "").trim().length > 0);
+            return (
+              <Card key={order.id} className="bg-card/60 border-amber-500/20">
+                <CardContent className="p-3 flex flex-col gap-2.5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-xl shrink-0">
+                      {order.productEmoji}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {order.userPseudo} <span className="opacity-60">· {order.userEmail}</span>
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {new Date(order.createdAt).toLocaleString("fr-FR")} · {order.price.toFixed(2)}€
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm truncate">{order.productName}</p>
+                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-amber-500/40 text-amber-500">
+                          #{order.id}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {order.userPseudo} <span className="opacity-60">· {order.userEmail}</span>
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {new Date(order.createdAt).toLocaleString("fr-FR")} · {order.price.toFixed(2)}€
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <Button
-                  size="sm"
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold"
-                  onClick={() => openDeliver(order)}
-                >
-                  <Send className="w-3.5 h-3.5 mr-1.5" />
-                  Envoyer la commande
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+
+                  {needsInfo && (
+                    <div className={`rounded-lg border p-2.5 flex flex-col gap-1.5 ${
+                      infoComplete
+                        ? "bg-green-500/5 border-green-500/30"
+                        : "bg-orange-500/5 border-orange-500/30"
+                    }`}>
+                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold">
+                        {infoComplete ? (
+                          <>
+                            <ClipboardList className="w-3 h-3 text-green-500" />
+                            <span className="text-green-500">Infos client reçues</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-3 h-3 text-orange-500" />
+                            <span className="text-orange-500">En attente des infos client</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {fields.map((f) => {
+                          const v = info?.[f]?.trim() ?? "";
+                          return (
+                            <div key={f} className="flex items-start gap-2 text-xs">
+                              <span className="text-muted-foreground shrink-0 min-w-[80px]">{f} :</span>
+                              {v ? (
+                                <span className="font-medium break-words">{v}</span>
+                              ) : (
+                                <span className="text-orange-400 italic">(non renseigné)</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    size="sm"
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+                    onClick={() => openDeliver(order)}
+                  >
+                    <Send className="w-3.5 h-3.5 mr-1.5" />
+                    Envoyer la commande
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

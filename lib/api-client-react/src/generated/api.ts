@@ -61,6 +61,7 @@ import type {
   ReviewItem,
   ReviewResponse,
   SimpleOk,
+  SubmitCustomerInfoBody,
   TierProgress,
   Transaction,
   User,
@@ -3173,6 +3174,94 @@ export const useAdminDeliverOrder = <
   TContext
 > => {
   return useMutation(getAdminDeliverOrderMutationOptions(options));
+};
+
+/**
+ * @summary Submit customer info for an order that requires it
+ */
+export const getSubmitOrderCustomerInfoUrl = (id: number) => {
+  return `/api/orders/${id}/customer-info`;
+};
+
+export const submitOrderCustomerInfo = async (
+  id: number,
+  submitCustomerInfoBody: SubmitCustomerInfoBody,
+  options?: RequestInit,
+): Promise<Order> => {
+  return customFetch<Order>(getSubmitOrderCustomerInfoUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitCustomerInfoBody),
+  });
+};
+
+export const getSubmitOrderCustomerInfoMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitOrderCustomerInfo>>,
+    TError,
+    { id: number; data: BodyType<SubmitCustomerInfoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitOrderCustomerInfo>>,
+  TError,
+  { id: number; data: BodyType<SubmitCustomerInfoBody> },
+  TContext
+> => {
+  const mutationKey = ["submitOrderCustomerInfo"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitOrderCustomerInfo>>,
+    { id: number; data: BodyType<SubmitCustomerInfoBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return submitOrderCustomerInfo(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitOrderCustomerInfoMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitOrderCustomerInfo>>
+>;
+export type SubmitOrderCustomerInfoMutationBody =
+  BodyType<SubmitCustomerInfoBody>;
+export type SubmitOrderCustomerInfoMutationError = ErrorType<void>;
+
+/**
+ * @summary Submit customer info for an order that requires it
+ */
+export const useSubmitOrderCustomerInfo = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitOrderCustomerInfo>>,
+    TError,
+    { id: number; data: BodyType<SubmitCustomerInfoBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitOrderCustomerInfo>>,
+  TError,
+  { id: number; data: BodyType<SubmitCustomerInfoBody> },
+  TContext
+> => {
+  return useMutation(getSubmitOrderCustomerInfoMutationOptions(options));
 };
 
 /**

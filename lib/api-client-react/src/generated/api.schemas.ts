@@ -32,6 +32,8 @@ export interface Product {
   digitalContent?: string | null;
   /** @nullable */
   digitalImageUrl?: string | null;
+  requiresCustomerInfo: boolean;
+  customerInfoFields: string[];
 }
 
 export type AdminProductBodyDeliveryType =
@@ -55,10 +57,18 @@ export interface AdminProductBody {
   digitalContent?: string | null;
   /** @nullable */
   digitalImageUrl?: string | null;
+  requiresCustomerInfo?: boolean;
+  customerInfoFields?: string[];
 }
 
 export interface UploadResponse {
   url: string;
+}
+
+export type SubmitCustomerInfoBodyInfo = { [key: string]: string };
+
+export interface SubmitCustomerInfoBody {
+  info: SubmitCustomerInfoBodyInfo;
 }
 
 export interface AuthRegisterBody {
@@ -219,6 +229,8 @@ export const OrderStatus = {
   cancelled: "cancelled",
 } as const;
 
+export type OrderCustomerInfo = { [key: string]: string } | null;
+
 export interface Order {
   id: number;
   productName: string;
@@ -231,6 +243,8 @@ export interface Order {
   deliveryImageUrl?: string | null;
   /** @nullable */
   deliveredAt?: string | null;
+  customerInfoFields: string[];
+  customerInfo?: OrderCustomerInfo;
   createdAt: string;
 }
 
@@ -240,6 +254,8 @@ export interface CheckoutResult {
   totalCharged: number;
   newBalance: number;
 }
+
+export type AdminPendingOrderCustomerInfo = { [key: string]: string } | null;
 
 export interface AdminPendingOrder {
   id: number;
@@ -255,6 +271,8 @@ export interface AdminPendingOrder {
   digitalContent?: string | null;
   /** @nullable */
   digitalImageUrl?: string | null;
+  customerInfoFields: string[];
+  customerInfo?: AdminPendingOrderCustomerInfo;
 }
 
 export interface AdminPendingOrdersResponse {

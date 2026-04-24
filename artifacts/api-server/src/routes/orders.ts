@@ -7,11 +7,40 @@ import {
   GetOrdersResponse,
   BuyProductResponse,
   GetPendingOrdersCountResponse,
+  SubmitOrderCustomerInfoBody,
+  SubmitOrderCustomerInfoResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
 const POINTS_PER_EUR = 20;
+
+function parseFields(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseCustomerInfo(raw: string | null): Record<string, string> | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw);
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      const out: Record<string, string> = {};
+      for (const [k, val] of Object.entries(v)) {
+        if (typeof val === "string") out[k] = val;
+      }
+      return out;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 router.get("/orders", requireAuth, async (req, res): Promise<void> => {
   const orders = await db
@@ -32,10 +61,64 @@ router.get("/orders", requireAuth, async (req, res): Promise<void> => {
         credentials: o.credentials,
         deliveryImageUrl: o.deliveryImageUrl,
         deliveredAt: o.deliveredAt?.toISOString() ?? null,
+        customerInfoFields: parseFields(o.customerInfoFields),
+        customerInfo: parseCustomerInfo(o.customerInfo),
         createdAt: o.createdAt.toISOString(),
       }))
     )
   );
+});
+
+router.post("/orders/:id/customer-info", requireAuth, async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
+
+  const parsed = SubmitOrderCustomerInfoBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(and(eq(ordersTable.id, id), eq(ordersTable.userId, req.userId!)));
+
+  if (!order) { res.status(404).json({ error: "Commande introuvable" }); return; }
+
+  const fields = parseFields(order.customerInfoFields);
+  if (fields.length === 0) {
+    res.status(400).json({ error: "Cette commande ne demande pas d'infos client." });
+    return;
+  }
+
+  const submitted = parsed.data.info;
+  const cleaned: Record<string, string> = {};
+  for (const f of fields) {
+    const v = (submitted[f] ?? "").trim();
+    if (!v) {
+      res.status(400).json({ error: `Le champ "${f}" est obligatoire.` });
+      return;
+    }
+    cleaned[f] = v;
+  }
+
+  const [updated] = await db
+    .update(ordersTable)
+    .set({ customerInfo: JSON.stringify(cleaned) })
+    .where(eq(ordersTable.id, id))
+    .returning();
+
+  res.json(SubmitOrderCustomerInfoResponse.parse({
+    id: updated.id,
+    productName: updated.productName,
+    productEmoji: updated.productEmoji,
+    price: Number(updated.price),
+    status: updated.status,
+    credentials: updated.credentials,
+    deliveryImageUrl: updated.deliveryImageUrl,
+    deliveredAt: updated.deliveredAt?.toISOString() ?? null,
+    customerInfoFields: parseFields(updated.customerInfoFields),
+    customerInfo: parseCustomerInfo(updated.customerInfo),
+    createdAt: updated.createdAt.toISOString(),
+  }));
 });
 
 router.get("/orders/pending-count", requireAuth, async (_req, res): Promise<void> => {
@@ -115,6 +198,9 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
         product.digitalContent && product.digitalContent.trim()
           ? product.digitalContent
           : "Votre produit a été livré automatiquement.";
+      const customerInfoFieldsJson = product.requiresCustomerInfo && product.customerInfoFields
+        ? product.customerInfoFields
+        : null;
       const orderRows = Array.from({ length: quantity }).map(() => ({
         userId: req.userId!,
         productId,
@@ -125,6 +211,7 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
         credentials: isAuto ? autoContent : null,
         deliveryImageUrl: isAuto ? (product.digitalImageUrl ?? null) : null,
         deliveredAt: isAuto ? new Date() : null,
+        customerInfoFields: customerInfoFieldsJson,
       }));
 
       const inserted = await tx.insert(ordersTable).values(orderRows).returning();
@@ -141,6 +228,8 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
         credentials: firstOrder.credentials,
         deliveryImageUrl: firstOrder.deliveryImageUrl,
         deliveredAt: firstOrder.deliveredAt?.toISOString() ?? null,
+        customerInfoFields: parseFields(firstOrder.customerInfoFields),
+        customerInfo: parseCustomerInfo(firstOrder.customerInfo),
         createdAt: firstOrder.createdAt.toISOString(),
       })
     );

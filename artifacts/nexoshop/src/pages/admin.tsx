@@ -60,6 +60,8 @@ type FormState = {
   imageUrl: string;
   digitalContent: string;
   digitalImageUrl: string;
+  requiresCustomerInfo: boolean;
+  customerInfoFieldsText: string;
 };
 
 const DEFAULT_FORM: FormState = {
@@ -72,7 +74,16 @@ const DEFAULT_FORM: FormState = {
   imageUrl: "",
   digitalContent: "",
   digitalImageUrl: "",
+  requiresCustomerInfo: false,
+  customerInfoFieldsText: "",
 };
+
+function parseFieldLines(text: string): string[] {
+  return text
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
 
 export default function Admin() {
   const qc = useQueryClient();
@@ -120,6 +131,8 @@ export default function Admin() {
       imageUrl: p.imageUrl ?? "",
       digitalContent: p.digitalContent ?? "",
       digitalImageUrl: p.digitalImageUrl ?? "",
+      requiresCustomerInfo: p.requiresCustomerInfo ?? false,
+      customerInfoFieldsText: (p.customerInfoFields ?? []).join("\n"),
     });
     setImagePreview(p.imageUrl ?? null);
     setDigitalImagePreview(p.digitalImageUrl ?? null);
@@ -187,6 +200,12 @@ export default function Admin() {
       return;
     }
 
+    const fields = parseFieldLines(form.customerInfoFieldsText);
+    if (form.requiresCustomerInfo && fields.length === 0) {
+      toast.error("Ajoutez au moins un champ d'info client (un par ligne)");
+      return;
+    }
+
     const payload = {
       name: form.name,
       category: form.category,
@@ -197,6 +216,8 @@ export default function Admin() {
       imageUrl: form.imageUrl || null,
       digitalContent: form.deliveryType === "auto" ? (form.digitalContent || null) : null,
       digitalImageUrl: form.deliveryType === "auto" ? (form.digitalImageUrl || null) : null,
+      requiresCustomerInfo: form.requiresCustomerInfo,
+      customerInfoFields: form.requiresCustomerInfo ? fields : [],
     };
 
     try {
@@ -614,6 +635,31 @@ export default function Admin() {
                 </div>
               </div>
             )}
+
+            {/* Customer info request */}
+            <div className="flex flex-col gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Demander des infos client</Label>
+                <Switch
+                  checked={form.requiresCustomerInfo}
+                  onCheckedChange={(v) => setForm((f) => ({ ...f, requiresCustomerInfo: v }))}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Le client paiera d'abord, puis pourra remplir les champs ci-dessous depuis sa commande.
+              </p>
+              {form.requiresCustomerInfo && (
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs text-muted-foreground">Champs (un par ligne)</Label>
+                  <Textarea
+                    placeholder={"Nom\nEmail\nDate de naissance"}
+                    value={form.customerInfoFieldsText}
+                    className="bg-background border-border/60 min-h-[90px] text-sm"
+                    onChange={(e) => setForm((f) => ({ ...f, customerInfoFieldsText: e.target.value }))}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* In Stock */}
             <div className="flex items-center justify-between py-1">

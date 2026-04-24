@@ -55,10 +55,32 @@ const AdminProductSchema = z.object({
   imageUrl: z.string().nullable().optional(),
   digitalContent: z.string().nullable().optional(),
   digitalImageUrl: z.string().nullable().optional(),
-});
+  requiresCustomerInfo: z.coerce.boolean().default(false),
+  customerInfoFields: z
+    .array(z.string().min(1))
+    .default([])
+    .transform((arr) => Array.from(new Set(arr.map((s) => s.trim()).filter((s) => s.length > 0)))),
+}).refine(
+  (data) => !data.requiresCustomerInfo || data.customerInfoFields.length > 0,
+  { message: "Au moins un champ d'information client est requis", path: ["customerInfoFields"] },
+);
+
+function parseProductFields(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 function mapProduct(p: typeof productsTable.$inferSelect) {
-  return { ...p, price: Number(p.price) };
+  return {
+    ...p,
+    price: Number(p.price),
+    customerInfoFields: parseProductFields(p.customerInfoFields),
+  };
 }
 
 router.get("/admin/products", async (_req, res): Promise<void> => {
@@ -72,7 +94,7 @@ router.post("/admin/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl } = parsed.data;
+  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl, requiresCustomerInfo, customerInfoFields } = parsed.data;
   const [product] = await db
     .insert(productsTable)
     .values({
@@ -85,6 +107,8 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       imageUrl: imageUrl ?? null,
       digitalContent: digitalContent ?? null,
       digitalImageUrl: digitalImageUrl ?? null,
+      requiresCustomerInfo,
+      customerInfoFields: customerInfoFields.length ? JSON.stringify(customerInfoFields) : null,
       emoji: "🛍️",
     })
     .returning();
@@ -98,7 +122,7 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
   const parsed = AdminProductSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl } = parsed.data;
+  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl, requiresCustomerInfo, customerInfoFields } = parsed.data;
   const [product] = await db
     .update(productsTable)
     .set({
@@ -106,6 +130,8 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
       imageUrl: imageUrl ?? null,
       digitalContent: digitalContent ?? null,
       digitalImageUrl: digitalImageUrl ?? null,
+      requiresCustomerInfo,
+      customerInfoFields: customerInfoFields.length ? JSON.stringify(customerInfoFields) : null,
     })
     .where(eq(productsTable.id, id))
     .returning();
@@ -346,6 +372,8 @@ router.get("/admin/orders/pending", async (_req, res): Promise<void> => {
       userEmail: usersTable.email,
       digitalContent: productsTable.digitalContent,
       digitalImageUrl: productsTable.digitalImageUrl,
+      customerInfoFields: ordersTable.customerInfoFields,
+      customerInfo: ordersTable.customerInfo,
     })
     .from(ordersTable)
     .innerJoin(usersTable, eq(ordersTable.userId, usersTable.id))
@@ -353,6 +381,24 @@ router.get("/admin/orders/pending", async (_req, res): Promise<void> => {
     .where(eq(ordersTable.status, "pending"))
     .orderBy(desc(ordersTable.createdAt))
     .limit(200);
+
+  const parseFields = (raw: string | null): string[] => {
+    if (!raw) return [];
+    try { const v = JSON.parse(raw); return Array.isArray(v) ? v.filter((x) => typeof x === "string") : []; }
+    catch { return []; }
+  };
+  const parseInfo = (raw: string | null): Record<string, string> | null => {
+    if (!raw) return null;
+    try {
+      const v = JSON.parse(raw);
+      if (v && typeof v === "object" && !Array.isArray(v)) {
+        const out: Record<string, string> = {};
+        for (const [k, val] of Object.entries(v)) if (typeof val === "string") out[k] = val;
+        return out;
+      }
+      return null;
+    } catch { return null; }
+  };
 
   res.json({
     items: rows.map((r) => ({
@@ -367,6 +413,8 @@ router.get("/admin/orders/pending", async (_req, res): Promise<void> => {
       createdAt: r.createdAt.toISOString(),
       digitalContent: r.digitalContent,
       digitalImageUrl: r.digitalImageUrl,
+      customerInfoFields: parseFields(r.customerInfoFields),
+      customerInfo: parseInfo(r.customerInfo),
     })),
   });
 });

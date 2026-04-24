@@ -14,6 +14,8 @@ export const productsTable = pgTable("products", {
   digitalContent: text("digital_content"),
   digitalImageUrl: text("digital_image_url"),
   imageUrl: text("image_url"),
+  requiresCustomerInfo: boolean("requires_customer_info").notNull().default(false),
+  customerInfoFields: text("customer_info_fields"),
 });
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({ id: true });

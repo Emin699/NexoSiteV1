@@ -13,6 +13,8 @@ export const ordersTable = pgTable("orders", {
   credentials: text("credentials"),
   deliveryImageUrl: text("delivery_image_url"),
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  customerInfoFields: text("customer_info_fields"),
+  customerInfo: text("customer_info"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

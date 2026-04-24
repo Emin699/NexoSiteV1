@@ -9,6 +9,16 @@ import {
 
 const router: IRouter = Router();
 
+function parseProductFields(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 router.get("/products", async (req, res): Promise<void> => {
   const params = GetProductsQueryParams.safeParse(req.query);
   if (!params.success) {
@@ -30,7 +40,11 @@ router.get("/products", async (req, res): Promise<void> => {
     GetProductsResponse.parse(
       products.map((p) => {
         const { digitalContent: _dc, digitalImageUrl: _di, ...rest } = p;
-        return { ...rest, price: Number(p.price) };
+        return {
+          ...rest,
+          price: Number(p.price),
+          customerInfoFields: parseProductFields(p.customerInfoFields),
+        };
       })
     )
   );
@@ -60,6 +74,7 @@ router.get("/products/:id", async (req, res): Promise<void> => {
     GetProductResponse.parse({
       ...rest,
       price: Number(product.price),
+      customerInfoFields: parseProductFields(product.customerInfoFields),
     })
   );
 });
