@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Error</title>
+</head>
+<body>
+<pre>Internal Server Error</pre>
+</body>
+</html>
+root@ubuntu:/var/www/nexosite# sudo apt install -y postgresql-client
+psql "$DATABASE_URL" -c "SELECT count(*) FROM users;"
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+The following packages were automatically installed and are no longer required:
+  gyp handlebars libcares2 libdrm-amdgpu1 libdrm-intel1 libegl-mesa0 libegl1 libfile-basedir-perl
+  libfile-desktopentry-perl libfile-mimeinfo-perl libgbm1 libgl1 libgl1-mesa-dri libgles2 libglvnd0 libglx-mesa0
+  libglx0 libice6 libio-stringy-perl libipc-system-simple-perl libjs-async libjs-events libjs-inherits
+  libjs-is-typedarray libjs-prettify libjs-regenerate libjs-source-map libjs-sprintf-js libjs-typedarray-to-buffer
+  libllvm20 libnet-dbus-perl libpciaccess0 libre2-10 libsm6 libssl-dev libtie-ixhash-perl libuv1-dev libvulkan1
+  libwayland-client0 libx11-protocol-perl libx11-xcb1 libxaw7 libxcb-dri3-0 libxcb-glx0 libxcb-present0 libxcb-randr0
+  libxcb-shape0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcomposite1 libxcursor1 libxfixes3 libxft2 libxi6
+  libxinerama1 libxkbfile1 libxml-parser-perl libxml-twig-perl libxml-xpathengine-perl libxmu6 libxrandr2 libxrender1
+  libxshmfence1 libxt6t64 libxtst6 libxv1 libxxf86dga1 libxxf86vm1 mesa-libgallium mesa-vulkan-drivers node-abbrev
+  node-ampproject-remapping node-ansi-escapes node-ansi-regex node-ansi-styles node-aproba node-are-we-there-yet
+  node-argparse node-arrify node-async node-async-each node-auto-bind node-babel-plugin-add-module-exports
+  node-babel7-runtime node-balanced-match node-base64-js node-binary-extensions node-brace-expansion node-busboy
+  node-camelcase node-caniuse-lite node-chownr node-chrome-trace-event node-ci-info node-cjs-module-lexer
+  node-cli-boxes node-cli-cursor node-clone node-clone-deep node-collection-visit node-color-convert node-color-name
+  node-colors node-commander node-commondir node-concat-stream node-console-control-strings node-convert-source-map
+  node-core-js node-core-js-pure node-core-util-is node-data-uri-to-buffer node-decompress-response node-deep-is
+  node-defaults node-define-property node-delegates node-depd node-diff node-electron-to-chromium node-encoding
+  node-end-of-stream node-err-code node-error-ex node-es-module-lexer node-escape-string-regexp node-eslint-utils
+  node-eslint-visitor-keys node-esquery node-estraverse node-esutils node-events node-fancy-log node-fast-deep-equal
+  node-fast-levenshtein node-fetch node-find-up node-flatted node-for-in node-for-own node-foreground-child
+  node-fs-readdir-recursive node-fs-write-stream-atomic node-fs.realpath node-function-bind
+  node-functional-red-black-tree node-get-caller-file node-get-stream node-get-value node-glob node-globals node-got
+  node-graceful-fs node-growl node-has-flag node-has-unicode node-has-value node-has-values node-hosted-git-info
+  node-iconv-lite node-ieee754 node-iferr node-imurmurhash node-indent-string node-inflight node-inherits node-ini
+  node-interpret node-ip node-ip-regex node-is-arrayish node-is-binary-path node-is-buffer node-is-descriptor
+  node-is-extendable node-is-extglob node-is-path-cwd node-is-plain-obj node-is-plain-object node-is-stream
+  node-is-typedarray node-is-windows node-isarray node-isexe node-isobject node-js-tokens node-jsesc node-json-buffer
+  node-json-parse-better-errors node-json-schema node-json-schema-traverse node-json-stable-stringify node-jsonify
+  node-jsonparse node-kind-of node-levn node-loader-runner node-locate-path node-lodash-packages node-log-driver
+  node-lowercase-keys node-lru-cache node-map-visit node-memfs node-merge-stream node-mimic-response node-minimatch
+  node-minimist node-minipass node-mixin-deep node-mute-stream node-n3 node-negotiator node-neo-async
+  node-npm-run-path node-object-inspect node-object-visit node-once node-optimist node-optionator node-osenv
+  node-p-cancelable node-p-limit node-p-locate node-p-map node-pascalcase node-path-dirname node-path-exists
+  node-path-is-absolute node-path-is-inside node-path-type node-pify node-pkg-dir node-postcss-value-parser
+  node-prelude-ls node-process-nextick-args node-promise-inflight node-promise-retry node-promzard node-prr node-pump
+  node-punycode node-quick-lru node-randombytes node-read node-readable-stream node-rechoir node-regenerate
+  node-regenerate-unicode-properties node-regenerator-runtime node-regenerator-transform node-regexpp node-regjsgen
+  node-repeat-string node-require-directory node-require-from-string node-resolve node-resolve-cwd node-resolve-from
+  node-restore-cursor node-resumer node-retry node-run-queue node-safe-buffer node-sellside-emitter
+  node-serialize-javascript node-set-blocking node-set-immediate-shim node-shebang-command node-shebang-regex
+  node-shell-quote node-signal-exit node-slash node-slice-ansi node-source-list-map node-source-map
+  node-source-map-support node-spdx-correct node-spdx-exceptions node-spdx-expression-parse node-spdx-license-ids
+  node-sprintf-js node-ssri node-stack-utils node-string-decoder node-strip-bom node-strip-json-comments
+  node-supports-color node-tapable node-terser node-text-table node-through node-time-stamp node-to-fast-properties
+  node-tslib node-type-check node-typedarray node-typedarray-to-buffer node-undici
+  node-unicode-canonical-property-names-ecmascript node-unicode-match-property-value-ecmascript
+  node-unicode-property-aliases-ecmascript node-unique-filename node-unset-value node-uri-js node-util-deprecate
+  node-uuid node-v8flags node-validate-npm-package-license node-wcwidth.js node-webpack-sources node-wordwrap
+  node-wrappy node-write-file-atomic node-xtend node-y18n node-yallist node-yaml x11-common x11-utils
+  x11-xserver-utils xdg-utils zutty
+Use 'sudo apt autoremove' to remove them.
+The following additional packages will be installed:
+  libpq5 postgresql-client-16 postgresql-client-common
+Suggested packages:
+  postgresql-16 postgresql-doc-16
+The following NEW packages will be installed:
+  libpq5 postgresql-client postgresql-client-16 postgresql-client-common
+0 upgraded, 4 newly installed, 0 to remove and 4 not upgraded.
+Need to get 1492 kB of archives.
+After this operation, 4964 kB of additional disk space will be used.
+Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 libpq5 amd64 16.13-0ubuntu0.24.04.1 [146 kB]
+Get:2 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 postgresql-client-common all 257build1.1 [36.4 kB]
+Get:3 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 postgresql-client-16 amd64 16.13-0ubuntu0.24.04.1 [1298 kB]
+Get:4 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 postgresql-client all 16+257build1.1 [11.6 kB]
+Fetched 1492 kB in 1s (1548 kB/s)
+Selecting previously unselected package libpq5:amd64.
+(Reading database ... 132596 files and directories currently installed.)
+Preparing to unpack .../libpq5_16.13-0ubuntu0.24.04.1_amd64.deb ...
+Unpacking libpq5:amd64 (16.13-0ubuntu0.24.04.1) ...
+Selecting previously unselected package postgresql-client-common.
+Preparing to unpack .../postgresql-client-common_257build1.1_all.deb ...
+Unpacking postgresql-client-common (257build1.1) ...
+Selecting previously unselected package postgresql-client-16.
+Preparing to unpack .../postgresql-client-16_16.13-0ubuntu0.24.04.1_amd64.deb ...
+Unpacking postgresql-client-16 (16.13-0ubuntu0.24.04.1) ...
+Selecting previously unselected package postgresql-client.
+Preparing to unpack .../postgresql-client_16+257build1.1_all.deb ...
+Unpacking postgresql-client (16+257build1.1) ...
+Setting up postgresql-client-common (257build1.1) ...
+Setting up libpq5:amd64 (16.13-0ubuntu0.24.04.1) ...
+Setting up postgresql-client-16 (16.13-0ubuntu0.24.04.1) ...
+update-alternatives: using /usr/share/postgresql/16/man/man1/psql.1.gz to provide /usr/share/man/man1/psql.1.gz (psql.1.gz) in auto mode
+Setting up postgresql-client (16+257build1.1) ...
+Processing triggers for man-db (2.12.0-4build2) ...
+Processing triggers for libc-bin (2.39-0ubuntu8.7) ...
+Scanning processes...
+Scanning candidates...
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+Restarting services...
+
+Service restarts being deferred:
+ /etc/needrestart/restart.d/dbus.service
+ systemctl restart systemd-logind.service
+ systemctl restart unattended-upgrades.service
+
+No containers need to be restarted.
+
+User sessions running outdated binaries:
+ root @ session #7: PM2 v6.0.14: Go[2438]
+ root @ user manager service: systemd[824]
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+ count
+-------
+   211
+(1 row)
+
+root@ubuntu:/var/www/nexosite# # Test 2 : connexion depuis Node avec affichage de la VRAIE erreur
+cd /var/www/nexosite
+set -a; source .env; set +a
+
+node -e "
+const pg = require('pg');
+const url = new URL(process.env.DATABASE_URL);
+url.searchParams.delete('sslmode');
+url.searchParams.delete('channel_binding');
+const pool = new pg.Pool({
+  connectionString: url.toString(),
+  ssl: { rejectUnauthorized: false }
+});
+pool.query('SELECT count(*) FROM users')
+  .then(r => { console.log('OK:', r.rows); process.exit(0); })
+  .catch(e => { console.error('ERREUR:', e.message); console.error(e); process.exit(1); });
+"
+node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module 'pg'
+Require stack:
+- /var/www/nexosite/[eval]
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Function._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at [eval]:2:12
+    at runScriptInThisContext (node:internal/vm:209:10) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/var/www/nexosite/[eval]' ]
+}
+
+Node.js v22.22.2
+root@ubuntu:/var/www/nexosite# # Test 2 : connexion depuis Node avec affichage de la VRAIE erreur
+cd /var/www/nexosite
+set -a; source .env; set +a
+
+node -e "
+const pg = require('pg');
+const url = new URL(process.env.DATABASE_URL);
+url.searchParams.delete('sslmode');
+url.searchParams.delete('channel_binding');
+const pool = new pg.Pool({
+  connectionString: url.toString(),
+  ssl: { rejectUnauthorized: false }
+});
+pool.query('SELECT count(*) FROM users')
+  .then(r => { console.log('OK:', r.rows); process.exit(0); })
+  .catch(e => { console.error('ERREUR:', e.message); console.error(e); process.exit(1); });
+"^C
+root@ubuntu:/var/www/nexosite# cd /var/www/nexosite
+set -a; source .env; set +a
+root@ubuntu:/var/www/nexosite# node -e "
+const pg = require('pg');
+const url = new URL(process.env.DATABASE_URL);
+url.searchParams.delete('sslmode');
+url.searchParams.delete('channel_binding');
+const pool = new pg.Pool({
+  connectionString: url.toString(),
+  ssl: { rejectUnauthorized: false }
+});
+pool.query('SELECT count(*) FROM users')
+  .then(r => { console.log('OK:', r.rows); process.exit(0); })
+  .catch(e => { console.error('ERREUR:', e.message); console.error(e); process.exit(1); });
+"
+node:internal/modules/cjs/loader:1386
+  throw err;
+  ^
+
+Error: Cannot find module 'pg'
+Require stack:
+- /var/www/nexosite/[eval]
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+    at Function._load (node:internal/modules/cjs/loader:1192:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+    at Module.require (node:internal/modules/cjs/loader:1463:12)
+    at require (node:internal/modules/helpers:147:16)
+    at [eval]:2:12
+    at runScriptInThisContext (node:internal/vm:209:10) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/var/www/nexosite/[eval]' ]
+}
+
+Node.js v22.22.2
+root@ubuntu:/var/www/nexosite#
