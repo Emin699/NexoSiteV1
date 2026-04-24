@@ -1,0 +1,85 @@
+root@ubuntu:/var/www/nexosite# pm2 save
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+root@ubuntu:/var/www/nexosite# curl http://localhost:3001/api/products
+curl: (7) Failed to connect to localhost port 3001 after 0 ms: Couldn't connect to server
+root@ubuntu:/var/www/nexosite# nano .env
+root@ubuntu:/var/www/nexosite# cd /var/www/nexosite
+root@ubuntu:/var/www/nexosite# set -a
+root@ubuntu:/var/www/nexosite# source .env
+root@ubuntu:/var/www/nexosite# set +a
+root@ubuntu:/var/www/nexosite# echo "DATABASE_URL longueur = ${#DATABASE_URL}"
+echo "PORT = $PORT"
+DATABASE_URL longueur = 145
+PORT = 3001
+root@ubuntu:/var/www/nexosite# pm2 delete nexosite-api 2>/dev/null
+
+pm2 start "pnpm --filter @workspace/api-server run start" --name nexosite-api --cwd /var/www/nexosite --update-env
+
+pm2 save
+pm2 logs nexosite-api --lines 20
+[PM2] Applying action deleteProcessId on app [nexosite-api](ids: [ 4 ])
+[PM2] [nexosite-api](4) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 187.3mb  │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Starting /usr/bin/bash in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 187.3mb  │
+│ 5  │ nexosite-api       │ fork     │ 0    │ online    │ 0%       │ 3.5mb    │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+[TAILING] Tailing last 20 lines for [nexosite-api] process (change the value with --lines option)
+/root/.pm2/logs/nexosite-api-error.log last 20 lines:
+5|nexosite |         ^
+5|nexosite |
+5|nexosite | Error: DATABASE_URL must be set. Did you forget to provision a database?
+5|nexosite |     at <anonymous> (/var/www/nexosite/lib/db/src/index.ts:8:9)
+5|nexosite |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+5|nexosite |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+5|nexosite |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+5|nexosite |
+5|nexosite | Node.js v22.22.2
+5|nexosite | /var/www/nexosite/lib/db/src/index.ts:8
+5|nexosite |   throw new Error(
+5|nexosite |         ^
+5|nexosite |
+5|nexosite | Error: DATABASE_URL must be set. Did you forget to provision a database?
+5|nexosite |     at <anonymous> (/var/www/nexosite/lib/db/src/index.ts:8:9)
+5|nexosite |     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+5|nexosite |     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+5|nexosite |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+5|nexosite |
+5|nexosite | Node.js v22.22.2
+
+/root/.pm2/logs/nexosite-api-out.log last 20 lines:
+5|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+5|nexosite | > node --enable-source-maps ./dist/index.mjs
+5|nexosite |
+5|nexosite | /var/www/nexosite/artifacts/api-server:
+5|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+5|nexosite | Exit status 1
+5|nexosite |
+5|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+5|nexosite | > node --enable-source-maps ./dist/index.mjs
+5|nexosite |
+5|nexosite | /var/www/nexosite/artifacts/api-server:
+5|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+5|nexosite | Exit status 1
+5|nexosite |
+5|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+5|nexosite | > node --enable-source-maps ./dist/index.mjs
+5|nexosite |
+5|nexosite | /var/www/nexosite/artifacts/api-server:
+5|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+5|nexosite | Exit status 1
+
+5|nexosite-api  | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+5|nexosite-api  | > node --enable-source-maps ./dist/index.mjs
+5|nexosite-api  | {"level":30,"time":1777042960045,"pid":63406,"hostname":"ubuntu","port":3001,"msg":"Server listening"}
