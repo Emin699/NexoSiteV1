@@ -1,0 +1,135 @@
+PS C:\Users\33667> ssh root@82.165.242.173
+root@82.165.242.173's password:
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-110-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Fri Apr 24 18:16:15 UTC 2026
+
+  System load:  0.02              Processes:             114
+  Usage of /:   5.4% of 76.45GB   Users logged in:       1
+  Memory usage: 35%               IPv4 address for ens6: 82.165.242.173
+  Swap usage:   0%
+
+ * Strictly confined Kubernetes makes edge and IoT secure. Learn how MicroK8s
+   just raised the bar for easy, resilient and secure K8s cluster deployment.
+
+   https://ubuntu.com/engage/secure-kubernetes-at-the-edge
+
+Expanded Security Maintenance for Applications is not enabled.
+
+4 updates can be applied immediately.
+2 of these updates are standard security updates.
+To see these additional updates run: apt list --upgradable
+
+1 additional security update can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+Last login: Fri Apr 24 17:00:18 2026 from 194.146.15.226
+root@ubuntu:~# cd
+root@ubuntu:~# pwd
+/root
+root@ubuntu:~# sudo find / -type d -name "nexoshop*" 2>/dev/null
+./var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/nexoshop69.com
+/var/www/nexosite/artifacts/nexoshop
+root@ubuntu:~# sudo find / -type d -name "nexoshop*" 2>/dev/null
+/var/lib/caddy/.local/share/caddy/certificates/acme-v02.api.letsencrypt.org-directory/nexoshop69.com
+/var/www/nexosite/artifacts/nexoshop
+root@ubuntu:~# sudo find / -type d -name "nexosit*" 2>/dev/null
+/var/www/nexosite
+root@ubuntu:~# cd /var/www/nexosite
+root@ubuntu:/var/www/nexosite# d
+d: command not found
+root@ubuntu:/var/www/nexosite# git push
+Username for 'https://github.com':
+Password for 'https://github.com':
+remote: Repository not found.
+fatal: Authentication failed for 'https://github.com/Emin699/NexoSiteV1.git/'
+root@ubuntu:/var/www/nexosite# git push
+Username for 'https://github.com': Emin699
+Password for 'https://Emin699@github.com':
+To https://github.com/Emin699/NexoSiteV1.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/Emin699/NexoSiteV1.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. This is usually caused by another repository pushing to
+hint: the same ref. If you want to integrate the remote changes, use
+hint: 'git pull' before pushing again.
+hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+root@ubuntu:/var/www/nexosite# git pull origin main
+Username for 'https://github.com': Emin699
+Password for 'https://Emin699@github.com':
+remote: Enumerating objects: 129, done.
+remote: Counting objects: 100% (129/129), done.
+remote: Compressing objects: 100% (28/28), done.
+remote: Total 83 (delta 53), reused 83 (delta 53), pack-reused 0 (from 0)
+Unpacking objects: 100% (83/83), 36.62 KiB | 1.08 MiB/s, done.
+From https://github.com/Emin699/NexoSiteV1
+ * branch            main       -> FETCH_HEAD
+   296e967..ba26166  main       -> origin/main
+Updating 296e967..ba26166
+error: Your local changes to the following files would be overwritten by merge:
+        pnpm-workspace.yaml
+Please commit your changes or stash them before you merge.
+Aborting
+root@ubuntu:/var/www/nexosite# pnpm --filter @workspace/api-server run build
+pnpm --filter @workspace/nexoshop run build
+
+> @workspace/api-server@0.0.0 build /var/www/nexosite/artifacts/api-server
+> node ./build.mjs
+
+✘ [ERROR] No matching export in "../../lib/api-zod/src/index.ts" for import "GetPendingRechargesResponse"
+
+    src/routes/wallet.ts:12:2:
+      12 │   GetPendingRechargesResponse,
+         ╵   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1 error
+
+  dist/scripts/admin-cli.mjs         801.3kb
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.0kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/scripts/admin-cli.mjs.map       1.6mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           203.9kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 326ms
+Error: Build failed with 1 error:
+src/routes/wallet.ts:12:2: ERROR: No matching export in "../../lib/api-zod/src/index.ts" for import "GetPendingRechargesResponse"
+    at failureErrorWithLog (/var/www/nexosite/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1467:15)
+    at /var/www/nexosite/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:926:25
+    at /var/www/nexosite/node_modules/.pnpm/esbuild@0.27.3/node_modules/esbuild/lib/main.js:1345:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+/var/www/nexosite/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 build: `node ./build.mjs`
+Exit status 1
+
+> @workspace/nexoshop@0.0.0 build /var/www/nexosite/artifacts/nexoshop
+> vite build --config vite.config.ts
+
+failed to load config from /var/www/nexosite/artifacts/nexoshop/vite.config.ts
+error during build:
+Error: PORT environment variable is required but was not provided.
+    at file:///var/www/nexosite/artifacts/nexoshop/node_modules/.vite-temp/vite.config.ts.timestamp-1777054795944-6d1aec0c3bee4.mjs:10:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:665:26)
+    at async loadConfigFromBundledFile (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35920:12)
+    at async bundleAndLoadConfigFile (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35808:17)
+    at async loadConfigFromFile (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35775:42)
+    at async resolveConfig (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:35424:22)
+    at async createBuilder (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/chunks/config.js:33879:19)
+    at async CAC.<anonymous> (file:///var/www/nexosite/node_modules/.pnpm/vite@7.3.2_@types+node@25.3.5_jiti@2.6.1_lightningcss@1.31.1_tsx@4.21.0_yaml@2.8.2/node_modules/vite/dist/node/cli.js:629:10)
+/var/www/nexosite/artifacts/nexoshop:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/nexoshop@0.0.0 build: `vite build --config vite.config.ts`
+Exit status 1
+root@ubuntu:/var/www/nexosite#
