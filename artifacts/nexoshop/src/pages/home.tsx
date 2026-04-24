@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useGetProducts, useAddToCart, useBuyProduct } from "@workspace/api-client-react";
 import { ReviewModal } from "@/components/review-modal";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ProductCardHolo } from "@/components/product-card-holo";
+import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,8 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  ShoppingCart,
-  Zap,
   Tv2,
   Music2,
   BrainCircuit,
@@ -45,32 +42,6 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   Tech: Cpu,
   Spécial: Sparkles,
 };
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Streaming: "from-red-500/20 to-rose-500/10 text-red-400",
-  Musique: "from-purple-500/20 to-violet-500/10 text-purple-400",
-  IA: "from-cyan-500/20 to-blue-500/10 text-cyan-400",
-  Sport: "from-green-500/20 to-emerald-500/10 text-green-400",
-  Tech: "from-blue-500/20 to-indigo-500/10 text-blue-400",
-  Spécial: "from-amber-500/20 to-yellow-500/10 text-amber-400",
-};
-
-function ProductIcon({ category, imageUrl }: { category: string; imageUrl?: string | null }) {
-  const Icon = CATEGORY_ICONS[category] ?? LayoutGrid;
-  const colors = CATEGORY_COLORS[category] ?? "from-primary/20 to-secondary/10 text-primary";
-  if (imageUrl) {
-    return (
-      <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 shrink-0">
-        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
-      </div>
-    );
-  }
-  return (
-    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colors} flex items-center justify-center shadow-inner border border-white/5 shrink-0`}>
-      <Icon className="w-6 h-6" />
-    </div>
-  );
-}
 
 export default function Home() {
   const [activeCategory, setActiveCategory] = useState("Tout");
@@ -151,10 +122,10 @@ export default function Home() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className="h-[220px] animate-pulse bg-muted/20 border-border/50" />
+            <Card key={i} className="h-[480px] animate-pulse bg-muted/20 border-border/50" />
           ))
         ) : products?.length === 0 ? (
           <div className="col-span-full py-12 text-center text-muted-foreground bg-card/50 rounded-xl border border-dashed border-border">
@@ -162,59 +133,14 @@ export default function Home() {
           </div>
         ) : (
           products?.map((product) => (
-            <Card
+            <ProductCardHolo
               key={product.id}
-              className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/50 transition-colors cursor-pointer"
-              onClick={() => setLocation(`/product/${product.id}`)}
-            >
-              <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between space-y-0">
-                <div className="flex items-center gap-3">
-                  <ProductIcon category={product.category} imageUrl={product.imageUrl} />
-                  <div>
-                    <h3 className="font-bold text-base leading-tight">{product.name}</h3>
-                    <Badge
-                      variant="outline"
-                      className="mt-1 text-[10px] px-1.5 py-0 h-4 border-primary/30 text-primary/80"
-                    >
-                      {product.category}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="font-mono font-bold text-lg text-primary">
-                    {product.price.toFixed(2)}€
-                  </span>
-                </div>
-              </CardHeader>
-
-              <CardContent className="p-4 pt-2 pb-2">
-                <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">
-                  {product.description}
-                </p>
-              </CardContent>
-
-              <CardFooter className="p-4 flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 bg-card hover:bg-primary/10 hover:text-primary border-border"
-                  onClick={(e) => { e.stopPropagation(); handleAddToCart(product.id); }}
-                  disabled={!product.inStock}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Panier
-                </Button>
-                <Button
-                  size="sm"
-                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/20 border-none"
-                  onClick={(e) => { e.stopPropagation(); handleBuyNow(product.id, product.name); }}
-                  disabled={!product.inStock}
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Acheter
-                </Button>
-              </CardFooter>
-            </Card>
+              product={product}
+              onOpen={() => setLocation(`/product/${product.id}`)}
+              onAddToCart={() => handleAddToCart(product.id)}
+              onBuy={() => handleBuyNow(product.id, product.name)}
+              busy={addToCart.isPending || buyProduct.isPending}
+            />
           ))
         )}
       </div>
