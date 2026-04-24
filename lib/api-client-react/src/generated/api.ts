@@ -24,6 +24,7 @@ import type {
   AdminLogsResponse,
   AdminProductBody,
   AdminUser,
+  AllReviewsResponse,
   AuthLoginBody,
   AuthRegisterBody,
   AuthResponse,
@@ -497,6 +498,81 @@ export const useAuthLogin = <
 > => {
   return useMutation(getAuthLoginMutationOptions(options));
 };
+
+/**
+ * @summary Get all reviews with global stats
+ */
+export const getGetAllReviewsUrl = () => {
+  return `/api/reviews`;
+};
+
+export const getAllReviews = async (
+  options?: RequestInit,
+): Promise<AllReviewsResponse> => {
+  return customFetch<AllReviewsResponse>(getGetAllReviewsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAllReviewsQueryKey = () => {
+  return [`/api/reviews`] as const;
+};
+
+export const getGetAllReviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAllReviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAllReviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAllReviewsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAllReviews>>> = ({
+    signal,
+  }) => getAllReviews({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAllReviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAllReviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAllReviews>>
+>;
+export type GetAllReviewsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get all reviews with global stats
+ */
+
+export function useGetAllReviews<
+  TData = Awaited<ReturnType<typeof getAllReviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAllReviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAllReviewsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Submit a review after purchase

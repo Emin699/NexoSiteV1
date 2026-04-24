@@ -72,6 +72,27 @@ export const AuthLoginResponse = zod.object({
 });
 
 /**
+ * @summary Get all reviews with global stats
+ */
+export const GetAllReviewsResponse = zod.object({
+  total: zod.number(),
+  average: zod.number(),
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number(),
+      firstName: zod.string(),
+      productId: zod.number(),
+      productName: zod.string().nullish(),
+      rating: zod.number(),
+      comment: zod.string(),
+      imageUrl: zod.string().nullish(),
+      createdAt: zod.string(),
+    }),
+  ),
+});
+
+/**
  * @summary Submit a review after purchase
  */
 export const submitReviewBodyRatingMax = 5;
@@ -81,6 +102,7 @@ export const SubmitReviewBody = zod.object({
   orderId: zod.number().nullish(),
   rating: zod.number().min(1).max(submitReviewBodyRatingMax),
   comment: zod.string(),
+  imageUrl: zod.string().nullish(),
 });
 
 /**
@@ -95,8 +117,10 @@ export const GetProductReviewsResponseItem = zod.object({
   userId: zod.number(),
   firstName: zod.string(),
   productId: zod.number(),
+  productName: zod.string().nullish(),
   rating: zod.number(),
   comment: zod.string(),
+  imageUrl: zod.string().nullish(),
   createdAt: zod.string(),
 });
 export const GetProductReviewsResponse = zod.array(

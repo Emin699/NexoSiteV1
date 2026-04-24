@@ -17,6 +17,7 @@ import Loyalty from "@/pages/loyalty";
 import Jackpot from "@/pages/jackpot";
 import Tiers from "@/pages/tiers";
 import Referral from "@/pages/referral";
+import ReviewsPage from "@/pages/reviews";
 import Admin from "@/pages/admin";
 import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
@@ -54,6 +55,7 @@ function AppContent() {
         <Route path="/jackpot" component={Jackpot} />
         <Route path="/tiers" component={Tiers} />
         <Route path="/referral" component={Referral} />
+        <Route path="/reviews" component={ReviewsPage} />
         <Route path="/admin" component={Admin} />
         <Route component={NotFound} />
       </Switch>

@@ -94,6 +94,8 @@ export interface ReviewBody {
    */
   rating: number;
   comment: string;
+  /** @nullable */
+  imageUrl?: string | null;
 }
 
 export interface ReviewResponse {
@@ -107,9 +109,19 @@ export interface ReviewItem {
   userId: number;
   firstName: string;
   productId: number;
+  /** @nullable */
+  productName?: string | null;
   rating: number;
   comment: string;
+  /** @nullable */
+  imageUrl?: string | null;
   createdAt: string;
+}
+
+export interface AllReviewsResponse {
+  total: number;
+  average: number;
+  items: ReviewItem[];
 }
 
 export interface User {

@@ -220,6 +220,27 @@ router.post("/admin/users/:id/ban", async (req, res): Promise<void> => {
   res.json({ id, isBanned: newValue === 1 });
 });
 
+// ============ DELETE REVIEW ============
+router.delete("/admin/reviews/:id", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid review ID" }); return; }
+
+  const [review] = await db.select().from(reviewsTable).where(eq(reviewsTable.id, id));
+  if (!review) { res.status(404).json({ error: "Avis introuvable" }); return; }
+
+  // Try to delete the associated image file (best-effort, do not fail on errors)
+  if (review.imageUrl) {
+    const m = review.imageUrl.match(/^\/api\/uploads\/([\w.\-]+)$/);
+    if (m) {
+      const filePath = path.join(uploadsDir, m[1]);
+      try { fs.unlinkSync(filePath); } catch { /* ignore */ }
+    }
+  }
+
+  await db.delete(reviewsTable).where(eq(reviewsTable.id, id));
+  res.json({ id, deleted: true });
+});
+
 // ============ DELETE USER ============
 router.delete("/admin/users/:id", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);

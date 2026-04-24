@@ -137,6 +137,17 @@ paths:
           description: Invalid credentials
 
   /reviews:
+    get:
+      operationId: getAllReviews
+      tags: [reviews]
+      summary: Get all reviews with global stats
+      responses:
+        "200":
+          description: All reviews with stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllReviewsResponse"
     post:
       operationId: submitReview
       tags: [reviews]
@@ -944,6 +955,8 @@ components:
           maximum: 5
         comment:
           type: string
+        imageUrl:
+          type: ["string", "null"]
       required: [productId, rating, comment]
 
     ReviewResponse:
@@ -968,13 +981,30 @@ components:
           type: string
         productId:
           type: integer
+        productName:
+          type: ["string", "null"]
         rating:
           type: integer
         comment:
           type: string
+        imageUrl:
+          type: ["string", "null"]
         createdAt:
           type: string
       required: [id, userId, firstName, productId, rating, comment, createdAt]
+
+    AllReviewsResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+        average:
+          type: number
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReviewItem"
+      required: [total, average, items]
 
     User:
       type: object
