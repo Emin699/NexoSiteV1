@@ -13,8 +13,22 @@ import {
 
 const router: IRouter = Router();
 
-async function buildCartSummary(userId: number) {
-  const items = await db
+const POINTS_PER_EUR = 20;
+const AUTO_DISCOUNT_THRESHOLD = 50;
+const AUTO_DISCOUNT_RATE = 0.05;
+
+type CartItemRow = {
+  id: number;
+  productId: number;
+  quantity: number;
+  name: string;
+  emoji: string;
+  price: string;
+  deliveryType: string;
+};
+
+async function fetchCartItems(userId: number): Promise<CartItemRow[]> {
+  return db
     .select({
       id: cartItemsTable.id,
       productId: cartItemsTable.productId,
@@ -27,10 +41,58 @@ async function buildCartSummary(userId: number) {
     .from(cartItemsTable)
     .innerJoin(productsTable, eq(cartItemsTable.productId, productsTable.id))
     .where(eq(cartItemsTable.userId, userId));
+}
 
+type CouponData = {
+  code: string;
+  type: "percent" | "amount";
+  value: number;
+};
+
+async function loadCouponFor(userId: number, code: string): Promise<{ coupon: CouponData | null; reason?: string }> {
+  const [c] = await db.select().from(couponsTable).where(eq(couponsTable.code, code.toUpperCase()));
+  if (!c) return { coupon: null, reason: "Code promo invalide" };
+  if (c.currentUses >= c.maxUses) return { coupon: null, reason: "Code promo épuisé" };
+  if (c.expiresAt && c.expiresAt < new Date()) return { coupon: null, reason: "Code promo expiré" };
+  if (c.restrictedToUserId && c.restrictedToUserId !== userId) {
+    return { coupon: null, reason: "Ce code n'est pas valide pour votre compte" };
+  }
+  return { coupon: { code: c.code, type: c.type as "percent" | "amount", value: Number(c.value) } };
+}
+
+function computeDiscount(subtotal: number, coupon: CouponData | null) {
+  const autoDiscount = subtotal >= AUTO_DISCOUNT_THRESHOLD ? subtotal * AUTO_DISCOUNT_RATE : 0;
+  let couponDiscount = 0;
+  if (coupon) {
+    couponDiscount = coupon.type === "percent"
+      ? subtotal * (coupon.value / 100)
+      : Math.min(coupon.value, subtotal);
+  }
+  // Règle: on prend la meilleure remise des deux, jamais les deux cumulées
+  const finalDiscount = Math.max(autoDiscount, couponDiscount);
+  const couponApplied = couponDiscount > 0 && couponDiscount >= autoDiscount;
+  return {
+    autoDiscount: Math.round(autoDiscount * 100) / 100,
+    couponDiscount: Math.round(couponDiscount * 100) / 100,
+    finalDiscount: Math.round(finalDiscount * 100) / 100,
+    couponApplied,
+  };
+}
+
+async function buildCartSummary(userId: number, requestedCoupon?: string | null) {
+  const items = await fetchCartItems(userId);
   const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
-  const discount = subtotal >= 50 ? subtotal * 0.05 : 0;
-  const total = subtotal - discount;
+
+  let coupon: CouponData | null = null;
+  let couponMessage: string | null = null;
+  if (requestedCoupon && requestedCoupon.trim()) {
+    const loaded = await loadCouponFor(userId, requestedCoupon.trim());
+    coupon = loaded.coupon;
+    if (!coupon) couponMessage = loaded.reason ?? "Code invalide";
+  }
+
+  const { finalDiscount, couponApplied } = computeDiscount(subtotal, coupon);
+  const total = Math.max(0, subtotal - finalDiscount);
 
   return {
     items: items.map((i) => ({
@@ -43,15 +105,17 @@ async function buildCartSummary(userId: number) {
       deliveryType: i.deliveryType,
     })),
     subtotal: Math.round(subtotal * 100) / 100,
-    discount: Math.round(discount * 100) / 100,
+    discount: finalDiscount,
     total: Math.round(total * 100) / 100,
-    couponCode: null,
+    couponCode: couponApplied && coupon ? coupon.code : null,
+    couponMessage,
     itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
   };
 }
 
 router.get("/cart", requireAuth, async (req, res): Promise<void> => {
-  const summary = await buildCartSummary(req.userId!);
+  const couponParam = typeof req.query.couponCode === "string" ? req.query.couponCode : null;
+  const summary = await buildCartSummary(req.userId!, couponParam);
   res.json(GetCartResponse.parse(summary));
 });
 
@@ -78,13 +142,13 @@ router.post("/cart", requireAuth, async (req, res): Promise<void> => {
   if (existing) {
     await db
       .update(cartItemsTable)
-      .set({ quantity: existing.quantity + quantity })
+      .set({ quantity: Math.min(99, existing.quantity + quantity) })
       .where(eq(cartItemsTable.id, existing.id));
   } else {
     await db.insert(cartItemsTable).values({
       userId: req.userId!,
       productId,
-      quantity,
+      quantity: Math.min(99, quantity),
     });
   }
 
@@ -122,43 +186,29 @@ router.post("/cart/validate-coupon", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  const { code, cartTotal } = parsed.data;
+  const { code } = parsed.data;
+  const summary = await buildCartSummary(req.userId!, code);
 
-  const [coupon] = await db.select().from(couponsTable).where(eq(couponsTable.code, code.toUpperCase()));
-
-  if (!coupon) {
-    res.json(ValidateCouponResponse.parse({ valid: false, discount: 0, type: null, message: "Code promo invalide" }));
+  if (!summary.couponCode) {
+    res.json(
+      ValidateCouponResponse.parse({
+        valid: false,
+        discount: 0,
+        newTotal: summary.total,
+        type: null,
+        message: summary.couponMessage ?? "Code invalide ou non avantageux par rapport à la remise automatique",
+      })
+    );
     return;
-  }
-
-  if (coupon.currentUses >= coupon.maxUses) {
-    res.json(ValidateCouponResponse.parse({ valid: false, discount: 0, type: null, message: "Code promo épuisé" }));
-    return;
-  }
-
-  if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-    res.json(ValidateCouponResponse.parse({ valid: false, discount: 0, type: null, message: "Code promo expiré" }));
-    return;
-  }
-
-  if (coupon.restrictedToUserId && coupon.restrictedToUserId !== req.userId) {
-    res.json(ValidateCouponResponse.parse({ valid: false, discount: 0, type: null, message: "Ce code n'est pas valide pour votre compte" }));
-    return;
-  }
-
-  let discount = 0;
-  if (coupon.type === "percent") {
-    discount = cartTotal * (Number(coupon.value) / 100);
-  } else {
-    discount = Math.min(Number(coupon.value), cartTotal);
   }
 
   res.json(
     ValidateCouponResponse.parse({
       valid: true,
-      discount: Math.round(discount * 100) / 100,
-      type: coupon.type,
-      message: `Code appliqué : -${coupon.type === "percent" ? coupon.value + "%" : coupon.value + "€"}`,
+      discount: summary.discount,
+      newTotal: summary.total,
+      type: "applied",
+      message: `Code appliqué — total : ${summary.total.toFixed(2)}€`,
     })
   );
 });
@@ -172,99 +222,125 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
 
   const { couponCode } = parsed.data;
 
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId!));
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
-    return;
-  }
-
-  const summary = await buildCartSummary(req.userId!);
-  if (summary.items.length === 0) {
-    res.status(400).json({ error: "Cart is empty" });
-    return;
-  }
-
-  let totalCharged = summary.total;
-
-  if (couponCode) {
-    const [coupon] = await db.select().from(couponsTable).where(eq(couponsTable.code, couponCode.toUpperCase()));
-    if (coupon && coupon.currentUses < coupon.maxUses) {
-      let discount = 0;
-      if (coupon.type === "percent") {
-        discount = totalCharged * (Number(coupon.value) / 100);
-      } else {
-        discount = Math.min(Number(coupon.value), totalCharged);
-      }
-      totalCharged = Math.max(0, totalCharged - discount);
-      await db
-        .update(couponsTable)
-        .set({ currentUses: coupon.currentUses + 1 })
-        .where(eq(couponsTable.code, couponCode.toUpperCase()));
-    }
-  }
-
-  totalCharged = Math.round(totalCharged * 100) / 100;
-
-  if (Number(user.balance) < totalCharged) {
-    res.status(400).json({ error: "Solde insuffisant. Veuillez recharger votre portefeuille." });
-    return;
-  }
-
-  const newBalance = Math.round((Number(user.balance) - totalCharged) * 100) / 100;
-
-  await db
-    .update(usersTable)
-    .set({
-      balance: newBalance.toFixed(2),
-      purchaseCount: sql`${usersTable.purchaseCount} + ${summary.items.length}`,
-      jackpotTickets: sql`${usersTable.jackpotTickets} + ${summary.items.length}`,
-    })
-    .where(eq(usersTable.id, req.userId!));
-
-  await db.insert(transactionsTable).values({
-    userId: req.userId!,
-    type: "debit",
-    amount: totalCharged.toFixed(2),
-    description: `Achat panier (${summary.items.length} article${summary.items.length > 1 ? "s" : ""})`,
-  });
-
-  const newOrders = await Promise.all(
-    summary.items.map((item) =>
-      db
-        .insert(ordersTable)
-        .values({
-          userId: req.userId!,
-          productId: item.productId,
-          productName: item.productName,
-          price: item.price.toFixed(2),
-          status: item.deliveryType === "auto" ? "delivered" : "pending",
-          credentials: item.deliveryType === "auto" ? "Livraison automatique en cours de traitement" : null,
-          deliveredAt: item.deliveryType === "auto" ? new Date() : null,
+  try {
+    const result = await db.transaction(async (tx) => {
+      const items = await tx
+        .select({
+          id: cartItemsTable.id,
+          productId: cartItemsTable.productId,
+          quantity: cartItemsTable.quantity,
+          name: productsTable.name,
+          emoji: productsTable.emoji,
+          price: productsTable.price,
+          deliveryType: productsTable.deliveryType,
         })
-        .returning()
-    )
-  );
+        .from(cartItemsTable)
+        .innerJoin(productsTable, eq(cartItemsTable.productId, productsTable.id))
+        .where(eq(cartItemsTable.userId, req.userId!));
 
-  await db.delete(cartItemsTable).where(eq(cartItemsTable.userId, req.userId!));
+      if (items.length === 0) {
+        throw Object.assign(new Error("Cart is empty"), { status: 400 });
+      }
 
-  const orders = newOrders.flat().map((o) => ({
-    id: o.id,
-    productName: o.productName,
-    price: Number(o.price),
-    status: o.status,
-    credentials: o.credentials,
-    deliveredAt: o.deliveredAt?.toISOString() ?? null,
-    createdAt: o.createdAt.toISOString(),
-  }));
+      const subtotal = items.reduce((sum, i) => sum + Number(i.price) * i.quantity, 0);
 
-  res.json(
-    CheckoutResponse.parse({
-      success: true,
-      orders,
-      totalCharged,
-      newBalance,
-    })
-  );
+      let coupon: CouponData | null = null;
+      if (couponCode && couponCode.trim()) {
+        const loaded = await loadCouponFor(req.userId!, couponCode.trim());
+        coupon = loaded.coupon;
+      }
+
+      const { finalDiscount, couponApplied } = computeDiscount(subtotal, coupon);
+      const totalCharged = Math.round(Math.max(0, subtotal - finalDiscount) * 100) / 100;
+
+      const [user] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
+      if (!user) {
+        throw Object.assign(new Error("User not found"), { status: 404 });
+      }
+      if (Number(user.balance) < totalCharged) {
+        throw Object.assign(new Error("Solde insuffisant. Veuillez recharger votre portefeuille."), { status: 400 });
+      }
+
+      const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
+      const newBalance = Math.round((Number(user.balance) - totalCharged) * 100) / 100;
+      const earnedPoints = Math.floor(totalCharged * POINTS_PER_EUR);
+
+      await tx
+        .update(usersTable)
+        .set({
+          balance: newBalance.toFixed(2),
+          purchaseCount: sql`${usersTable.purchaseCount} + ${totalQuantity}`,
+          jackpotTickets: sql`${usersTable.jackpotTickets} + ${totalQuantity}`,
+          loyaltyPoints: sql`${usersTable.loyaltyPoints} + ${earnedPoints}`,
+        })
+        .where(eq(usersTable.id, req.userId!));
+
+      await tx.insert(transactionsTable).values({
+        userId: req.userId!,
+        type: "debit",
+        amount: totalCharged.toFixed(2),
+        description: `Achat panier (${items.length} produit${items.length > 1 ? "s" : ""}, ${totalQuantity} unité${totalQuantity > 1 ? "s" : ""})${couponApplied && coupon ? ` — coupon ${coupon.code}` : ""}`,
+      });
+
+      if (couponApplied && coupon) {
+        await tx
+          .update(couponsTable)
+          .set({ currentUses: sql`${couponsTable.currentUses} + 1` })
+          .where(eq(couponsTable.code, coupon.code));
+      }
+
+      const orderRows: Array<{
+        userId: number;
+        productId: number;
+        productName: string;
+        price: string;
+        status: string;
+        credentials: string | null;
+        deliveredAt: Date | null;
+      }> = [];
+      for (const item of items) {
+        for (let i = 0; i < item.quantity; i++) {
+          orderRows.push({
+            userId: req.userId!,
+            productId: item.productId,
+            productName: item.name,
+            price: item.price,
+            status: item.deliveryType === "auto" ? "delivered" : "pending",
+            credentials: item.deliveryType === "auto" ? "Livraison automatique en cours de traitement" : null,
+            deliveredAt: item.deliveryType === "auto" ? new Date() : null,
+          });
+        }
+      }
+
+      const insertedOrders = await tx.insert(ordersTable).values(orderRows).returning();
+
+      await tx.delete(cartItemsTable).where(eq(cartItemsTable.userId, req.userId!));
+
+      return { insertedOrders, totalCharged, newBalance };
+    });
+
+    const orders = result.insertedOrders.map((o) => ({
+      id: o.id,
+      productName: o.productName,
+      price: Number(o.price),
+      status: o.status,
+      credentials: o.credentials,
+      deliveredAt: o.deliveredAt?.toISOString() ?? null,
+      createdAt: o.createdAt.toISOString(),
+    }));
+
+    res.json(
+      CheckoutResponse.parse({
+        success: true,
+        orders,
+        totalCharged: result.totalCharged,
+        newBalance: result.newBalance,
+      })
+    );
+  } catch (err) {
+    const e = err as { status?: number; message?: string };
+    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur lors du checkout" });
+  }
 });
 
 export default router;

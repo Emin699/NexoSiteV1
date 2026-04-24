@@ -1,28 +1,28 @@
 import { useEffect, useState } from "react";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
-const USER_ID_KEY = "nexoshop_user_id";
+const TOKEN_KEY = "nexoshop_token";
 const USER_EMAIL_KEY = "nexoshop_email";
 const USER_NAME_KEY = "nexoshop_name";
 
-const originalFetch = window.fetch;
-window.fetch = async (input, init) => {
-  const userId = localStorage.getItem(USER_ID_KEY);
-  if (userId) {
-    init = init || {};
-    init.headers = new Headers(init.headers);
-    init.headers.set("X-User-Id", userId);
+setAuthTokenGetter(() => {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
   }
-  return originalFetch(input, init);
-};
+});
 
-export function storeAuth(userId: number, firstName: string, email: string) {
-  localStorage.setItem(USER_ID_KEY, String(userId));
+export function storeAuth(token: string | null | undefined, firstName: string, email: string) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
   localStorage.setItem(USER_NAME_KEY, firstName);
   localStorage.setItem(USER_EMAIL_KEY, email);
 }
 
 export function clearAuth() {
-  localStorage.removeItem(USER_ID_KEY);
+  localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_NAME_KEY);
   localStorage.removeItem(USER_EMAIL_KEY);
 }
@@ -32,14 +32,14 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const userId = localStorage.getItem(USER_ID_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
     document.documentElement.classList.add("dark");
-    if (userId) setIsAuthenticated(true);
+    if (token) setIsAuthenticated(true);
     setIsReady(true);
   }, []);
 
-  const handleAuth = (userId: number, firstName: string, email: string) => {
-    storeAuth(userId, firstName, email);
+  const handleAuth = (token: string | null | undefined, firstName: string, email: string) => {
+    storeAuth(token, firstName, email);
     setIsAuthenticated(true);
   };
 

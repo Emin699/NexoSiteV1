@@ -13,6 +13,7 @@ import tiersRouter from "./tiers";
 import adminRouter from "./admin";
 import authRouter from "./auth";
 import reviewsRouter from "./reviews";
+import paypalRouter from "./paypal";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(tiersRouter);
 router.use(adminRouter);
 router.use(authRouter);
 router.use(reviewsRouter);
+router.use(paypalRouter);
 
 export default router;

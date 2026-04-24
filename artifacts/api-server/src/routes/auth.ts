@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { sendVerificationEmail } from "../lib/resend-client.js";
 import { isDisposableEmail } from "../lib/disposable-emails.js";
+import { signToken } from "../lib/session-token.js";
 
 const router: IRouter = Router();
 
@@ -108,6 +109,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     firstName: returnedFirstName,
     email: normalizedEmail,
     needsVerification: true,
+    token: null,
   });
 });
 
@@ -125,7 +127,13 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
     return;
   }
   if (user.emailVerified === 1) {
-    res.json({ userId: user.id, firstName: user.firstName, email: user.email ?? "", needsVerification: false });
+    res.json({
+      userId: user.id,
+      firstName: user.firstName,
+      email: user.email ?? "",
+      needsVerification: false,
+      token: signToken(user.id),
+    });
     return;
   }
   if (!user.verificationCode || user.verificationCode !== code) {
@@ -147,6 +155,7 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
     firstName: user.firstName,
     email: user.email ?? "",
     needsVerification: false,
+    token: signToken(user.id),
   });
 });
 
@@ -224,6 +233,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     firstName: user.firstName,
     email: user.email,
     needsVerification: false,
+    token: signToken(user.id),
   });
 });
 

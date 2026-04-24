@@ -7,3 +7,5 @@ export * from "./coupons";
 export * from "./referrals";
 export * from "./wheel_spins";
 export * from "./reviews";
+export * from "./jackpot_draws";
+export * from "./crypto_recharges";

@@ -2,8 +2,8 @@ import { Router, type IRouter } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { db, productsTable, usersTable, transactionsTable, ordersTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { db, productsTable, usersTable, transactionsTable, ordersTable, jackpotDrawsTable } from "@workspace/db";
+import { eq, desc, sql, gt } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "../middlewares/userAuth.js";
 
@@ -240,6 +240,119 @@ router.post("/admin/users/:id/adjust", async (req, res): Promise<void> => {
     freeSpins: updated.freeSpins,
     jackpotTickets: updated.jackpotTickets,
   });
+});
+
+// ============ JACKPOT DRAW ============
+const JackpotDrawSchema = z.object({
+  prizeAmount: z.coerce.number().positive(),
+  resetTickets: z.boolean().optional().default(true),
+});
+
+router.post("/admin/jackpot/draw", async (req, res): Promise<void> => {
+  const parsed = JackpotDrawSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { prizeAmount, resetTickets } = parsed.data;
+
+  try {
+    const result = await db.transaction(async (tx) => {
+      // Get all candidates (users with at least 1 ticket)
+      const candidates = await tx
+        .select({
+          id: usersTable.id,
+          firstName: usersTable.firstName,
+          username: usersTable.username,
+          email: usersTable.email,
+          tickets: usersTable.jackpotTickets,
+          balance: usersTable.balance,
+        })
+        .from(usersTable)
+        .where(gt(usersTable.jackpotTickets, 0));
+
+      const totalTickets = candidates.reduce((s, c) => s + c.tickets, 0);
+      if (totalTickets === 0) {
+        throw Object.assign(new Error("Aucun ticket en jeu — impossible de tirer un gagnant"), { status: 400 });
+      }
+
+      // Weighted random pick
+      let pick = Math.floor(Math.random() * totalTickets);
+      let winner = candidates[0];
+      for (const c of candidates) {
+        if (pick < c.tickets) { winner = c; break; }
+        pick -= c.tickets;
+      }
+
+      // Credit winner's balance
+      const winnerNewBalance = Math.round((Number(winner.balance) + prizeAmount) * 100) / 100;
+      await tx
+        .update(usersTable)
+        .set({ balance: winnerNewBalance.toFixed(2) })
+        .where(eq(usersTable.id, winner.id));
+
+      await tx.insert(transactionsTable).values({
+        userId: winner.id,
+        type: "credit",
+        amount: prizeAmount.toFixed(2),
+        description: `Jackpot hebdomadaire — gagnant !`,
+      });
+
+      const winnerName = winner.username
+        ? `@${winner.username}`
+        : winner.firstName ?? "Utilisateur";
+
+      // Record draw
+      const [draw] = await tx
+        .insert(jackpotDrawsTable)
+        .values({
+          winnerId: winner.id,
+          winnerName,
+          prizeAmount: prizeAmount.toFixed(2),
+          totalTicketsAtDraw: totalTickets,
+        })
+        .returning();
+
+      // Reset all tickets if requested
+      if (resetTickets) {
+        await tx.update(usersTable).set({ jackpotTickets: 0 });
+      }
+
+      return { draw, winner: { id: winner.id, name: winnerName, email: winner.email }, totalTickets };
+    });
+
+    res.json({
+      success: true,
+      drawId: result.draw.id,
+      winnerId: result.winner.id,
+      winnerName: result.winner.name,
+      winnerEmail: result.winner.email,
+      prizeAmount: Number(result.draw.prizeAmount),
+      totalTicketsAtDraw: result.totalTickets,
+      drawDate: result.draw.drawDate.toISOString(),
+    });
+  } catch (err) {
+    const e = err as { status?: number; message?: string };
+    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur lors du tirage" });
+  }
+});
+
+router.get("/admin/jackpot/draws", async (_req, res): Promise<void> => {
+  const draws = await db
+    .select()
+    .from(jackpotDrawsTable)
+    .orderBy(desc(jackpotDrawsTable.drawDate))
+    .limit(20);
+  res.json(
+    draws.map((d) => ({
+      id: d.id,
+      drawDate: d.drawDate.toISOString(),
+      winnerId: d.winnerId,
+      winnerName: d.winnerName,
+      prizeAmount: Number(d.prizeAmount),
+      totalTicketsAtDraw: d.totalTicketsAtDraw,
+    }))
+  );
 });
 
 // Suppress unused warning

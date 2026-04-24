@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Mail, Lock, User, Eye, EyeOff, ShoppingBag, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
 
 interface AuthPageProps {
-  onAuth: (userId: number, firstName: string, email: string) => void;
+  onAuth: (token: string | null | undefined, firstName: string, email: string) => void;
 }
 
 type Mode = "login" | "register" | "verify";
@@ -61,7 +61,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
           toast.success("Code envoyé sur ton email !");
           goToVerify(res.userId, res.firstName, res.email);
         } else {
-          onAuth(res.userId, res.firstName, res.email);
+          onAuth(res.token, res.firstName, res.email);
           toast.success(`Bienvenue ${res.firstName} !`);
         }
       } else if (mode === "login") {
@@ -70,7 +70,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
           toast.message("Vérifie ton email pour continuer");
           goToVerify(res.userId, res.firstName, res.email);
         } else {
-          onAuth(res.userId, res.firstName, res.email);
+          onAuth(res.token, res.firstName, res.email);
           toast.success(`Bon retour ${res.firstName} !`);
         }
       }
@@ -98,7 +98,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
     setLoading(true);
     try {
       const res = await authVerify.mutateAsync({ data: { userId: pendingUserId, code } });
-      onAuth(res.userId, res.firstName, res.email);
+      onAuth(res.token, res.firstName, res.email);
       toast.success(`Bienvenue ${res.firstName} ! Email vérifié 🎉`);
     } catch (e: unknown) {
       const msg = (e as { data?: { error?: string } })?.data?.error || "Code incorrect";

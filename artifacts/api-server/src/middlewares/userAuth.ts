@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { verifyToken } from "../lib/session-token.js";
 
 declare global {
   namespace Express {
@@ -11,19 +12,26 @@ declare global {
   }
 }
 
+function extractBearer(req: Request): string | null {
+  const auth = req.headers["authorization"];
+  if (!auth || typeof auth !== "string") return null;
+  if (!auth.toLowerCase().startsWith("bearer ")) return null;
+  return auth.slice(7).trim() || null;
+}
+
 export async function userAuthMiddleware(
   req: Request,
-  res: Response,
-  next: NextFunction
+  _res: Response,
+  next: NextFunction,
 ): Promise<void> {
-  const userIdHeader = req.headers["x-user-id"];
-  if (!userIdHeader) {
+  const token = extractBearer(req);
+  if (!token) {
     next();
     return;
   }
 
-  const userId = parseInt(Array.isArray(userIdHeader) ? userIdHeader[0] : userIdHeader, 10);
-  if (isNaN(userId)) {
+  const verified = verifyToken(token);
+  if (!verified) {
     next();
     return;
   }
@@ -31,7 +39,8 @@ export async function userAuthMiddleware(
   const [user] = await db
     .select({ id: usersTable.id, isAdmin: usersTable.isAdmin })
     .from(usersTable)
-    .where(eq(usersTable.id, userId));
+    .where(eq(usersTable.id, verified.userId));
+
   if (user) {
     req.userId = user.id;
     req.isAdmin = user.isAdmin === 1;

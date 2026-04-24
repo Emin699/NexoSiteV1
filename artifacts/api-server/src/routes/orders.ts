@@ -10,6 +10,8 @@ import {
 
 const router: IRouter = Router();
 
+const POINTS_PER_EUR = 20;
+
 router.get("/orders", requireAuth, async (req, res): Promise<void> => {
   const orders = await db
     .select()
@@ -41,6 +43,7 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
   }
 
   const { productId } = parsed.data;
+  const quantity = Math.max(1, Math.min(99, parsed.data.quantity ?? 1));
 
   const [product] = await db
     .select()
@@ -52,67 +55,85 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, req.userId!));
-
-  if (!user) {
-    res.status(404).json({ error: "Utilisateur introuvable" });
+  if (!product.inStock) {
+    res.status(400).json({ error: "Produit en rupture de stock" });
     return;
   }
 
-  const price = Number(product.price);
-  if (Number(user.balance) < price) {
-    res.status(400).json({ error: "Solde insuffisant. Veuillez recharger votre portefeuille." });
-    return;
+  const unitPrice = Number(product.price);
+  const total = Math.round(unitPrice * quantity * 100) / 100;
+
+  // Single atomic operation: balance check + debit + N orders + transaction + stats
+  try {
+    const firstOrder = await db.transaction(async (tx) => {
+      const [user] = await tx
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, req.userId!));
+
+      if (!user) {
+        throw Object.assign(new Error("Utilisateur introuvable"), { status: 404 });
+      }
+      if (Number(user.balance) < total) {
+        throw Object.assign(new Error("Solde insuffisant. Veuillez recharger votre portefeuille."), { status: 400 });
+      }
+
+      const newBalance = Math.round((Number(user.balance) - total) * 100) / 100;
+      const earnedPoints = Math.floor(total * POINTS_PER_EUR);
+
+      await tx
+        .update(usersTable)
+        .set({
+          balance: newBalance.toFixed(2),
+          purchaseCount: sql`${usersTable.purchaseCount} + ${quantity}`,
+          jackpotTickets: sql`${usersTable.jackpotTickets} + ${quantity}`,
+          loyaltyPoints: sql`${usersTable.loyaltyPoints} + ${earnedPoints}`,
+        })
+        .where(eq(usersTable.id, req.userId!));
+
+      await tx.insert(transactionsTable).values({
+        userId: req.userId!,
+        type: "debit",
+        amount: total.toFixed(2),
+        description: quantity > 1
+          ? `Achat : ${product.name} ×${quantity}`
+          : `Achat : ${product.name}`,
+      });
+
+      const orderRows = Array.from({ length: quantity }).map(() => ({
+        userId: req.userId!,
+        productId,
+        productName: product.name,
+        price: product.price,
+        status: product.deliveryType === "auto" ? "delivered" : "pending",
+        credentials:
+          product.deliveryType === "auto"
+            ? product.digitalContent ?? "Livraison automatique en cours de traitement"
+            : null,
+        deliveredAt: product.deliveryType === "auto" ? new Date() : null,
+      }));
+
+      const inserted = await tx.insert(ordersTable).values(orderRows).returning();
+      return inserted[0];
+    });
+
+    res.json(
+      BuyProductResponse.parse({
+        id: firstOrder.id,
+        productName: firstOrder.productName,
+        price: Number(firstOrder.price),
+        status: firstOrder.status,
+        credentials: firstOrder.credentials,
+        deliveredAt: firstOrder.deliveredAt?.toISOString() ?? null,
+        createdAt: firstOrder.createdAt.toISOString(),
+        quantity,
+        totalCharged: total,
+      })
+    );
+  } catch (err) {
+    const e = err as { status?: number; message?: string };
+    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur lors de l'achat" });
   }
-
-  const newBalance = Math.round((Number(user.balance) - price) * 100) / 100;
-
-  await db
-    .update(usersTable)
-    .set({
-      balance: newBalance.toFixed(2),
-      purchaseCount: sql`${usersTable.purchaseCount} + 1`,
-      jackpotTickets: sql`${usersTable.jackpotTickets} + 1`,
-    })
-    .where(eq(usersTable.id, req.userId!));
-
-  await db.insert(transactionsTable).values({
-    userId: req.userId!,
-    type: "debit",
-    amount: price.toFixed(2),
-    description: `Achat : ${product.name}`,
-  });
-
-  const [order] = await db
-    .insert(ordersTable)
-    .values({
-      userId: req.userId!,
-      productId,
-      productName: product.name,
-      price: product.price,
-      status: product.deliveryType === "auto" ? "delivered" : "pending",
-      credentials:
-        product.deliveryType === "auto"
-          ? product.digitalContent ?? "Livraison automatique en cours de traitement"
-          : null,
-      deliveredAt: product.deliveryType === "auto" ? new Date() : null,
-    })
-    .returning();
-
-  res.json(
-    BuyProductResponse.parse({
-      id: order.id,
-      productName: order.productName,
-      price: Number(order.price),
-      status: order.status,
-      credentials: order.credentials,
-      deliveredAt: order.deliveredAt?.toISOString() ?? null,
-      createdAt: order.createdAt.toISOString(),
-    })
-  );
 });
 
 export default router;
