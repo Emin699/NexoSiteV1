@@ -10,8 +10,12 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+const dbUrl = new URL(process.env.DATABASE_URL);
+dbUrl.searchParams.delete("sslmode");
+dbUrl.searchParams.delete("channel_binding");
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: dbUrl.toString(),
   ssl: { rejectUnauthorized: false },
 });
 export const db = drizzle(pool, { schema });
