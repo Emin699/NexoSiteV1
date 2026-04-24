@@ -3,14 +3,21 @@ import { db, usersTable, referralsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
 import { GetReferralResponse } from "@workspace/api-zod";
+import { REFERRAL_REWARD_EUR, REFERRAL_CAP_EUR } from "../lib/referral-config";
 
 const router: IRouter = Router();
 
-const BOT_URL = "https://nexoshop.replit.app";
-const REFERRAL_REWARD = 5;
-const REFERRAL_CAP = 80;
+function buildReferralLink(req: { protocol: string; get: (h: string) => string | undefined }, userId: number): string {
+  const envBase = process.env["PUBLIC_URL"]?.replace(/\/+$/, "");
+  const base = envBase && envBase.length > 0
+    ? envBase
+    : `${req.protocol}://${req.get("host") ?? "localhost"}`;
+  return `${base}/?ref=${userId}`;
+}
 
 router.get("/referral", requireAuth, async (req, res): Promise<void> => {
+  const userId = req.userId!;
+
   const referrals = await db
     .select({
       id: referralsTable.id,
@@ -20,10 +27,10 @@ router.get("/referral", requireAuth, async (req, res): Promise<void> => {
       createdAt: referralsTable.createdAt,
     })
     .from(referralsTable)
-    .where(eq(referralsTable.referrerId, req.userId!));
+    .where(eq(referralsTable.referrerId, userId));
 
-  const totalEarned = referrals.filter((r) => r.paid).length * REFERRAL_REWARD;
-  const remainingCap = Math.max(0, REFERRAL_CAP - totalEarned);
+  const totalEarned = referrals.filter((r) => r.paid).length * REFERRAL_REWARD_EUR;
+  const remainingCap = Math.max(0, REFERRAL_CAP_EUR - totalEarned);
 
   const referralUsers = await Promise.all(
     referrals.map(async (r) => {
@@ -43,9 +50,12 @@ router.get("/referral", requireAuth, async (req, res): Promise<void> => {
 
   res.json(
     GetReferralResponse.parse({
-      referralLink: `${BOT_URL}?ref=${req.userId}`,
+      referralLink: buildReferralLink(req, userId),
+      referralCode: String(userId),
       totalEarned,
       remainingCap,
+      rewardPerReferral: REFERRAL_REWARD_EUR,
+      cap: REFERRAL_CAP_EUR,
       referrals: referralUsers,
     })
   );

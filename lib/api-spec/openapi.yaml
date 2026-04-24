@@ -1006,6 +1006,10 @@ components:
           type: string
         firstName:
           type: string
+        referralCode:
+          type: string
+          nullable: true
+          description: "Code de parrainage optionnel (ID du parrain) capté depuis ?ref= dans l'URL"
       required: [email, password, firstName]
 
     AuthLoginBody:
@@ -1501,15 +1505,21 @@ components:
       properties:
         referralLink:
           type: string
+        referralCode:
+          type: string
         totalEarned:
           type: number
         remainingCap:
+          type: number
+        rewardPerReferral:
+          type: number
+        cap:
           type: number
         referrals:
           type: array
           items:
             $ref: "#/components/schemas/ReferralEntry"
-      required: [referralLink, totalEarned, remainingCap, referrals]
+      required: [referralLink, referralCode, totalEarned, remainingCap, rewardPerReferral, cap, referrals]
 
     ReferralEntry:
       type: object

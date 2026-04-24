@@ -12,6 +12,9 @@ export default function Referral() {
   const { data: refData, isLoading } = useGetReferral();
   const [copied, setCopied] = useState(false);
 
+  const reward = refData?.rewardPerReferral ?? 1;
+  const rewardLabel = reward.toFixed(2);
+
   const copyLink = () => {
     if (!refData?.referralLink) return;
     navigator.clipboard.writeText(refData.referralLink);
@@ -57,7 +60,7 @@ export default function Referral() {
           </div>
           <h2 className="text-2xl font-bold mb-2 text-white">Invitez vos amis</h2>
           <p className="text-muted-foreground text-sm max-w-[250px] mx-auto">
-            Gagnez <strong className="text-blue-400">1.00€</strong> sur votre solde pour chaque ami qui s'inscrit et effectue son premier achat.
+            Gagnez <strong className="text-blue-400">{rewardLabel}€</strong> sur votre solde pour chaque ami qui s'inscrit et effectue son premier achat.
           </p>
         </div>
 
@@ -137,7 +140,7 @@ export default function Referral() {
                     </div>
                     <div>
                       {ref.paid ? (
-                        <Badge className="bg-green-500/20 text-green-500 border-none hover:bg-green-500/20">+1.00€ payé</Badge>
+                        <Badge className="bg-green-500/20 text-green-500 border-none hover:bg-green-500/20">+{rewardLabel}€ payé</Badge>
                       ) : ref.eligible ? (
                         <Badge className="bg-yellow-500/20 text-yellow-500 border-none hover:bg-yellow-500/20">En attente</Badge>
                       ) : (

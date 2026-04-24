@@ -1,7 +1,8 @@
 import { Router, type IRouter } from "express";
-import { db, cartItemsTable, productsTable, couponsTable, usersTable, ordersTable, transactionsTable } from "@workspace/db";
+import { db, cartItemsTable, productsTable, couponsTable, usersTable, ordersTable, transactionsTable, referralsTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
+import { REFERRAL_REWARD_EUR, REFERRAL_CAP_EUR } from "../lib/referral-config";
 import {
   AddToCartBody,
   ValidateCouponBody,
@@ -260,6 +261,16 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
       const earnedPoints = Math.floor(totalCharged * POINTS_PER_EUR);
 
+      // Snapshot of the buyer BEFORE the debit, so we can detect their first paid purchase.
+      const [buyerBefore] = await tx
+        .select({
+          purchaseCount: usersTable.purchaseCount,
+          referredBy: usersTable.referredBy,
+        })
+        .from(usersTable)
+        .where(eq(usersTable.id, req.userId!));
+      if (!buyerBefore) throw Object.assign(new Error("User not found"), { status: 404 });
+
       // Conditional debit: atomic balance check + decrement (no read-then-write race).
       const debited = await tx
         .update(usersTable)
@@ -276,11 +287,65 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
         .returning();
 
       if (debited.length === 0) {
-        const [u] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
-        if (!u) throw Object.assign(new Error("User not found"), { status: 404 });
         throw Object.assign(new Error("Solde insuffisant. Veuillez recharger votre portefeuille."), { status: 400 });
       }
       const newBalance = Number(debited[0].balance);
+
+      // Referral reward: credit the referrer the first time this buyer makes a paid purchase.
+      // We use an atomic conditional UPDATE ... WHERE paid = false RETURNING * as our
+      // claim mechanism — only one transaction can ever flip paid=false → paid=true.
+      if (
+        buyerBefore.purchaseCount === 0 &&
+        totalCharged > 0 &&
+        buyerBefore.referredBy != null
+      ) {
+        const referrerId = buyerBefore.referredBy;
+        const claimed = await tx
+          .update(referralsTable)
+          .set({ eligible: true, paid: true })
+          .where(and(
+            eq(referralsTable.referrerId, referrerId),
+            eq(referralsTable.referredId, req.userId!),
+            eq(referralsTable.paid, false),
+          ))
+          .returning({ id: referralsTable.id });
+
+        if (claimed.length > 0) {
+          // Count how much this referrer has already been paid (excluding this row,
+          // which we just flipped). Enforce the cap.
+          const paidRows = await tx
+            .select({ id: referralsTable.id })
+            .from(referralsTable)
+            .where(and(
+              eq(referralsTable.referrerId, referrerId),
+              eq(referralsTable.paid, true),
+            ));
+          // paidRows now includes the row we just claimed, so subtract 1 to know the prior earnings.
+          const priorEarned = Math.max(0, (paidRows.length - 1)) * REFERRAL_REWARD_EUR;
+          const remaining = Math.max(0, REFERRAL_CAP_EUR - priorEarned);
+          const reward = Math.min(REFERRAL_REWARD_EUR, remaining);
+
+          if (reward > 0) {
+            await tx
+              .update(usersTable)
+              .set({ balance: sql`${usersTable.balance} + ${reward.toFixed(2)}` })
+              .where(eq(usersTable.id, referrerId));
+
+            const [buyer] = await tx
+              .select({ firstName: usersTable.firstName, username: usersTable.username })
+              .from(usersTable)
+              .where(eq(usersTable.id, req.userId!));
+            const buyerLabel = buyer?.username ? `@${buyer.username}` : (buyer?.firstName ?? "un filleul");
+
+            await tx.insert(transactionsTable).values({
+              userId: referrerId,
+              type: "credit",
+              amount: reward.toFixed(2),
+              description: `Bonus parrainage — ${buyerLabel}`,
+            });
+          }
+        }
+      }
 
       await tx.insert(transactionsTable).values({
         userId: req.userId!,

@@ -75,6 +75,8 @@ export interface AuthRegisterBody {
   email: string;
   password: string;
   firstName: string;
+  /** Code de parrainage optionnel (ID du parrain) capté depuis ?ref= dans l'URL */
+  referralCode?: string | null;
 }
 
 export interface AuthLoginBody {
@@ -385,8 +387,11 @@ export interface ReferralEntry {
 
 export interface ReferralInfo {
   referralLink: string;
+  referralCode: string;
   totalEarned: number;
   remainingCap: number;
+  rewardPerReferral: number;
+  cap: number;
   referrals: ReferralEntry[];
 }
 

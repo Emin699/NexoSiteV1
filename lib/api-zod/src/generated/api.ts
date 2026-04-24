@@ -21,6 +21,12 @@ export const AuthRegisterBody = zod.object({
   email: zod.string(),
   password: zod.string(),
   firstName: zod.string(),
+  referralCode: zod
+    .string()
+    .nullish()
+    .describe(
+      "Code de parrainage optionnel (ID du parrain) capté depuis ?ref= dans l'URL",
+    ),
 });
 
 export const AuthRegisterResponse = zod.object({
@@ -833,8 +839,11 @@ export const ConvertPointsResponse = zod.object({
  */
 export const GetReferralResponse = zod.object({
   referralLink: zod.string(),
+  referralCode: zod.string(),
   totalEarned: zod.number(),
   remainingCap: zod.number(),
+  rewardPerReferral: zod.number(),
+  cap: zod.number(),
   referrals: zod.array(
     zod.object({
       id: zod.number(),

@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcrypt";
-import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, referralsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { sendVerificationEmail } from "../lib/resend-client.js";
 import { isDisposableEmail } from "../lib/disposable-emails.js";
@@ -13,7 +13,29 @@ const RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   firstName: z.string().min(1).max(50),
+  referralCode: z.string().trim().optional().nullable(),
 });
+
+async function resolveReferrerId(
+  rawCode: string | null | undefined,
+  newUserEmail: string,
+): Promise<number | null> {
+  if (!rawCode) return null;
+  const trimmed = rawCode.trim();
+  if (!trimmed) return null;
+  const id = Number(trimmed);
+  if (!Number.isInteger(id) || id <= 0) return null;
+  const [referrer] = await db
+    .select({ id: usersTable.id, email: usersTable.email })
+    .from(usersTable)
+    .where(eq(usersTable.id, id));
+  if (!referrer) return null;
+  // Refuse self-referral via the same email account
+  if (referrer.email && referrer.email.toLowerCase() === newUserEmail.toLowerCase()) {
+    return null;
+  }
+  return referrer.id;
+}
 
 const LoginSchema = z.object({
   email: z.string().email(),
@@ -40,7 +62,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     return;
   }
 
-  const { email, password, firstName } = parsed.data;
+  const { email, password, firstName, referralCode } = parsed.data;
   const normalizedEmail = email.toLowerCase().trim();
 
   if (isDisposableEmail(normalizedEmail)) {
@@ -49,7 +71,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   }
 
   const [existing] = await db
-    .select({ id: usersTable.id, emailVerified: usersTable.emailVerified })
+    .select({ id: usersTable.id, emailVerified: usersTable.emailVerified, referredBy: usersTable.referredBy })
     .from(usersTable)
     .where(eq(usersTable.email, normalizedEmail));
 
@@ -57,6 +79,8 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Cette adresse email est déjà utilisée." });
     return;
   }
+
+  const referrerId = await resolveReferrerId(referralCode, normalizedEmail);
 
   const passwordHash = await bcrypt.hash(password, 10);
   const code = generateCode();
@@ -66,34 +90,83 @@ router.post("/auth/register", async (req, res): Promise<void> => {
   let returnedFirstName: string;
 
   if (existing) {
-    // Existing unverified account — overwrite credentials and resend code
+    // Existing unverified account — overwrite credentials and resend code.
+    // Only set referredBy if it isn't already linked to a referrer.
+    const updateValues: {
+      passwordHash: string;
+      firstName: string;
+      verificationCode: string;
+      verificationCodeExpiresAt: Date;
+      referredBy?: number;
+    } = {
+      passwordHash,
+      firstName,
+      verificationCode: code,
+      verificationCodeExpiresAt: expiresAt,
+    };
+    if (existing.referredBy == null && referrerId != null && referrerId !== existing.id) {
+      updateValues.referredBy = referrerId;
+    }
     const [updated] = await db
       .update(usersTable)
-      .set({
-        passwordHash,
-        firstName,
-        verificationCode: code,
-        verificationCodeExpiresAt: expiresAt,
-      })
+      .set(updateValues)
       .where(eq(usersTable.id, existing.id))
-      .returning({ id: usersTable.id, firstName: usersTable.firstName });
+      .returning({ id: usersTable.id, firstName: usersTable.firstName, referredBy: usersTable.referredBy });
     userId = updated.id;
     returnedFirstName = updated.firstName;
+
+    // Insert the referral row if needed (only when this register call set the referrer).
+    if (updateValues.referredBy != null) {
+      const [alreadyLinked] = await db
+        .select({ id: referralsTable.id })
+        .from(referralsTable)
+        .where(eq(referralsTable.referredId, updated.id));
+      if (!alreadyLinked) {
+        await db.insert(referralsTable).values({
+          referrerId: updateValues.referredBy,
+          referredId: updated.id,
+          eligible: false,
+          paid: false,
+        });
+      }
+    }
   } else {
+    const insertValues: {
+      email: string;
+      passwordHash: string;
+      firstName: string;
+      username: null;
+      emailVerified: number;
+      verificationCode: string;
+      verificationCodeExpiresAt: Date;
+      referredBy?: number;
+    } = {
+      email: normalizedEmail,
+      passwordHash,
+      firstName,
+      username: null,
+      emailVerified: 0,
+      verificationCode: code,
+      verificationCodeExpiresAt: expiresAt,
+    };
+    if (referrerId != null) {
+      insertValues.referredBy = referrerId;
+    }
     const [user] = await db
       .insert(usersTable)
-      .values({
-        email: normalizedEmail,
-        passwordHash,
-        firstName,
-        username: null,
-        emailVerified: 0,
-        verificationCode: code,
-        verificationCodeExpiresAt: expiresAt,
-      })
+      .values(insertValues)
       .returning({ id: usersTable.id, firstName: usersTable.firstName });
     userId = user.id;
     returnedFirstName = user.firstName;
+
+    if (referrerId != null && referrerId !== user.id) {
+      await db.insert(referralsTable).values({
+        referrerId,
+        referredId: user.id,
+        eligible: false,
+        paid: false,
+      });
+    }
   }
 
   try {

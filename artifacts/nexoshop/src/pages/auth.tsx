@@ -27,10 +27,36 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
   const [code, setCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  // Referral code captured from ?ref= in the URL.
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
   const authRegister = useAuthRegister();
   const authLogin = useAuthLogin();
   const authVerify = useAuthVerifyEmail();
   const authResend = useAuthResendCode();
+
+  // Capture ?ref= from the URL (and remember it across the session).
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("nexoshop_ref");
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = params.get("ref");
+      if (fromUrl && /^\d+$/.test(fromUrl)) {
+        sessionStorage.setItem("nexoshop_ref", fromUrl);
+        setReferralCode(fromUrl);
+        setMode("register");
+        // Clean the URL so the param is not kept after navigation.
+        params.delete("ref");
+        const newSearch = params.toString();
+        const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "") + window.location.hash;
+        window.history.replaceState({}, "", newUrl);
+      } else if (stored && /^\d+$/.test(stored)) {
+        setReferralCode(stored);
+      }
+    } catch {
+      // sessionStorage may be unavailable (private mode); ignore.
+    }
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -56,7 +82,9 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
           toast.error("Le prénom est requis");
           return;
         }
-        const res = await authRegister.mutateAsync({ data: { email, password, firstName } });
+        const res = await authRegister.mutateAsync({
+          data: { email, password, firstName, ...(referralCode ? { referralCode } : {}) },
+        });
         if (res.needsVerification) {
           toast.success("Code envoyé sur ton email !");
           goToVerify(res.userId, res.firstName, res.email);
