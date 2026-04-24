@@ -1,0 +1,216 @@
+root@ubuntu:/var/www/nexosite# pm2 logs --lines 50
+[TAILING] Tailing last 50 lines for [all] processes (change the value with --lines option)
+/root/.pm2/pm2.log last 50 lines:
+PM2        | 2026-04-24T17:01:26: PM2 log: pid=66557 msg=process killed
+PM2        | 2026-04-24T17:01:26: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:26: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:27: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:28: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:29: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] starting in -fork mode-
+PM2        | 2026-04-24T17:01:30: PM2 log: App [nexosite-api:8] online
+PM2        | 2026-04-24T17:01:31: PM2 log: App [nexosite-api:8] exited with code [1] via signal [SIGINT]
+PM2        | 2026-04-24T17:01:31: PM2 log: Script /usr/bin/bash had too many unstable restarts (16). Stopped. "errored"
+
+/root/.pm2/logs/nexoshop-bot-error.log last 50 lines:
+0|nexoshop | (node:23209) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+0|nexoshop | In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+0|nexoshop |
+0|nexoshop | To prepare for this change:
+0|nexoshop | - If you want the current behavior, explicitly use 'sslmode=verify-full'
+0|nexoshop | - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+0|nexoshop |
+0|nexoshop | See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+0|nexoshop | (Use `node --trace-warnings ...` to show where the warning was created)
+0|nexoshop | (node:23209) [node-telegram-bot-api] DeprecationWarning: In the future, content-type of files you send will default to "application/octet-stream". See https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files for more information on how sending files has been improved and on how to disable this deprecation message altogether.
+0|nexoshop | (node:26329) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+0|nexoshop | In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+0|nexoshop |
+0|nexoshop | To prepare for this change:
+0|nexoshop | - If you want the current behavior, explicitly use 'sslmode=verify-full'
+0|nexoshop | - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+0|nexoshop |
+0|nexoshop | See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+0|nexoshop | (Use `node --trace-warnings ...` to show where the warning was created)
+0|nexoshop | (node:26329) [node-telegram-bot-api] DeprecationWarning: In the future, content-type of files you send will default to "application/octet-stream". See https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files for more information on how sending files has been improved and on how to disable this deprecation message altogether.
+0|nexoshop | (node:30676) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+0|nexoshop | In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+0|nexoshop |
+0|nexoshop | To prepare for this change:
+0|nexoshop | - If you want the current behavior, explicitly use 'sslmode=verify-full'
+0|nexoshop | - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+0|nexoshop |
+0|nexoshop | See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+0|nexoshop | (Use `node --trace-warnings ...` to show where the warning was created)
+0|nexoshop | (node:30676) [node-telegram-bot-api] DeprecationWarning: In the future, content-type of files you send will default to "application/octet-stream". See https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files for more information on how sending files has been improved and on how to disable this deprecation message altogether.
+0|nexoshop | (node:44563) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+0|nexoshop | In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+0|nexoshop |
+0|nexoshop | To prepare for this change:
+0|nexoshop | - If you want the current behavior, explicitly use 'sslmode=verify-full'
+0|nexoshop | - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+0|nexoshop |
+0|nexoshop | See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+0|nexoshop | (Use `node --trace-warnings ...` to show where the warning was created)
+0|nexoshop | (node:44563) [node-telegram-bot-api] DeprecationWarning: In the future, content-type of files you send will default to "application/octet-stream". See https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files for more information on how sending files has been improved and on how to disable this deprecation message altogether.
+0|nexoshop | (node:44717) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+0|nexoshop | In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+0|nexoshop |
+0|nexoshop | To prepare for this change:
+0|nexoshop | - If you want the current behavior, explicitly use 'sslmode=verify-full'
+0|nexoshop | - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+0|nexoshop |
+0|nexoshop | See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+0|nexoshop | (Use `node --trace-warnings ...` to show where the warning was created)
+0|nexoshop | (node:44717) [node-telegram-bot-api] DeprecationWarning: In the future, content-type of files you send will default to "application/octet-stream". See https://github.com/yagop/node-telegram-bot-api/blob/master/doc/usage.md#sending-files for more information on how sending files has been improved and on how to disable this deprecation message altogether.
+
+/root/.pm2/logs/nexoshop-bot-out.log last 50 lines:
+0|nexoshop | ode-postgres/session.ts:161:13)\n    at async NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:71:12)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)","query":"select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)","params":["PENDING","2026-04-24T14:08:28.178Z"]},"msg":"Error polling PayPal payments"}
+0|nexoshop | {"level":50,"time":1777040653937,"pid":44717,"hostname":"ubuntu","err":{"type":"_DrizzleQueryError","message":"Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T14:09:13.183Z: ","stack":"Error: Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T14:09:13.183Z\n    at NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)\ncaused by: AggregateError [ETIMEDOUT]: \n    at <anonymous> (/root/bot/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:161:13)\n    at async NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:71:12)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)","query":"select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)","params":["PENDING","2026-04-24T14:09:13.183Z"]},"msg":"Error polling PayPal payments"}
+0|nexoshop | {"level":50,"time":1777040698946,"pid":44717,"hostname":"ubuntu","err":{"type":"_DrizzleQueryError","message":"Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T14:09:58.192Z: ","stack":"Error: Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T14:09:58.192Z\n    at NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)\ncaused by: AggregateError [ETIMEDOUT]: \n    at <anonymous> (/root/bot/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:161:13)\n    at async NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:71:12)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)","query":"select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)","params":["PENDING","2026-04-24T14:09:58.192Z"]},"msg":"Error polling PayPal payments"}
+0|nexoshop | {"level":50,"time":1777040743976,"pid":44717,"hostname":"ubuntu","err":{"type":"_DrizzleQueryError","message":"Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T14:10:43.193Z: ","stack":"Error: Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T14:10:43.193Z\n    at NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)\ncaused by: AggregateError [ETIMEDOUT]: \n    at <anonymous> (/root/bot/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:161:13)\n    at async NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:71:12)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)","query":"select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)","params":["PENDING","2026-04-24T14:10:43.193Z"]},"msg":"Error polling PayPal payments"}
+0|nexoshop | {"level":50,"time":1777047899770,"pid":44717,"hostname":"ubuntu","err":{"type":"_DrizzleQueryError","message":"Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T16:09:59.016Z: ","stack":"Error: Failed query: select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)\nparams: PENDING,2026-04-24T16:09:59.016Z\n    at NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)\ncaused by: AggregateError [ETIMEDOUT]: \n    at <anonymous> (/root/bot/node_modules/.pnpm/pg-pool@3.13.0_pg@8.20.0/node_modules/pg-pool/index.js:45:11)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:161:13)\n    at async NodePgPreparedQuery.queryWithCache (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:71:12)\n    at async <anonymous> (/root/bot/node_modules/.pnpm/drizzle-orm@0.45.1_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)\n    at async expireOldPaypalPayments (/root/bot/artifacts/api-server/src/bot/paypal.ts:94:20)\n    at async Timeout.pollPayPalPayments (/root/bot/artifacts/api-server/src/bot/index.ts:785:23)","query":"select \"id\", \"telegram_id\", \"amount\" from \"paypal_payments\" where (\"paypal_payments\".\"status\" = $1 and \"paypal_payments\".\"created_at\" < $2)","params":["PENDING","2026-04-24T16:09:59.016Z"]},"msg":"Error polling PayPal payments"}
+
+/root/.pm2/logs/nexosite-api-error.log last 50 lines:
+8|nexosite | Error: Cannot find module '/var/www/nexosite/artifacts/api-server/dist/index.mjs'
+8|nexosite |     at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+8|nexosite |     at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+8|nexosite |     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+8|nexosite |     at Function._load (node:internal/modules/cjs/loader:1192:37)
+8|nexosite |     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+8|nexosite |     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+8|nexosite |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+8|nexosite |     at node:internal/main/run_main_module:36:49 {
+8|nexosite |   code: 'MODULE_NOT_FOUND',
+8|nexosite |   requireStack: []
+8|nexosite | }
+8|nexosite |
+8|nexosite | Node.js v22.22.2
+8|nexosite | node:internal/modules/cjs/loader:1386
+8|nexosite |   throw err;
+8|nexosite |   ^
+8|nexosite |
+8|nexosite | Error: Cannot find module '/var/www/nexosite/artifacts/api-server/dist/index.mjs'
+8|nexosite |     at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+8|nexosite |     at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+8|nexosite |     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+8|nexosite |     at Function._load (node:internal/modules/cjs/loader:1192:37)
+8|nexosite |     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+8|nexosite |     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+8|nexosite |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+8|nexosite |     at node:internal/main/run_main_module:36:49 {
+8|nexosite |   code: 'MODULE_NOT_FOUND',
+8|nexosite |   requireStack: []
+8|nexosite | }
+8|nexosite |
+8|nexosite | Node.js v22.22.2
+8|nexosite | node:internal/modules/cjs/loader:1386
+8|nexosite |   throw err;
+8|nexosite |   ^
+8|nexosite |
+8|nexosite | Error: Cannot find module '/var/www/nexosite/artifacts/api-server/dist/index.mjs'
+8|nexosite |     at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+8|nexosite |     at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+8|nexosite |     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+8|nexosite |     at Function._load (node:internal/modules/cjs/loader:1192:37)
+8|nexosite |     at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+8|nexosite |     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+8|nexosite |     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+8|nexosite |     at node:internal/main/run_main_module:36:49 {
+8|nexosite |   code: 'MODULE_NOT_FOUND',
+8|nexosite |   requireStack: []
+8|nexosite | }
+8|nexosite |
+8|nexosite | Node.js v22.22.2
+
+/root/.pm2/logs/nexosite-api-out.log last 50 lines:
+8|nexosite | Exit status 1
+8|nexosite |
+8|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+8|nexosite | > node --enable-source-maps ./dist/index.mjs
+8|nexosite |
+8|nexosite | /var/www/nexosite/artifacts/api-server:
+8|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+8|nexosite | Exit status 1
+8|nexosite |
+8|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+8|nexosite | > node --enable-source-maps ./dist/index.mjs
+8|nexosite |
+8|nexosite | /var/www/nexosite/artifacts/api-server:
+8|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+8|nexosite | Exit status 1
+8|nexosite |
+8|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+8|nexosite | > node --enable-source-maps ./dist/index.mjs
+8|nexosite |
+8|nexosite | /var/www/nexosite/artifacts/api-server:
+8|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+8|nexosite | Exit status 1
+8|nexosite |
+8|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+8|nexosite | > node --enable-source-maps ./dist/index.mjs
+8|nexosite |
+8|nexosite | /var/www/nexosite/artifacts/api-server:
+8|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+8|nexosite | Exit status 1
+8|nexosite |
+8|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+8|nexosite | > node --enable-source-maps ./dist/index.mjs
+8|nexosite |
+8|nexosite | /var/www/nexosite/artifacts/api-server:
+8|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+8|nexosite | Exit status 1
+8|nexosite |
+8|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+8|nexosite | > node --enable-source-maps ./dist/index.mjs
+8|nexosite |
+8|nexosite | /var/www/nexosite/artifacts/api-server:
+8|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+8|nexosite | Exit status 1
+8|nexosite |
+8|nexosite | > @workspace/api-server@0.0.0 start /var/www/nexosite/artifacts/api-server
+8|nexosite | > node --enable-source-maps ./dist/index.mjs
+8|nexosite |
+8|nexosite | /var/www/nexosite/artifacts/api-server:
+8|nexosite |  ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 start: `node --enable-source-maps ./dist/index.mjs`
+8|nexosite | Exit status 1
