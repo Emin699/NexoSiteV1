@@ -49,6 +49,15 @@ import {
   Layers,
   Box,
   Info,
+  Sparkles,
+  CheckCircle2,
+  ImageIcon,
+  Tag,
+  Euro,
+  Truck,
+  Users,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 const CATEGORIES = ["Streaming", "Musique", "IA", "Sport", "Tech", "Spécial"];
@@ -79,7 +88,7 @@ const DEFAULT_FORM: FormState = {
   category: "Streaming",
   description: "",
   price: "",
-  deliveryType: "manual",
+  deliveryType: "auto",
   inStock: true,
   imageUrl: "",
   digitalContent: "",
@@ -95,57 +104,55 @@ function parseFieldLines(text: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-type Props = {
+interface AdminProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editingProduct: Product | null;
-  onSaved: () => void;
-};
+}
 
-export function AdminProductModal({ open, onOpenChange, editingProduct, onSaved }: Props) {
+export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminProductModalProps) {
   const qc = useQueryClient();
   const createProduct = useAdminCreateProduct();
   const updateProduct = useAdminUpdateProduct();
 
-  const [tab, setTab] = useState<"infos" | "variantes" | "stock">("infos");
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const [imageMode, setImageMode] = useState<"url" | "file">("url");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageMode, setImageMode] = useState<"url" | "file">("url");
   const [digitalImagePreview, setDigitalImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [uploadingDigital, setUploadingDigital] = useState(false);
+  const [productId, setProductId] = useState<number | null>(null);
+  const [tab, setTab] = useState<"infos" | "variantes" | "stock">("infos");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const digitalFileRef = useRef<HTMLInputElement>(null);
 
-  // Track local product id (for "create then add variants" flow)
-  const [localProductId, setLocalProductId] = useState<number | null>(null);
-  const productId = editingProduct?.id ?? localProductId;
-
   useEffect(() => {
-    if (!open) return;
-    setTab("infos");
-    if (editingProduct) {
-      setForm({
-        name: editingProduct.name,
-        category: editingProduct.category,
-        description: editingProduct.description,
-        price: String(editingProduct.price),
-        deliveryType: editingProduct.deliveryType as "auto" | "manual",
-        inStock: editingProduct.inStock,
-        imageUrl: editingProduct.imageUrl ?? "",
-        digitalContent: editingProduct.digitalContent ?? "",
-        digitalImageUrl: editingProduct.digitalImageUrl ?? "",
-        requiresCustomerInfo: editingProduct.requiresCustomerInfo ?? false,
-        customerInfoFieldsText: (editingProduct.customerInfoFields ?? []).join("\n"),
-      });
-      setImagePreview(editingProduct.imageUrl ?? null);
-      setDigitalImagePreview(editingProduct.digitalImageUrl ?? null);
-      setLocalProductId(editingProduct.id);
-    } else {
-      setForm(DEFAULT_FORM);
-      setImagePreview(null);
-      setDigitalImagePreview(null);
-      setLocalProductId(null);
+    if (open) {
+      if (editingProduct) {
+        setForm({
+          name: editingProduct.name,
+          category: editingProduct.category,
+          description: editingProduct.description ?? "",
+          price: String(editingProduct.price),
+          deliveryType: editingProduct.deliveryType,
+          inStock: editingProduct.inStock,
+          imageUrl: editingProduct.imageUrl ?? "",
+          digitalContent: editingProduct.digitalContent ?? "",
+          digitalImageUrl: editingProduct.digitalImageUrl ?? "",
+          requiresCustomerInfo: editingProduct.requiresCustomerInfo,
+          customerInfoFieldsText: (editingProduct.customerInfoFields ?? []).join("\n"),
+        });
+        setImagePreview(editingProduct.imageUrl ?? null);
+        setDigitalImagePreview(editingProduct.digitalImageUrl ?? null);
+        setProductId(editingProduct.id);
+      } else {
+        setForm(DEFAULT_FORM);
+        setImagePreview(null);
+        setDigitalImagePreview(null);
+        setProductId(null);
+      }
+      setTab("infos");
     }
   }, [open, editingProduct]);
 
@@ -154,21 +161,21 @@ export function AdminProductModal({ open, onOpenChange, editingProduct, onSaved 
     if (!file) return;
     setUploading(true);
     try {
+      const formData = new FormData();
+      formData.append("file", file);
       const token = localStorage.getItem("nexoshop_token");
-      const fd = new FormData();
-      fd.append("file", file);
       const res = await fetch("/api/admin/upload", {
         method: "POST",
+        body: formData,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
       });
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) throw new Error();
       const { url } = await res.json();
       setForm((f) => ({ ...f, imageUrl: url }));
       setImagePreview(url);
-      toast.success("Image téléversée !");
+      toast.success("Image téléversée");
     } catch {
-      toast.error("Erreur lors du téléversement");
+      toast.error("Erreur d'upload");
     } finally {
       setUploading(false);
     }
@@ -179,346 +186,423 @@ export function AdminProductModal({ open, onOpenChange, editingProduct, onSaved 
     if (!file) return;
     setUploadingDigital(true);
     try {
+      const formData = new FormData();
+      formData.append("file", file);
       const token = localStorage.getItem("nexoshop_token");
-      const fd = new FormData();
-      fd.append("file", file);
       const res = await fetch("/api/admin/upload", {
         method: "POST",
+        body: formData,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: fd,
       });
-      if (!res.ok) throw new Error("Upload failed");
+      if (!res.ok) throw new Error();
       const { url } = await res.json();
       setForm((f) => ({ ...f, digitalImageUrl: url }));
       setDigitalImagePreview(url);
-      toast.success("Image de livraison téléversée !");
+      toast.success("Image téléversée");
     } catch {
-      toast.error("Erreur lors du téléversement");
+      toast.error("Erreur d'upload");
     } finally {
       setUploadingDigital(false);
     }
   };
 
   const buildPayload = () => {
-    const price = parseFloat(form.price);
-    const fields = parseFieldLines(form.customerInfoFieldsText);
+    const priceNum = parseFloat(form.price);
     return {
-      name: form.name,
+      name: form.name.trim(),
       category: form.category,
-      description: form.description,
-      price,
+      description: form.description.trim(),
+      price: isNaN(priceNum) ? 0 : priceNum,
       deliveryType: form.deliveryType,
       inStock: form.inStock,
-      imageUrl: form.imageUrl || null,
-      digitalContent: form.deliveryType === "auto" ? (form.digitalContent || null) : null,
-      digitalImageUrl: form.deliveryType === "auto" ? (form.digitalImageUrl || null) : null,
+      imageUrl: form.imageUrl.trim() || null,
+      digitalContent: form.digitalContent.trim() || null,
+      digitalImageUrl: form.digitalImageUrl.trim() || null,
       requiresCustomerInfo: form.requiresCustomerInfo,
-      customerInfoFields: form.requiresCustomerInfo ? fields : [],
+      customerInfoFields: form.requiresCustomerInfo ? parseFieldLines(form.customerInfoFieldsText) : [],
     };
   };
 
   const validateInfos = () => {
-    if (!form.name || !form.price || !form.category) {
-      toast.error("Nom, catégorie et prix sont obligatoires");
-      return false;
-    }
-    const price = parseFloat(form.price);
-    if (isNaN(price) || price <= 0) {
-      toast.error("Prix invalide");
-      return false;
-    }
+    if (!form.name.trim()) return "Nom requis";
+    if (!form.category) return "Catégorie requise";
+    const priceNum = parseFloat(form.price);
+    if (isNaN(priceNum) || priceNum <= 0) return "Prix invalide";
     if (form.requiresCustomerInfo && parseFieldLines(form.customerInfoFieldsText).length === 0) {
-      toast.error("Ajoutez au moins un champ d'info client");
-      return false;
+      return "Liste des champs client vide";
     }
-    return true;
+    return null;
   };
 
   const handleSaveInfos = async (closeAfter: boolean) => {
-    if (!validateInfos()) return;
+    const err = validateInfos();
+    if (err) {
+      toast.error(err);
+      return;
+    }
     const payload = buildPayload();
     try {
-      if (productId) {
-        await updateProduct.mutateAsync({ id: productId, data: payload });
-        toast.success("Produit mis à jour !");
+      if (editingProduct || productId) {
+        const id = (editingProduct?.id ?? productId)!;
+        await updateProduct.mutateAsync({ id, data: payload });
+        toast.success("Produit mis à jour");
       } else {
         const created = await createProduct.mutateAsync({ data: payload });
-        setLocalProductId(created.id);
-        toast.success("Produit créé ! Ajoute des variantes.");
+        setProductId(created.id);
+        toast.success("Produit créé — ajoute des variantes");
+        setTab("variantes");
       }
       qc.invalidateQueries({ queryKey: getAdminGetProductsQueryKey() });
-      onSaved();
       if (closeAfter) onOpenChange(false);
     } catch {
-      toast.error("Erreur lors de l'enregistrement");
+      toast.error("Erreur lors de la sauvegarde");
     }
   };
 
+  const isEditing = Boolean(editingProduct || productId);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border max-w-md max-h-[92dvh] overflow-y-auto p-0">
-        <DialogHeader className="px-4 pt-4 pb-2">
-          <DialogTitle>
-            {editingProduct ? "Modifier le produit" : "Nouveau produit"}
-          </DialogTitle>
+      <DialogContent className="bg-gradient-to-b from-card to-card/95 border-border/60 max-w-2xl max-h-[94dvh] overflow-y-auto p-0 shadow-2xl shadow-primary/10">
+        {/* Header gradient */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40 bg-gradient-to-r from-primary/10 via-secondary/5 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
+              {isEditing ? (
+                <Pencil className="w-5 h-5 text-white" />
+              ) : (
+                <Sparkles className="w-5 h-5 text-white" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-lg font-bold leading-tight">
+                {isEditing ? "Modifier le produit" : "Nouveau produit"}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isEditing
+                  ? `${editingProduct?.name ?? (form.name || "Produit")} · ${form.category}`
+                  : "Configure les infos, puis ajoute variantes et stock"}
+              </p>
+            </div>
+            {isEditing && (
+              <Badge className="bg-green-500/15 text-green-400 border-green-500/30 hover:bg-green-500/20">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                Sauvegardé
+              </Badge>
+            )}
+          </div>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as "infos" | "variantes" | "stock")} className="w-full">
-          <div className="px-4 pb-2">
-            <TabsList className="w-full grid grid-cols-3 bg-muted/30 h-9">
-              <TabsTrigger value="infos" className="text-xs gap-1.5">
-                <Info className="w-3.5 h-3.5" />
-                Infos
+          {/* Tabs en pill */}
+          <div className="px-6 pt-4 pb-2">
+            <TabsList className="w-full grid grid-cols-3 bg-muted/40 h-11 p-1 rounded-xl">
+              <TabsTrigger
+                value="infos"
+                className="text-sm gap-2 rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30"
+              >
+                <Info className="w-4 h-4" />
+                <span className="hidden sm:inline">Infos</span>
               </TabsTrigger>
-              <TabsTrigger value="variantes" className="text-xs gap-1.5" disabled={!productId}>
-                <Layers className="w-3.5 h-3.5" />
-                Variantes
+              <TabsTrigger
+                value="variantes"
+                disabled={!productId}
+                className="text-sm gap-2 rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30"
+              >
+                <Layers className="w-4 h-4" />
+                <span className="hidden sm:inline">Variantes</span>
               </TabsTrigger>
-              <TabsTrigger value="stock" className="text-xs gap-1.5" disabled={!productId}>
-                <Box className="w-3.5 h-3.5" />
-                Stock
+              <TabsTrigger
+                value="stock"
+                disabled={!productId}
+                className="text-sm gap-2 rounded-lg data-[state=active]:bg-gradient-to-br data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:shadow-primary/30"
+              >
+                <Box className="w-4 h-4" />
+                <span className="hidden sm:inline">Stock</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
           {/* ============ INFOS TAB ============ */}
-          <TabsContent value="infos" className="px-4 pb-4 mt-0">
-            <div className="flex flex-col gap-4 py-2">
-              {/* Image */}
-              <div className="flex flex-col gap-2">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Image</Label>
-                {imagePreview && (
-                  <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border/50 bg-muted/20">
-                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+          <TabsContent value="infos" className="px-6 pb-6 mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-4">
+              {/* === COL 1 : Image + Visibilité === */}
+              <div className="flex flex-col gap-5">
+                {/* Image */}
+                <SectionCard icon={<ImageIcon className="w-3.5 h-3.5" />} title="Image principale">
+                  {imagePreview && (
+                    <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border/50 bg-muted/20 mb-3">
+                      <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImagePreview(null);
+                          setForm((f) => ({ ...f, imageUrl: "" }));
+                        }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 backdrop-blur flex items-center justify-center hover:bg-black/90 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex gap-1.5 mb-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setImagePreview(null);
-                        setForm((f) => ({ ...f, imageUrl: "" }));
-                      }}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80"
+                      onClick={() => setImageMode("url")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium border transition-all ${
+                        imageMode === "url"
+                          ? "bg-primary/15 border-primary/50 text-primary"
+                          : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                      }`}
                     >
-                      <X className="w-3 h-3 text-white" />
+                      <LinkIcon className="w-3.5 h-3.5" />
+                      URL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImageMode("file")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium border transition-all ${
+                        imageMode === "file"
+                          ? "bg-primary/15 border-primary/50 text-primary"
+                          : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                      }`}
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      Fichier
                     </button>
                   </div>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setImageMode("url")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                      imageMode === "url" ? "bg-primary/10 border-primary/40 text-primary" : "border-border/50 text-muted-foreground hover:bg-muted/30"
-                    }`}
-                  >
-                    <LinkIcon className="w-3 h-3" />
-                    URL
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageMode("file")}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                      imageMode === "file" ? "bg-primary/10 border-primary/40 text-primary" : "border-border/50 text-muted-foreground hover:bg-muted/30"
-                    }`}
-                  >
-                    <Upload className="w-3 h-3" />
-                    Fichier
-                  </button>
-                </div>
-                {imageMode === "url" ? (
-                  <Input
-                    placeholder="https://example.com/image.jpg"
-                    value={form.imageUrl}
-                    className="bg-background border-border/60 text-sm"
-                    onChange={(e) => {
-                      setForm((f) => ({ ...f, imageUrl: e.target.value }));
-                      setImagePreview(e.target.value || null);
-                    }}
-                  />
-                ) : (
-                  <div>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-border/60 text-sm"
-                      disabled={uploading}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="w-4 h-4 mr-2" />
-                      {uploading ? "Téléversement..." : "Choisir une image"}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                  {imageMode === "url" ? (
+                    <Input
+                      placeholder="https://example.com/image.jpg"
+                      value={form.imageUrl}
+                      className="bg-background border-border/60 text-sm h-9"
+                      onChange={(e) => {
+                        setForm((f) => ({ ...f, imageUrl: e.target.value }));
+                        setImagePreview(e.target.value || null);
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-border/60 h-9"
+                        disabled={uploading}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {uploading ? "Téléversement..." : "Choisir une image"}
+                      </Button>
+                    </>
+                  )}
+                </SectionCard>
 
-              {/* Name */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Nom *</Label>
-                <Input
-                  placeholder="Netflix Premium"
-                  value={form.name}
-                  className="bg-background border-border/60"
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                />
-              </div>
-
-              {/* Category */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Catégorie *</Label>
-                <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
-                  <SelectTrigger className="bg-background border-border/60"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Description */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Description</Label>
-                <Input
-                  placeholder="Description courte..."
-                  value={form.description}
-                  className="bg-background border-border/60"
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                />
-              </div>
-
-              {/* Price */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Prix de base (€) *
-                </Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  placeholder="9.99"
-                  value={form.price}
-                  className="bg-background border-border/60"
-                  onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Prix par défaut. Si tu ajoutes des variantes, c'est leur prix qui sera utilisé.
-                </p>
-              </div>
-
-              {/* Delivery Type */}
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wider">Livraison</Label>
-                <Select
-                  value={form.deliveryType}
-                  onValueChange={(v) => setForm((f) => ({ ...f, deliveryType: v as "auto" | "manual" }))}
-                >
-                  <SelectTrigger className="bg-background border-border/60"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-card border-border">
-                    <SelectItem value="auto">Automatique</SelectItem>
-                    <SelectItem value="manual">Manuelle</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground">
-                  {form.deliveryType === "auto"
-                    ? "Le client reçoit automatiquement un code du pool de stock à chaque achat."
-                    : "Tu enverras la commande manuellement depuis l'onglet « Commandes »."}
-                </p>
-              </div>
-
-              {/* Auto delivery fallback content */}
-              {form.deliveryType === "auto" && (
-                <div className="flex flex-col gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
-                  <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-primary">
-                      Contenu de secours (sans variante)
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    Utilisé seulement pour les anciennes commandes sans variante. Pour les nouveaux produits, utilise les pools de codes via l'onglet Stock.
-                  </p>
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">Texte affiché au client</Label>
-                    <Textarea
-                      placeholder="Identifiants, lien, code..."
-                      value={form.digitalContent}
-                      className="bg-background border-border/60 min-h-[80px] text-sm"
-                      onChange={(e) => setForm((f) => ({ ...f, digitalContent: e.target.value }))}
+                {/* Visibilité */}
+                <SectionCard icon={form.inStock ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />} title="Visibilité">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{form.inStock ? "Visible sur le shop" : "Masqué"}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {form.inStock ? "Les clients peuvent voir et acheter ce produit." : "Le produit n'apparaît pas dans le catalogue."}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.inStock}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, inStock: v }))}
                     />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">Image (optionnel)</Label>
-                    {digitalImagePreview && (
-                      <div className="relative w-full h-24 rounded-lg overflow-hidden border border-border/50 bg-muted/20">
-                        <img src={digitalImagePreview} alt="" className="w-full h-full object-cover" />
+                </SectionCard>
+              </div>
+
+              {/* === COL 2 : Infos + Prix === */}
+              <div className="flex flex-col gap-5">
+                {/* Infos générales */}
+                <SectionCard icon={<Tag className="w-3.5 h-3.5" />} title="Identité">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Nom *</Label>
+                      <Input
+                        placeholder="Netflix Premium"
+                        value={form.name}
+                        className="bg-background border-border/60 h-9"
+                        onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Catégorie *</Label>
+                      <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
+                        <SelectTrigger className="bg-background border-border/60 h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-card border-border">
+                          {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Description</Label>
+                      <Textarea
+                        placeholder="Description courte du produit..."
+                        value={form.description}
+                        className="bg-background border-border/60 text-sm min-h-[60px]"
+                        onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </SectionCard>
+
+                {/* Prix + Livraison */}
+                <SectionCard icon={<Euro className="w-3.5 h-3.5" />} title="Prix & livraison">
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Prix de base (€) *</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          placeholder="9.99"
+                          value={form.price}
+                          className="bg-background border-border/60 h-9 pl-8 font-mono font-semibold"
+                          onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                        />
+                        <Euro className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        Si tu ajoutes des variantes, leur prix prend le dessus.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                        <Truck className="w-3 h-3" /> Livraison
+                      </Label>
+                      <div className="grid grid-cols-2 gap-1.5">
                         <button
                           type="button"
-                          onClick={() => {
-                            setDigitalImagePreview(null);
-                            setForm((f) => ({ ...f, digitalImageUrl: "" }));
-                          }}
-                          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80"
+                          onClick={() => setForm((f) => ({ ...f, deliveryType: "auto" }))}
+                          className={`py-2 px-2 rounded-lg text-xs font-medium border transition-all ${
+                            form.deliveryType === "auto"
+                              ? "bg-primary/15 border-primary/50 text-primary"
+                              : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                          }`}
                         >
-                          <X className="w-3 h-3 text-white" />
+                          Automatique
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, deliveryType: "manual" }))}
+                          className={`py-2 px-2 rounded-lg text-xs font-medium border transition-all ${
+                            form.deliveryType === "manual"
+                              ? "bg-primary/15 border-primary/50 text-primary"
+                              : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                          }`}
+                        >
+                          Manuelle
                         </button>
                       </div>
-                    )}
-                    <input ref={digitalFileRef} type="file" accept="image/*" className="hidden" onChange={handleDigitalFileChange} />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="w-full border-border/60 text-sm"
-                      disabled={uploadingDigital}
-                      onClick={() => digitalFileRef.current?.click()}
-                    >
-                      <Upload className="w-3.5 h-3.5 mr-2" />
-                      {uploadingDigital ? "Téléversement..." : digitalImagePreview ? "Changer l'image" : "Ajouter une image"}
-                    </Button>
+                      <p className="text-[10px] text-muted-foreground">
+                        {form.deliveryType === "auto"
+                          ? "Code envoyé instantanément depuis le pool de stock."
+                          : "Tu envoies la commande à la main depuis l'admin."}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                </SectionCard>
+              </div>
 
-              {/* Customer info */}
-              <div className="flex flex-col gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold">Demander des infos client</Label>
-                  <Switch
-                    checked={form.requiresCustomerInfo}
-                    onCheckedChange={(v) => setForm((f) => ({ ...f, requiresCustomerInfo: v }))}
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  Le client paiera d'abord, puis pourra remplir ces champs depuis sa commande.
-                </p>
-                {form.requiresCustomerInfo && (
-                  <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">Champs (un par ligne)</Label>
-                    <Textarea
-                      placeholder={"Nom\nEmail\nDate de naissance"}
-                      value={form.customerInfoFieldsText}
-                      className="bg-background border-border/60 min-h-[80px] text-sm"
-                      onChange={(e) => setForm((f) => ({ ...f, customerInfoFieldsText: e.target.value }))}
+              {/* Section large : Customer info */}
+              <div className="md:col-span-2">
+                <SectionCard
+                  icon={<Users className="w-3.5 h-3.5" />}
+                  title="Infos client"
+                  accent="amber"
+                >
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <p className="text-[11px] text-muted-foreground flex-1">
+                      Demande des informations au client après achat (nom, email, etc).
+                    </p>
+                    <Switch
+                      checked={form.requiresCustomerInfo}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, requiresCustomerInfo: v }))}
                     />
                   </div>
-                )}
+                  {form.requiresCustomerInfo && (
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Champs (un par ligne)</Label>
+                      <Textarea
+                        placeholder={"Nom\nEmail\nDate de naissance"}
+                        value={form.customerInfoFieldsText}
+                        className="bg-background border-border/60 min-h-[80px] text-sm"
+                        onChange={(e) => setForm((f) => ({ ...f, customerInfoFieldsText: e.target.value }))}
+                      />
+                    </div>
+                  )}
+                </SectionCard>
               </div>
 
-              {/* In stock toggle (legacy) */}
-              <div className="flex items-center justify-between py-1">
-                <div>
-                  <Label className="text-sm">Visible / actif</Label>
-                  <p className="text-[10px] text-muted-foreground">Désactive pour cacher le produit du shop.</p>
+              {/* Section large : Auto delivery fallback */}
+              {form.deliveryType === "auto" && (
+                <div className="md:col-span-2">
+                  <SectionCard
+                    icon={<Package className="w-3.5 h-3.5" />}
+                    title="Contenu de secours (sans variante)"
+                    accent="primary"
+                  >
+                    <p className="text-[11px] text-muted-foreground mb-3">
+                      Utilisé seulement pour les vieux produits sans variante. Les nouveaux passent par les pools de codes (onglet Stock).
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-[11px] text-muted-foreground">Texte affiché au client</Label>
+                        <Textarea
+                          placeholder="Identifiants, lien, code..."
+                          value={form.digitalContent}
+                          className="bg-background border-border/60 min-h-[90px] text-sm font-mono"
+                          onChange={(e) => setForm((f) => ({ ...f, digitalContent: e.target.value }))}
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Label className="text-[11px] text-muted-foreground">Image (optionnel)</Label>
+                        {digitalImagePreview ? (
+                          <div className="relative w-full h-[90px] rounded-lg overflow-hidden border border-border/50 bg-muted/20">
+                            <img src={digitalImagePreview} alt="" className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDigitalImagePreview(null);
+                                setForm((f) => ({ ...f, digitalImageUrl: "" }));
+                              }}
+                              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center hover:bg-black/90"
+                            >
+                              <X className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <input ref={digitalFileRef} type="file" accept="image/*" className="hidden" onChange={handleDigitalFileChange} />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full border-border/60 h-[90px] border-dashed text-muted-foreground"
+                              disabled={uploadingDigital}
+                              onClick={() => digitalFileRef.current?.click()}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              {uploadingDigital ? "Téléversement..." : "Ajouter une image"}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </SectionCard>
                 </div>
-                <Switch
-                  checked={form.inStock}
-                  onCheckedChange={(v) => setForm((f) => ({ ...f, inStock: v }))}
-                />
-              </div>
+              )}
             </div>
           </TabsContent>
 
           {/* ============ VARIANTES TAB ============ */}
-          <TabsContent value="variantes" className="px-4 pb-4 mt-0">
+          <TabsContent value="variantes" className="px-6 pb-6 mt-0">
             {productId ? (
               <VariantsManager productId={productId} />
             ) : (
@@ -527,7 +611,7 @@ export function AdminProductModal({ open, onOpenChange, editingProduct, onSaved 
           </TabsContent>
 
           {/* ============ STOCK TAB ============ */}
-          <TabsContent value="stock" className="px-4 pb-4 mt-0">
+          <TabsContent value="stock" className="px-6 pb-6 mt-0">
             {productId ? (
               <StockManager productId={productId} />
             ) : (
@@ -536,32 +620,40 @@ export function AdminProductModal({ open, onOpenChange, editingProduct, onSaved 
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="px-4 pb-4 pt-2 gap-2 border-t border-border/50 bg-card sticky bottom-0">
+        <DialogFooter className="px-6 py-4 gap-2 border-t border-border/40 bg-card/95 backdrop-blur sticky bottom-0">
           {tab === "infos" ? (
             <>
-              <Button variant="outline" className="flex-1 border-border" onClick={() => onOpenChange(false)}>
+              <Button
+                variant="outline"
+                className="flex-1 border-border h-10"
+                onClick={() => onOpenChange(false)}
+              >
                 Annuler
               </Button>
-              {!productId ? (
+              {!isEditing ? (
                 <Button
-                  className="flex-1 bg-primary hover:bg-primary/90"
+                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/30 h-10 font-semibold"
                   onClick={() => handleSaveInfos(false)}
                   disabled={createProduct.isPending}
                 >
-                  {createProduct.isPending ? "Création..." : "Créer + variantes"}
+                  {createProduct.isPending ? "Création..." : "Créer & continuer"}
                 </Button>
               ) : (
                 <Button
-                  className="flex-1 bg-primary hover:bg-primary/90"
+                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/30 h-10 font-semibold"
                   onClick={() => handleSaveInfos(true)}
                   disabled={updateProduct.isPending}
                 >
-                  {updateProduct.isPending ? "Enregistrement..." : "Enregistrer"}
+                  {updateProduct.isPending ? "Sauvegarde..." : "Enregistrer"}
                 </Button>
               )}
             </>
           ) : (
-            <Button variant="outline" className="w-full border-border" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              className="flex-1 border-border h-10"
+              onClick={() => onOpenChange(false)}
+            >
               Fermer
             </Button>
           )}
@@ -571,11 +663,52 @@ export function AdminProductModal({ open, onOpenChange, editingProduct, onSaved 
   );
 }
 
+// ===================== HELPERS =====================
+
+function SectionCard({
+  icon,
+  title,
+  accent,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  accent?: "primary" | "amber";
+  children: React.ReactNode;
+}) {
+  const accentClass =
+    accent === "primary"
+      ? "border-primary/25 bg-primary/5"
+      : accent === "amber"
+        ? "border-amber-500/25 bg-amber-500/5"
+        : "border-border/50 bg-background/40";
+  const iconClass =
+    accent === "primary"
+      ? "text-primary bg-primary/15"
+      : accent === "amber"
+        ? "text-amber-400 bg-amber-500/15"
+        : "text-muted-foreground bg-muted/40";
+
+  return (
+    <div className={`rounded-xl border ${accentClass} p-4`}>
+      <div className="flex items-center gap-2 mb-3">
+        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${iconClass}`}>
+          {icon}
+        </div>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80">{title}</h4>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function EmptyTabHint({ label }: { label: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-sm text-muted-foreground">
-      <Info className="w-8 h-8 opacity-40" />
-      <p>{label}</p>
+    <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
+      <div className="w-14 h-14 rounded-full bg-muted/30 flex items-center justify-center">
+        <Info className="w-6 h-6 text-muted-foreground" />
+      </div>
+      <p className="text-sm text-muted-foreground max-w-xs">{label}</p>
     </div>
   );
 }
@@ -706,19 +839,37 @@ function VariantsManager({ productId }: { productId: number }) {
     }
   };
 
+  const totalVariants = variants?.length ?? 0;
+  const activeCount = variants?.filter((v) => v.isActive).length ?? 0;
+
   return (
-    <div className="flex flex-col gap-3 py-2">
-      {/* Presets */}
-      <div className="flex flex-col gap-2 p-3 rounded-xl bg-muted/20 border border-border/50">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Ajout rapide</Label>
-        <div className="grid grid-cols-2 gap-2">
+    <div className="flex flex-col gap-4 py-4">
+      {/* Stats header */}
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h3 className="text-sm font-bold">Variantes du produit</h3>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            {totalVariants} variante{totalVariants > 1 ? "s" : ""} · {activeCount} active{activeCount > 1 ? "s" : ""}
+          </p>
+        </div>
+      </div>
+
+      {/* Quick add */}
+      <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-6 h-6 rounded-md bg-primary/15 text-primary flex items-center justify-center">
+            <Plus className="w-3.5 h-3.5" />
+          </div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80">Ajout rapide</h4>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {DURATION_PRESETS.map((p) => (
             <Button
               key={p.label}
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 text-xs border-border/60"
+              className="h-10 text-xs border-border/60 bg-background/60 hover:bg-primary/10 hover:border-primary/50 hover:text-primary font-medium"
               onClick={() => addPreset(p)}
               disabled={createVariant.isPending}
             >
@@ -730,94 +881,127 @@ function VariantsManager({ productId }: { productId: number }) {
           type="button"
           variant="outline"
           size="sm"
-          className="h-8 text-xs border-dashed border-primary/40 text-primary"
+          className="w-full mt-2 h-10 text-xs border-dashed border-primary/40 text-primary hover:bg-primary/10"
           onClick={addCustom}
           disabled={createVariant.isPending}
         >
-          <Plus className="w-3 h-3 mr-1" />
+          <Plus className="w-3.5 h-3.5 mr-1.5" />
           Variante personnalisée
         </Button>
       </div>
 
       {/* List */}
       {isLoading ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Chargement...</p>
+        <p className="text-xs text-muted-foreground text-center py-6">Chargement...</p>
       ) : !variants || variants.length === 0 ? (
-        <div className="text-center py-6 text-xs text-muted-foreground">
-          Aucune variante. Utilise les boutons ci-dessus pour en ajouter une.
+        <div className="text-center py-10 text-xs text-muted-foreground border border-dashed border-border/50 rounded-xl">
+          Aucune variante. Utilise les boutons ci-dessus pour en ajouter.
         </div>
       ) : (
         <div className="flex flex-col gap-2">
           {variants.map((v) => (
             <div
               key={v.id}
-              className={`p-3 rounded-xl border ${v.isActive ? "border-border/60 bg-background/50" : "border-border/30 bg-muted/10 opacity-60"}`}
+              className={`group rounded-xl border transition-all ${
+                v.isActive
+                  ? "border-border/60 bg-background/60 hover:border-primary/40"
+                  : "border-border/30 bg-muted/10 opacity-60"
+              }`}
             >
               {editingId === v.id ? (
-                <div className="flex flex-col gap-2">
+                <div className="p-3 flex flex-col gap-2">
                   <Input
                     value={draftName}
-                    placeholder="Nom"
-                    className="bg-background border-border/60 h-8 text-sm"
+                    placeholder="Nom de la variante"
+                    className="bg-background border-border/60 h-9 text-sm"
                     onChange={(e) => setDraftName(e.target.value)}
                   />
                   <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={draftPrice}
-                      placeholder="Prix €"
-                      className="bg-background border-border/60 h-8 text-sm"
-                      onChange={(e) => setDraftPrice(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={draftPrice}
+                        placeholder="Prix"
+                        className="bg-background border-border/60 h-9 pl-7 text-sm font-mono"
+                        onChange={(e) => setDraftPrice(e.target.value)}
+                      />
+                      <Euro className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
                     <Input
                       type="number"
                       value={draftDuration}
-                      placeholder="Jours (optionnel)"
-                      className="bg-background border-border/60 h-8 text-sm"
+                      placeholder="Jours (vide = illimité)"
+                      className="bg-background border-border/60 h-9 text-sm"
                       onChange={(e) => setDraftDuration(e.target.value)}
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 h-7 text-xs" onClick={cancelEdit}>
+                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={cancelEdit}>
                       Annuler
                     </Button>
-                    <Button size="sm" className="flex-1 h-7 text-xs bg-primary" onClick={() => saveEdit(v)}>
+                    <Button
+                      size="sm"
+                      className="flex-1 h-8 text-xs bg-gradient-to-r from-primary to-secondary"
+                      onClick={() => saveEdit(v)}
+                    >
                       Sauvegarder
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="p-3 flex items-center gap-3">
+                  {/* Icon coloré durée */}
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
+                    v.durationDays
+                      ? "bg-gradient-to-br from-primary/20 to-secondary/20 text-primary border border-primary/30"
+                      : "bg-muted/40 text-muted-foreground border border-border/50"
+                  }`}>
+                    {v.durationDays ? `${Math.round(v.durationDays / 30)}M` : "∞"}
+                  </div>
+
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold truncate">{v.name}</p>
-                      {v.durationDays && (
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
-                          {v.durationDays}j
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-primary font-semibold">{Number(v.price).toFixed(2)}€</span>
-                      <span className="text-[10px] text-muted-foreground">·</span>
-                      <span className={`text-[10px] ${v.stockCount > 0 ? "text-green-400" : "text-red-400"}`}>
-                        {v.stockCount} en stock
+                    <p className="text-sm font-semibold truncate">{v.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm text-primary font-mono font-bold">
+                        {Number(v.price).toFixed(2)}€
                       </span>
+                      <span className="text-muted-foreground text-xs">·</span>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] h-5 px-1.5 border ${
+                          v.stockCount > 5
+                            ? "border-green-500/40 text-green-400 bg-green-500/10"
+                            : v.stockCount > 0
+                              ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                              : "border-red-500/40 text-red-400 bg-red-500/10"
+                        }`}
+                      >
+                        <Box className="w-2.5 h-2.5 mr-1" />
+                        {v.stockCount} en stock
+                      </Badge>
                     </div>
                   </div>
-                  <Switch checked={v.isActive} onCheckedChange={() => toggleActive(v)} />
-                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(v)}>
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-red-400 hover:text-red-300"
-                    onClick={() => handleDelete(v)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    <Switch checked={v.isActive} onCheckedChange={() => toggleActive(v)} />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                      onClick={() => startEdit(v)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      onClick={() => handleDelete(v)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -848,25 +1032,39 @@ function StockManager({ productId }: { productId: number }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 py-2">
-      {/* Variant selector */}
-      <div className="flex flex-col gap-1.5">
-        <Label className="text-xs text-muted-foreground uppercase tracking-wider">Variante</Label>
-        <Select
-          value={selectedVariantId != null ? String(selectedVariantId) : ""}
-          onValueChange={(v) => setSelectedVariantId(parseInt(v, 10))}
-        >
-          <SelectTrigger className="bg-background border-border/60">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-card border-border">
-            {variants.map((v) => (
-              <SelectItem key={v.id} value={String(v.id)}>
-                {v.name} — {Number(v.price).toFixed(2)}€ ({v.stockCount} dispo)
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="flex flex-col gap-4 py-4">
+      {/* Variant selector — chips */}
+      <div className="flex flex-col gap-2">
+        <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Variante à gérer</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {variants.map((v) => {
+            const active = selectedVariantId === v.id;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setSelectedVariantId(v.id)}
+                className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all flex items-center gap-2 ${
+                  active
+                    ? "bg-primary/15 border-primary/50 text-primary shadow-sm shadow-primary/20"
+                    : "border-border/50 text-muted-foreground hover:bg-muted/30"
+                }`}
+              >
+                <span>{v.name}</span>
+                <Badge
+                  variant="outline"
+                  className={`text-[9px] h-4 px-1.5 ${
+                    v.stockCount > 0
+                      ? "border-green-500/40 text-green-400 bg-green-500/10"
+                      : "border-red-500/40 text-red-400 bg-red-500/10"
+                  }`}
+                >
+                  {v.stockCount}
+                </Badge>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {selectedVariantId != null && (
@@ -903,6 +1101,8 @@ function StockPool({
 
   const available = items?.filter((i) => i.status === "available").length ?? 0;
   const sold = items?.filter((i) => i.status === "sold").length ?? 0;
+  const total = available + sold;
+  const soldPct = total > 0 ? Math.round((sold / total) * 100) : 0;
 
   const handlePaste = async () => {
     const codes = paste.split("\n").map((s) => s.trim()).filter((s) => s.length > 0);
@@ -938,87 +1138,107 @@ function StockPool({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="p-3 rounded-xl border border-green-500/30 bg-green-500/5">
-          <p className="text-[10px] uppercase text-green-400/80 font-semibold">Disponibles</p>
-          <p className="text-2xl font-bold text-green-400">{available}</p>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="p-3 rounded-xl border border-green-500/30 bg-gradient-to-br from-green-500/10 to-green-500/5">
+          <p className="text-[10px] uppercase text-green-400/80 font-bold tracking-wider">Disponibles</p>
+          <p className="text-2xl font-extrabold text-green-400 mt-1 leading-none">{available}</p>
         </div>
         <div className="p-3 rounded-xl border border-border/50 bg-muted/20">
-          <p className="text-[10px] uppercase text-muted-foreground font-semibold">Vendus</p>
-          <p className="text-2xl font-bold">{sold}</p>
+          <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Vendus</p>
+          <p className="text-2xl font-extrabold mt-1 leading-none">{sold}</p>
+        </div>
+        <div className="p-3 rounded-xl border border-border/50 bg-muted/20">
+          <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">% Écoulé</p>
+          <p className="text-2xl font-extrabold mt-1 leading-none">{soldPct}%</p>
         </div>
       </div>
 
       {/* Bulk paste */}
-      <div className="flex flex-col gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
-        <div className="flex items-center gap-2">
-          <ClipboardPaste className="w-4 h-4 text-primary" />
-          <Label className="text-xs font-semibold uppercase tracking-wider text-primary">
+      <div className="rounded-xl border border-primary/25 bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-6 h-6 rounded-md bg-primary/15 text-primary flex items-center justify-center">
+            <ClipboardPaste className="w-3.5 h-3.5" />
+          </div>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80">
             Coller des codes
-          </Label>
+          </h4>
         </div>
-        <p className="text-[10px] text-muted-foreground">
-          Un code/compte par ligne. Ils seront vendus dans l'ordre (FIFO).
+        <p className="text-[11px] text-muted-foreground mb-2">
+          Un code/compte par ligne. Les doublons sont ignorés. Vendus en FIFO.
         </p>
         <Textarea
           placeholder={"login1:pass1\nlogin2:pass2\nlogin3:pass3"}
           value={paste}
-          className="bg-background border-border/60 min-h-[100px] text-xs font-mono"
+          className="bg-background border-border/60 min-h-[110px] text-xs font-mono"
           onChange={(e) => setPaste(e.target.value)}
         />
         <Button
           size="sm"
-          className="bg-primary hover:bg-primary/90"
+          className="w-full mt-2 h-10 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/30 font-semibold"
           onClick={handlePaste}
           disabled={addBulk.isPending}
         >
-          {addBulk.isPending ? "Ajout..." : "Ajouter au stock"}
+          {addBulk.isPending
+            ? "Ajout en cours..."
+            : (() => {
+                const n = paste.split("\n").filter((l) => l.trim()).length;
+                return n > 0 ? `Ajouter ${n} code${n > 1 ? "s" : ""} au stock` : "Ajouter au stock";
+              })()}
         </Button>
       </div>
 
       {/* Pool list */}
-      {isLoading ? (
-        <p className="text-xs text-muted-foreground text-center py-4">Chargement...</p>
-      ) : !items || items.length === 0 ? (
-        <div className="text-center py-4 text-xs text-muted-foreground">
-          Pool vide. Colle des codes ci-dessus.
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/80">
+            Pool ({items?.length ?? 0})
+          </h4>
         </div>
-      ) : (
-        <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto">
-          {items.map((it) => (
-            <div
-              key={it.id}
-              className={`flex items-center gap-2 p-2 rounded-lg border ${
-                it.status === "available"
-                  ? "border-border/40 bg-background/50"
-                  : "border-border/20 bg-muted/10 opacity-50"
-              }`}
-            >
-              <Badge
-                variant={it.status === "available" ? "default" : "secondary"}
-                className={`text-[9px] h-4 px-1.5 ${
-                  it.status === "available" ? "bg-green-500/20 text-green-400 border-green-500/30" : ""
+        {isLoading ? (
+          <p className="text-xs text-muted-foreground text-center py-6">Chargement...</p>
+        ) : !items || items.length === 0 ? (
+          <div className="text-center py-8 text-xs text-muted-foreground border border-dashed border-border/50 rounded-xl">
+            Pool vide. Colle des codes ci-dessus pour commencer.
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1 max-h-72 overflow-y-auto pr-1">
+            {items.map((it) => (
+              <div
+                key={it.id}
+                className={`group flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                  it.status === "available"
+                    ? "border-border/40 bg-background/60 hover:border-primary/30"
+                    : "border-border/20 bg-muted/10 opacity-50"
                 }`}
               >
-                {it.status === "available" ? "Dispo" : "Vendu"}
-              </Badge>
-              <code className="flex-1 text-xs truncate font-mono">{it.content}</code>
-              {it.status === "available" && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 text-red-400 hover:text-red-300"
-                  onClick={() => handleDelete(it.id)}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                  it.status === "available" ? "bg-green-400" : "bg-muted-foreground"
+                }`} />
+                <code className="flex-1 text-xs truncate font-mono">{it.content}</code>
+                {it.status === "sold" ? (
+                  <Badge
+                    variant="secondary"
+                    className="text-[9px] h-4 px-1.5 bg-muted/40 text-muted-foreground"
+                  >
+                    Vendu
+                  </Badge>
+                ) : (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 text-red-400 hover:text-red-300 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => handleDelete(it.id)}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
