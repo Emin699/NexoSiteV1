@@ -85,13 +85,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="text-[10px] font-medium">Profil</span>
           </Link>
 
-          <Link 
-            href="/admin" 
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isAdmin ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
-          >
-            <ShieldCheck className="w-5 h-5" />
-            <span className="text-[10px] font-medium">Admin</span>
-          </Link>
+          {user?.isAdmin ? (
+            <Link 
+              href="/admin" 
+              className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isAdmin ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
+            >
+              <ShieldCheck className="w-5 h-5" />
+              <span className="text-[10px] font-medium">Admin</span>
+            </Link>
+          ) : null}
         </div>
       </nav>
     </div>

@@ -34,6 +34,7 @@ router.post("/users/register", async (req, res): Promise<void> => {
         firstName: user.firstName,
         balance: Number(user.balance),
         totalRecharged: Number(user.totalRecharged),
+        isAdmin: user.isAdmin === 1,
         createdAt: user.createdAt.toISOString(),
       })
     );
@@ -57,6 +58,7 @@ router.post("/users/register", async (req, res): Promise<void> => {
       firstName: newUser.firstName,
       balance: Number(newUser.balance),
       totalRecharged: Number(newUser.totalRecharged),
+      isAdmin: newUser.isAdmin === 1,
       createdAt: newUser.createdAt.toISOString(),
     })
   );
@@ -81,6 +83,7 @@ router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
       firstName: user.firstName,
       balance: Number(user.balance),
       totalRecharged: Number(user.totalRecharged),
+      isAdmin: user.isAdmin === 1,
       createdAt: user.createdAt.toISOString(),
     })
   );

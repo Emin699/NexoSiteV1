@@ -6,6 +6,7 @@ declare global {
   namespace Express {
     interface Request {
       userId?: number;
+      isAdmin?: boolean;
     }
   }
 }
@@ -27,9 +28,13 @@ export async function userAuthMiddleware(
     return;
   }
 
-  const [user] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId));
+  const [user] = await db
+    .select({ id: usersTable.id, isAdmin: usersTable.isAdmin })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
   if (user) {
     req.userId = user.id;
+    req.isAdmin = user.isAdmin === 1;
   }
 
   next();
@@ -38,6 +43,18 @@ export async function userAuthMiddleware(
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (!req.userId) {
     res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  next();
+}
+
+export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
+  if (!req.userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+  if (!req.isAdmin) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
   next();

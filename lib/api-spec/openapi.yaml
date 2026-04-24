@@ -813,9 +813,11 @@ components:
           type: integer
         jackpotTickets:
           type: integer
+        isAdmin:
+          type: boolean
         createdAt:
           type: string
-      required: [id, firstName, balance, loyaltyPoints, purchaseCount, totalRecharged, freeSpins, jackpotTickets, createdAt]
+      required: [id, firstName, balance, loyaltyPoints, purchaseCount, totalRecharged, freeSpins, jackpotTickets, isAdmin, createdAt]
 
     UserStats:
       type: object

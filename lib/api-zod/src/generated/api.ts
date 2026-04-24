@@ -221,6 +221,7 @@ export const GetMeResponse = zod.object({
   totalRecharged: zod.number(),
   freeSpins: zod.number(),
   jackpotTickets: zod.number(),
+  isAdmin: zod.boolean(),
   createdAt: zod.string(),
 });
 
@@ -257,6 +258,7 @@ export const RegisterUserResponse = zod.object({
   totalRecharged: zod.number(),
   freeSpins: zod.number(),
   jackpotTickets: zod.number(),
+  isAdmin: zod.boolean(),
   createdAt: zod.string(),
 });
 

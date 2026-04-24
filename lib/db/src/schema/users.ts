@@ -20,6 +20,7 @@ export const usersTable = pgTable("users", {
   emailVerified: integer("email_verified").notNull().default(0),
   verificationCode: text("verification_code"),
   verificationCodeExpiresAt: timestamp("verification_code_expires_at", { withTimezone: true }),
+  isAdmin: integer("is_admin").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -5,6 +5,7 @@ import {
   useAdminUpdateProduct,
   useAdminDeleteProduct,
   getAdminGetProductsQueryKey,
+  useGetMe,
 } from "@workspace/api-client-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AdminLogs } from "@/components/admin-logs";
@@ -69,7 +70,12 @@ const DEFAULT_FORM: FormState = {
 
 export default function Admin() {
   const qc = useQueryClient();
-  const { data: products, isLoading } = useAdminGetProducts();
+  const { data: me, isLoading: isLoadingMe } = useGetMe();
+  const isAdmin = !!me?.isAdmin;
+
+  const { data: products, isLoading } = useAdminGetProducts({
+    query: { enabled: isAdmin, queryKey: getAdminGetProductsQueryKey() },
+  });
   const createProduct = useAdminCreateProduct();
   const updateProduct = useAdminUpdateProduct();
   const deleteProduct = useAdminDeleteProduct();
@@ -185,6 +191,30 @@ export default function Admin() {
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (isLoadingMe) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] text-muted-foreground text-sm">
+        Chargement...
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 p-6 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-destructive/15 flex items-center justify-center text-destructive">
+          <ShieldCheck className="w-7 h-7" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold">Accès refusé</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+            Cette zone est réservée aux administrateurs.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 p-4 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8">

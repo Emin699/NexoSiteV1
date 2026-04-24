@@ -125,6 +125,7 @@ export interface User {
   totalRecharged: number;
   freeSpins: number;
   jackpotTickets: number;
+  isAdmin: boolean;
   createdAt: string;
 }
 

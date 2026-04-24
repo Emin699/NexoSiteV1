@@ -5,8 +5,11 @@ import fs from "fs";
 import { db, productsTable, usersTable, transactionsTable, ordersTable } from "@workspace/db";
 import { eq, desc, sql } from "drizzle-orm";
 import { z } from "zod";
+import { requireAuth, requireAdmin } from "../middlewares/userAuth.js";
 
 const router: IRouter = Router();
+
+router.use("/admin", requireAuth, requireAdmin);
 
 const uploadsDir = path.resolve(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
