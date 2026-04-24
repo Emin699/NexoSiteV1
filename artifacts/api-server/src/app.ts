@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type ErrorRequestHandler } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import path from "path";
@@ -55,5 +55,38 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 app.use("/api/uploads", express.static(uploadsDir));
 
 app.use("/api", router);
+
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  const cause = (err as { cause?: unknown }).cause;
+  const causeMessage =
+    cause instanceof Error ? cause.message : cause ? String(cause) : undefined;
+  const causeCode =
+    cause && typeof cause === "object" && "code" in cause
+      ? (cause as { code: unknown }).code
+      : undefined;
+  req.log.error(
+    {
+      err: {
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack,
+        cause: cause instanceof Error ? { message: cause.message, name: cause.name, stack: cause.stack, code: causeCode } : cause,
+      },
+      causeMessage,
+      causeCode,
+      url: req.url,
+      method: req.method,
+    },
+    "Unhandled request error",
+  );
+  if (res.headersSent) return;
+  res.status(500).json({
+    error: "Internal Server Error",
+    message: err?.message,
+    cause: causeMessage,
+    code: causeCode,
+  });
+};
+app.use(errorHandler);
 
 export default app;
