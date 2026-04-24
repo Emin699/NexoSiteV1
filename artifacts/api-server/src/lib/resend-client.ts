@@ -1,9 +1,19 @@
-// blueprint:javascript_resend integration
 import { Resend } from "resend";
 
-let connectionSettings: { settings: { api_key: string; from_email: string } } | undefined;
+let cachedConnectorSettings: { settings: { api_key: string; from_email: string } } | undefined;
 
 async function getCredentials() {
+  // Direct env vars (production / VPS / any non-Replit env)
+  const envApiKey = process.env.RESEND_API_KEY;
+  const envFromEmail =
+    process.env.RESEND_FROM_EMAIL ||
+    process.env.MAIL_FROM ||
+    process.env.FROM_EMAIL;
+  if (envApiKey && envFromEmail) {
+    return { apiKey: envApiKey, fromEmail: envFromEmail };
+  }
+
+  // Fallback: Replit Connectors (only available inside Replit dev/deploy)
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
   const xReplitToken = process.env.REPL_IDENTITY
     ? "repl " + process.env.REPL_IDENTITY
@@ -11,29 +21,31 @@ async function getCredentials() {
     ? "depl " + process.env.WEB_REPL_RENEWAL
     : null;
 
-  if (!xReplitToken) {
-    throw new Error("X-Replit-Token not found for repl/depl");
-  }
+  if (hostname && xReplitToken) {
+    const data = await fetch(
+      "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=resend",
+      {
+        headers: {
+          Accept: "application/json",
+          "X-Replit-Token": xReplitToken,
+        },
+      }
+    ).then((res) => res.json());
 
-  const data = await fetch(
-    "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=resend",
-    {
-      headers: {
-        Accept: "application/json",
-        "X-Replit-Token": xReplitToken,
-      },
+    cachedConnectorSettings = data.items?.[0];
+
+    if (cachedConnectorSettings && cachedConnectorSettings.settings.api_key) {
+      return {
+        apiKey: cachedConnectorSettings.settings.api_key,
+        fromEmail:
+          envFromEmail || cachedConnectorSettings.settings.from_email,
+      };
     }
-  ).then((res) => res.json());
-
-  connectionSettings = data.items?.[0];
-
-  if (!connectionSettings || !connectionSettings.settings.api_key) {
-    throw new Error("Resend not connected");
   }
-  return {
-    apiKey: connectionSettings.settings.api_key,
-    fromEmail: connectionSettings.settings.from_email,
-  };
+
+  throw new Error(
+    "Resend credentials missing. Set RESEND_API_KEY and RESEND_FROM_EMAIL environment variables.",
+  );
 }
 
 // WARNING: Never cache this client. Always call this function fresh.
