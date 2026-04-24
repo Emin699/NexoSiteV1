@@ -9,3 +9,4 @@ export * from "./wheel_spins";
 export * from "./reviews";
 export * from "./jackpot_draws";
 export * from "./crypto_recharges";
+export * from "./paypal_recharges";

@@ -333,7 +333,7 @@ router.post("/admin/jackpot/draw", async (req, res): Promise<void> => {
     });
   } catch (err) {
     const e = err as { status?: number; message?: string };
-    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur lors du tirage" });
+    res.status(e.status ?? 500).json({ error: e.status ? e.message : "Erreur lors du tirage" });
   }
 });
 

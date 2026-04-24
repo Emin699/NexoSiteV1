@@ -541,6 +541,192 @@ paths:
               schema:
                 $ref: "#/components/schemas/VerifyCryptoResult"
 
+  /wallet/recharge/crypto/pending:
+    get:
+      operationId: getPendingCryptoRecharges
+      tags: [wallet]
+      summary: List user's pending crypto recharges
+      responses:
+        "200":
+          description: Pending recharges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PendingCryptoRecharge"
+
+  /wallet/recharge/crypto/pending/{id}:
+    delete:
+      operationId: cancelPendingCryptoRecharge
+      tags: [wallet]
+      summary: Cancel a pending crypto recharge
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleOk"
+        "404":
+          description: Not found
+
+  /wallet/recharge/paypal/config:
+    get:
+      operationId: getPaypalConfig
+      tags: [wallet]
+      summary: Get PayPal configuration (clientId + enabled flag)
+      responses:
+        "200":
+          description: PayPal config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaypalConfig"
+
+  /wallet/recharge/paypal/create:
+    post:
+      operationId: createPaypalOrder
+      tags: [wallet]
+      summary: Create a PayPal order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaypalCreateBody"
+      responses:
+        "200":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaypalCreateResult"
+        "503":
+          description: PayPal not configured
+
+  /wallet/recharge/paypal/capture:
+    post:
+      operationId: capturePaypalOrder
+      tags: [wallet]
+      summary: Capture a PayPal order and credit the wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaypalCaptureBody"
+      responses:
+        "200":
+          description: Captured
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaypalCaptureResult"
+        "503":
+          description: PayPal not configured
+
+  /admin/users:
+    get:
+      operationId: adminGetUsers
+      tags: [admin]
+      summary: List all users (admin)
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+
+  /admin/users/{id}/adjust:
+    post:
+      operationId: adminAdjustUser
+      tags: [admin]
+      summary: Adjust a user's balance/points/spins/tickets
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdjustUserBody"
+      responses:
+        "200":
+          description: Adjusted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdjustUserResult"
+
+  /admin/jackpot/draw:
+    post:
+      operationId: adminDrawJackpot
+      tags: [admin]
+      summary: Draw a jackpot winner (weighted random)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JackpotDrawBody"
+      responses:
+        "200":
+          description: Draw result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JackpotDrawResult"
+        "400":
+          description: No tickets in play
+
+  /admin/jackpot/draws:
+    get:
+      operationId: adminGetJackpotDraws
+      tags: [admin]
+      summary: List recent jackpot draws
+      responses:
+        "200":
+          description: Draws
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JackpotDraw"
+
+  /admin/logs:
+    get:
+      operationId: adminGetLogs
+      tags: [admin]
+      summary: Get recent transactions and orders for admin logs panel
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminLogsResponse"
+
   /wheel/spin:
     post:
       operationId: spinWheel
@@ -1006,6 +1192,8 @@ components:
     CryptoRechargeResult:
       type: object
       properties:
+        sessionId:
+          type: integer
         address:
           type: string
         amountLtc:
@@ -1016,7 +1204,7 @@ components:
           type: number
         expiresAt:
           type: string
-      required: [address, amountLtc, amountEur, exchangeRate, expiresAt]
+      required: [sessionId, address, amountLtc, amountEur, exchangeRate, expiresAt]
 
     VerifyCryptoBody:
       type: object
@@ -1025,6 +1213,9 @@ components:
           type: string
         amountEur:
           type: number
+        sessionId:
+          type: integer
+          nullable: true
       required: [txHash, amountEur]
 
     VerifyCryptoResult:
@@ -1131,7 +1322,232 @@ components:
           type: ["string", "null"]
         lastWinner:
           type: ["string", "null"]
+        lastPrize:
+          type: ["number", "null"]
+        lastDrawDate:
+          type: ["string", "null"]
       required: [userTickets, totalTickets]
+
+    PendingCryptoRecharge:
+      type: object
+      properties:
+        id:
+          type: integer
+        amountEur:
+          type: number
+        amountLtc:
+          type: number
+        address:
+          type: string
+        status:
+          type: string
+        expiresAt:
+          type: string
+        createdAt:
+          type: string
+      required: [id, amountEur, amountLtc, address, status, expiresAt, createdAt]
+
+    PaypalConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        clientId:
+          type: ["string", "null"]
+        env:
+          type: string
+          enum: [sandbox, live]
+      required: [enabled, env]
+
+    PaypalCreateBody:
+      type: object
+      properties:
+        amountEur:
+          type: number
+      required: [amountEur]
+
+    PaypalCreateResult:
+      type: object
+      properties:
+        orderId:
+          type: string
+        amountEur:
+          type: number
+      required: [orderId, amountEur]
+
+    PaypalCaptureBody:
+      type: object
+      properties:
+        orderId:
+          type: string
+      required: [orderId]
+
+    PaypalCaptureResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        newBalance:
+          type: number
+        amountEur:
+          type: number
+      required: [success, newBalance, amountEur]
+
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: ["string", "null"]
+        firstName:
+          type: string
+        username:
+          type: ["string", "null"]
+        balance:
+          type: number
+        loyaltyPoints:
+          type: integer
+        freeSpins:
+          type: integer
+        jackpotTickets:
+          type: integer
+        purchaseCount:
+          type: integer
+        totalRecharged:
+          type: number
+        createdAt:
+          type: string
+      required: [id, firstName, balance, loyaltyPoints, freeSpins, jackpotTickets, purchaseCount, totalRecharged, createdAt]
+
+    AdjustUserBody:
+      type: object
+      properties:
+        field:
+          type: string
+          enum: [balance, loyaltyPoints, freeSpins, jackpotTickets]
+        delta:
+          type: number
+        reason:
+          type: string
+      required: [field, delta]
+
+    AdjustUserResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        balance:
+          type: number
+        loyaltyPoints:
+          type: integer
+        freeSpins:
+          type: integer
+        jackpotTickets:
+          type: integer
+      required: [id, balance, loyaltyPoints, freeSpins, jackpotTickets]
+
+    JackpotDrawBody:
+      type: object
+      properties:
+        prizeAmount:
+          type: number
+        resetTickets:
+          type: boolean
+      required: [prizeAmount]
+
+    JackpotDrawResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        drawId:
+          type: integer
+        winnerId:
+          type: integer
+        winnerName:
+          type: string
+        winnerEmail:
+          type: ["string", "null"]
+        prizeAmount:
+          type: number
+        totalTicketsAtDraw:
+          type: integer
+        drawDate:
+          type: string
+      required: [success, drawId, winnerId, winnerName, prizeAmount, totalTicketsAtDraw, drawDate]
+
+    JackpotDraw:
+      type: object
+      properties:
+        id:
+          type: integer
+        drawDate:
+          type: string
+        winnerId:
+          type: integer
+        winnerName:
+          type: string
+        prizeAmount:
+          type: number
+        totalTicketsAtDraw:
+          type: integer
+      required: [id, drawDate, winnerId, winnerName, prizeAmount, totalTicketsAtDraw]
+
+    AdminTransactionLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userEmail:
+          type: ["string", "null"]
+        userName:
+          type: ["string", "null"]
+        type:
+          type: string
+        amount:
+          type: number
+        description:
+          type: string
+        createdAt:
+          type: string
+      required: [id, userId, type, amount, description, createdAt]
+
+    AdminOrderLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userEmail:
+          type: ["string", "null"]
+        userName:
+          type: ["string", "null"]
+        productName:
+          type: string
+        price:
+          type: number
+        status:
+          type: string
+        createdAt:
+          type: string
+      required: [id, userId, productName, price, status, createdAt]
+
+    AdminLogsResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminTransactionLog"
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminOrderLog"
+      required: [transactions, orders]
 
     TierProgress:
       type: object

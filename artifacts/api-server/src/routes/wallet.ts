@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, usersTable, transactionsTable, cryptoRechargesTable } from "@workspace/db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
+import { verifyLitecoinTx } from "../lib/ltc-verify";
 import {
   InitiateCryptoRechargeBody,
   VerifyCryptoRechargeBody,
@@ -9,7 +10,7 @@ import {
   GetTransactionsResponse,
   InitiateCryptoRechargeResponse,
   VerifyCryptoRechargeResponse,
-  GetPendingRechargesResponse,
+  GetPendingCryptoRechargesResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -141,7 +142,7 @@ router.get("/wallet/recharge/crypto/pending", requireAuth, async (req, res): Pro
   const stillPending = rows.filter((r) => r.expiresAt >= now);
 
   res.json(
-    GetPendingRechargesResponse.parse(
+    GetPendingCryptoRechargesResponse.parse(
       stillPending.map((r) => ({
         id: r.id,
         amountEur: Number(r.amountEur),
@@ -182,7 +183,7 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
 
   const { txHash, amountEur, sessionId } = parsed.data;
 
-  if (!txHash || txHash.length < 10) {
+  if (!txHash || !/^[a-fA-F0-9]{64}$/.test(txHash)) {
     res.json(
       VerifyCryptoRechargeResponse.parse({
         success: false,
@@ -193,110 +194,147 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
     return;
   }
 
+  // 0) Reject if this txHash was ALREADY used to verify any recharge (cross-user replay protection).
+  const [globalReplay] = await db
+    .select()
+    .from(cryptoRechargesTable)
+    .where(and(
+      eq(cryptoRechargesTable.txHash, txHash),
+      eq(cryptoRechargesTable.status, "verified"),
+    ));
+  if (globalReplay) {
+    if (globalReplay.userId === req.userId) {
+      const [u] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId!));
+      res.json(VerifyCryptoRechargeResponse.parse({
+        success: true,
+        message: "Recharge déjà confirmée précédemment",
+        newBalance: u ? Number(u.balance) : null,
+      }));
+      return;
+    }
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false,
+      message: "Cette transaction a déjà été utilisée",
+      newBalance: null,
+    }));
+    return;
+  }
+
+  // 1) Pick pending session (prefer explicit id, else most-recent pending for user).
+  let pending: typeof cryptoRechargesTable.$inferSelect | null = null;
+  if (sessionId) {
+    const [r] = await db.select().from(cryptoRechargesTable)
+      .where(and(eq(cryptoRechargesTable.id, sessionId), eq(cryptoRechargesTable.userId, req.userId!)));
+    pending = r ?? null;
+  } else {
+    const [r] = await db.select().from(cryptoRechargesTable)
+      .where(and(eq(cryptoRechargesTable.userId, req.userId!), eq(cryptoRechargesTable.status, "pending")))
+      .orderBy(desc(cryptoRechargesTable.createdAt)).limit(1);
+    pending = r ?? null;
+  }
+
+  if (!pending) {
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false, message: "Aucune recharge en attente trouvée", newBalance: null,
+    }));
+    return;
+  }
+  if (pending.status !== "pending") {
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false,
+      message: `Recharge déjà ${pending.status === "verified" ? "validée" : pending.status}`,
+      newBalance: null,
+    }));
+    return;
+  }
+  if (pending.expiresAt < new Date()) {
+    await db.update(cryptoRechargesTable).set({ status: "expired" })
+      .where(eq(cryptoRechargesTable.id, pending.id));
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false, message: "Session expirée — recommence", newBalance: null,
+    }));
+    return;
+  }
+
+  const credited = Number(pending.amountEur);
+  if (Math.abs(credited - amountEur) > 0.01) {
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false, message: "Le montant ne correspond pas à la session", newBalance: null,
+    }));
+    return;
+  }
+
+  // 2) On-chain verification — server fetches the tx and validates address+amount+confirmations.
+  const expectedLtc = Number(pending.amountLtc);
+  const verification = await verifyLitecoinTx(txHash, pending.address, 1);
+  if (!verification.ok) {
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false, message: verification.reason, newBalance: null,
+    }));
+    return;
+  }
+  // Allow 1% under-payment tolerance for explorer rounding (but never less).
+  if (verification.ltcReceived + 1e-8 < expectedLtc * 0.99) {
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false,
+      message: `Montant LTC reçu insuffisant (${verification.ltcReceived} / ${expectedLtc} LTC)`,
+      newBalance: null,
+    }));
+    return;
+  }
+
+  // 3) Atomic credit — only the UPDATE that flips pending→verified actually grants funds.
   try {
     const result = await db.transaction(async (tx) => {
-      // Find pending recharge: prefer sessionId, fallback first matching pending of this user
-      let pending: typeof cryptoRechargesTable.$inferSelect | null = null;
-      if (sessionId) {
-        const [r] = await tx
-          .select()
-          .from(cryptoRechargesTable)
-          .where(and(
-            eq(cryptoRechargesTable.id, sessionId),
-            eq(cryptoRechargesTable.userId, req.userId!),
-          ));
-        pending = r ?? null;
-      } else {
-        const [r] = await tx
-          .select()
-          .from(cryptoRechargesTable)
-          .where(and(
-            eq(cryptoRechargesTable.userId, req.userId!),
-            eq(cryptoRechargesTable.status, "pending"),
-          ))
-          .orderBy(desc(cryptoRechargesTable.createdAt))
-          .limit(1);
-        pending = r ?? null;
-      }
-
-      // Idempotence: if same tx hash already verified, return success without re-crediting
-      const [alreadyDone] = await tx
-        .select()
-        .from(cryptoRechargesTable)
-        .where(and(
-          eq(cryptoRechargesTable.userId, req.userId!),
-          eq(cryptoRechargesTable.txHash, txHash),
-          eq(cryptoRechargesTable.status, "verified"),
-        ));
-      if (alreadyDone) {
-        const [u] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
-        return {
-          success: true,
-          message: "Recharge déjà confirmée précédemment",
-          newBalance: u ? Number(u.balance) : null,
-        };
-      }
-
-      if (!pending) {
-        throw Object.assign(new Error("Aucune recharge en attente trouvée"), { status: 404 });
-      }
-      if (pending.status !== "pending") {
-        throw Object.assign(new Error(`Recharge déjà ${pending.status === "verified" ? "validée" : pending.status}`), { status: 400 });
-      }
-      if (pending.expiresAt < new Date()) {
-        await tx.update(cryptoRechargesTable).set({ status: "expired" }).where(eq(cryptoRechargesTable.id, pending.id));
-        throw Object.assign(new Error("Session de recharge expirée. Recommence."), { status: 400 });
-      }
-
-      const credited = Number(pending.amountEur);
-      // Sanity: amountEur from client must match (within 1 cent)
-      if (Math.abs(credited - amountEur) > 0.01) {
-        throw Object.assign(new Error("Le montant ne correspond pas à la session"), { status: 400 });
-      }
-
-      const [user] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
-      if (!user) throw Object.assign(new Error("User not found"), { status: 404 });
-
-      const newBalance = Math.round((Number(user.balance) + credited) * 100) / 100;
-      const newTotalRecharged = Math.round((Number(user.totalRecharged) + credited) * 100) / 100;
-
-      await tx
-        .update(usersTable)
-        .set({
-          balance: newBalance.toFixed(2),
-          totalRecharged: newTotalRecharged.toFixed(2),
-        })
-        .where(eq(usersTable.id, req.userId!));
-
-      await tx
+      const claimed = await tx
         .update(cryptoRechargesTable)
         .set({ status: "verified", txHash, verifiedAt: new Date() })
-        .where(eq(cryptoRechargesTable.id, pending.id));
+        .where(and(
+          eq(cryptoRechargesTable.id, pending!.id),
+          eq(cryptoRechargesTable.status, "pending"),
+        ))
+        .returning();
+      if (claimed.length === 0) {
+        throw Object.assign(new Error("Recharge déjà traitée"), { status: 409 });
+      }
+
+      const [user] = await tx.update(usersTable)
+        .set({
+          balance: sql`${usersTable.balance} + ${credited.toFixed(2)}`,
+          totalRecharged: sql`${usersTable.totalRecharged} + ${credited.toFixed(2)}`,
+        })
+        .where(eq(usersTable.id, req.userId!))
+        .returning();
 
       await tx.insert(transactionsTable).values({
         userId: req.userId!,
         type: "credit",
         amount: credited.toFixed(2),
-        description: `Recharge Litecoin (${credited.toFixed(2)}€)`,
+        description: `Recharge Litecoin (${credited.toFixed(2)}€) — tx ${txHash.slice(0, 12)}…`,
       });
 
       return {
         success: true,
         message: `Recharge de ${credited.toFixed(2)}€ effectuée avec succès`,
-        newBalance,
+        newBalance: Number(user.balance),
       };
     });
-
     res.json(VerifyCryptoRechargeResponse.parse(result));
   } catch (err) {
-    const e = err as { status?: number; message?: string };
-    res.json(
-      VerifyCryptoRechargeResponse.parse({
-        success: false,
-        message: e.message ?? "Erreur lors de la vérification",
-        newBalance: null,
-      })
-    );
+    req.log.error({ err, txHash }, "crypto verify failed");
+    // Detect unique-constraint violation (Postgres code 23505) on tx_hash —
+    // means another request claimed this tx first.
+    const code = (err as { code?: string; cause?: { code?: string } }).code
+      ?? (err as { cause?: { code?: string } }).cause?.code;
+    if (code === "23505") {
+      res.json(VerifyCryptoRechargeResponse.parse({
+        success: false, message: "Cette transaction a déjà été utilisée", newBalance: null,
+      }));
+      return;
+    }
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false, message: "Erreur lors de la vérification", newBalance: null,
+    }));
   }
 });
 

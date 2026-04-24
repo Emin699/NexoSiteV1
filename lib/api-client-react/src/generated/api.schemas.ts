@@ -250,6 +250,7 @@ export interface CryptoRechargeBody {
 }
 
 export interface CryptoRechargeResult {
+  sessionId: number;
   address: string;
   amountLtc: number;
   amountEur: number;
@@ -260,6 +261,7 @@ export interface CryptoRechargeResult {
 export interface VerifyCryptoBody {
   txHash: string;
   amountEur: number;
+  sessionId?: number | null;
 }
 
 export interface VerifyCryptoResult {
@@ -324,6 +326,151 @@ export interface JackpotInfo {
   nextDrawDate?: string | null;
   /** @nullable */
   lastWinner?: string | null;
+  /** @nullable */
+  lastPrize?: number | null;
+  /** @nullable */
+  lastDrawDate?: string | null;
+}
+
+export interface PendingCryptoRecharge {
+  id: number;
+  amountEur: number;
+  amountLtc: number;
+  address: string;
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export type PaypalConfigEnv =
+  (typeof PaypalConfigEnv)[keyof typeof PaypalConfigEnv];
+
+export const PaypalConfigEnv = {
+  sandbox: "sandbox",
+  live: "live",
+} as const;
+
+export interface PaypalConfig {
+  enabled: boolean;
+  /** @nullable */
+  clientId?: string | null;
+  env: PaypalConfigEnv;
+}
+
+export interface PaypalCreateBody {
+  amountEur: number;
+}
+
+export interface PaypalCreateResult {
+  orderId: string;
+  amountEur: number;
+}
+
+export interface PaypalCaptureBody {
+  orderId: string;
+}
+
+export interface PaypalCaptureResult {
+  success: boolean;
+  newBalance: number;
+  amountEur: number;
+}
+
+export interface AdminUser {
+  id: number;
+  /** @nullable */
+  email?: string | null;
+  firstName: string;
+  /** @nullable */
+  username?: string | null;
+  balance: number;
+  loyaltyPoints: number;
+  freeSpins: number;
+  jackpotTickets: number;
+  purchaseCount: number;
+  totalRecharged: number;
+  createdAt: string;
+}
+
+export type AdjustUserBodyField =
+  (typeof AdjustUserBodyField)[keyof typeof AdjustUserBodyField];
+
+export const AdjustUserBodyField = {
+  balance: "balance",
+  loyaltyPoints: "loyaltyPoints",
+  freeSpins: "freeSpins",
+  jackpotTickets: "jackpotTickets",
+} as const;
+
+export interface AdjustUserBody {
+  field: AdjustUserBodyField;
+  delta: number;
+  reason?: string;
+}
+
+export interface AdjustUserResult {
+  id: number;
+  balance: number;
+  loyaltyPoints: number;
+  freeSpins: number;
+  jackpotTickets: number;
+}
+
+export interface JackpotDrawBody {
+  prizeAmount: number;
+  resetTickets?: boolean;
+}
+
+export interface JackpotDrawResult {
+  success: boolean;
+  drawId: number;
+  winnerId: number;
+  winnerName: string;
+  /** @nullable */
+  winnerEmail?: string | null;
+  prizeAmount: number;
+  totalTicketsAtDraw: number;
+  drawDate: string;
+}
+
+export interface JackpotDraw {
+  id: number;
+  drawDate: string;
+  winnerId: number;
+  winnerName: string;
+  prizeAmount: number;
+  totalTicketsAtDraw: number;
+}
+
+export interface AdminTransactionLog {
+  id: number;
+  userId: number;
+  /** @nullable */
+  userEmail?: string | null;
+  /** @nullable */
+  userName?: string | null;
+  type: string;
+  amount: number;
+  description: string;
+  createdAt: string;
+}
+
+export interface AdminOrderLog {
+  id: number;
+  userId: number;
+  /** @nullable */
+  userEmail?: string | null;
+  /** @nullable */
+  userName?: string | null;
+  productName: string;
+  price: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface AdminLogsResponse {
+  transactions: AdminTransactionLog[];
+  orders: AdminOrderLog[];
 }
 
 export interface Tier {
@@ -346,4 +493,8 @@ export interface TierProgress {
 
 export type GetProductsParams = {
   category?: string;
+};
+
+export type AdminGetLogsParams = {
+  limit?: number;
 };

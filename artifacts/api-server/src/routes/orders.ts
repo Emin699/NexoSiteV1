@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, ordersTable, productsTable, usersTable, transactionsTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
 import {
   BuyProductBody,
@@ -66,30 +66,29 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
   // Single atomic operation: balance check + debit + N orders + transaction + stats
   try {
     const firstOrder = await db.transaction(async (tx) => {
-      const [user] = await tx
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.id, req.userId!));
-
-      if (!user) {
-        throw Object.assign(new Error("Utilisateur introuvable"), { status: 404 });
-      }
-      if (Number(user.balance) < total) {
-        throw Object.assign(new Error("Solde insuffisant. Veuillez recharger votre portefeuille."), { status: 400 });
-      }
-
-      const newBalance = Math.round((Number(user.balance) - total) * 100) / 100;
       const earnedPoints = Math.floor(total * POINTS_PER_EUR);
 
-      await tx
+      // Conditional debit: only succeeds if balance >= total. No read-then-write race.
+      const debited = await tx
         .update(usersTable)
         .set({
-          balance: newBalance.toFixed(2),
+          balance: sql`${usersTable.balance} - ${total.toFixed(2)}`,
           purchaseCount: sql`${usersTable.purchaseCount} + ${quantity}`,
           jackpotTickets: sql`${usersTable.jackpotTickets} + ${quantity}`,
           loyaltyPoints: sql`${usersTable.loyaltyPoints} + ${earnedPoints}`,
         })
-        .where(eq(usersTable.id, req.userId!));
+        .where(and(
+          eq(usersTable.id, req.userId!),
+          sql`${usersTable.balance} >= ${total.toFixed(2)}`,
+        ))
+        .returning();
+
+      if (debited.length === 0) {
+        // Either user missing or insufficient balance — distinguish for UX.
+        const [u] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
+        if (!u) throw Object.assign(new Error("Utilisateur introuvable"), { status: 404 });
+        throw Object.assign(new Error("Solde insuffisant. Veuillez recharger votre portefeuille."), { status: 400 });
+      }
 
       await tx.insert(transactionsTable).values({
         userId: req.userId!,
@@ -132,7 +131,7 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
     );
   } catch (err) {
     const e = err as { status?: number; message?: string };
-    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur lors de l'achat" });
+    res.status(e.status ?? 500).json({ error: e.status ? e.message : "Erreur lors de l'achat" });
   }
 });
 

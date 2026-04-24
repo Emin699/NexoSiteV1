@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, transactionsTable, wheelSpinsTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, or, gt, lt, isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
 import { SpinWheelResponse, GetWheelStatusResponse } from "@workspace/api-zod";
 
@@ -76,80 +76,98 @@ router.get("/wheel/status", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.post("/wheel/spin", requireAuth, async (req, res): Promise<void> => {
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, req.userId!));
-
-  if (!user) {
-    res.status(404).json({ error: "User not found" });
-    return;
-  }
-
   const now = new Date();
-  const lastSpin = user.lastSpinAt;
-  const hoursSinceLastSpin = lastSpin
-    ? (now.getTime() - lastSpin.getTime()) / (1000 * 60 * 60)
-    : 999;
-
-  const hasFreeSpins = user.freeSpins > 0;
-  const canSpinByTime = hoursSinceLastSpin >= 24;
-
-  if (!hasFreeSpins && !canSpinByTime) {
-    res.status(400).json({ error: "Aucun tour disponible. Revenez dans 24h." });
-    return;
-  }
-
+  const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const reward = spinWheel();
 
-  let newBalance: number | null = null;
-  let newPoints: number | null = null;
+  try {
+    const result = await db.transaction(async (tx) => {
+      // Atomic spin claim: only succeeds if user is eligible AT update time.
+      // Eligibility = freeSpins > 0  OR  lastSpinAt < now-24h  OR  lastSpinAt IS NULL.
+      // If they have free spins we decrement, otherwise we set lastSpinAt = now.
+      // We do this in two separate conditional updates so we know which path was taken.
+      const usedFreeSpin = await tx
+        .update(usersTable)
+        .set({ freeSpins: sql`${usersTable.freeSpins} - 1`, lastSpinAt: now })
+        .where(and(
+          eq(usersTable.id, req.userId!),
+          gt(usersTable.freeSpins, 0),
+        ))
+        .returning();
 
-  const updates: Record<string, unknown> = {
-    lastSpinAt: now,
-  };
+      let userRow = usedFreeSpin[0] ?? null;
+      if (!userRow) {
+        const usedDaily = await tx
+          .update(usersTable)
+          .set({ lastSpinAt: now })
+          .where(and(
+            eq(usersTable.id, req.userId!),
+            or(isNull(usersTable.lastSpinAt), lt(usersTable.lastSpinAt, cutoff)),
+          ))
+          .returning();
+        userRow = usedDaily[0] ?? null;
+      }
 
-  if (hasFreeSpins) {
-    updates.freeSpins = sql`${usersTable.freeSpins} - 1`;
-  }
+      if (!userRow) {
+        // Either user missing or not eligible.
+        const [u] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
+        if (!u) throw Object.assign(new Error("User not found"), { status: 404 });
+        throw Object.assign(new Error("Aucun tour disponible. Revenez dans 24h."), { status: 400 });
+      }
 
-  if (reward.type === "balance" && reward.value) {
-    const updatedBalance = Math.round((Number(user.balance) + reward.value) * 100) / 100;
-    newBalance = updatedBalance;
-    updates.balance = updatedBalance.toFixed(2);
+      let newBalance: number | null = null;
+      let newPoints: number | null = null;
 
-    await db.insert(transactionsTable).values({
-      userId: req.userId!,
-      type: "credit",
-      amount: reward.value.toFixed(2),
-      description: `Roue du destin : ${reward.label}`,
+      if (reward.type === "balance" && reward.value) {
+        const [bumped] = await tx
+          .update(usersTable)
+          .set({ balance: sql`${usersTable.balance} + ${reward.value.toFixed(2)}` })
+          .where(eq(usersTable.id, req.userId!))
+          .returning();
+        newBalance = Number(bumped.balance);
+        await tx.insert(transactionsTable).values({
+          userId: req.userId!,
+          type: "credit",
+          amount: reward.value.toFixed(2),
+          description: `Roue du destin : ${reward.label}`,
+        });
+      } else if (reward.type === "points" && reward.value) {
+        const [bumped] = await tx
+          .update(usersTable)
+          .set({ loyaltyPoints: sql`${usersTable.loyaltyPoints} + ${reward.value}` })
+          .where(eq(usersTable.id, req.userId!))
+          .returning();
+        newPoints = bumped.loyaltyPoints;
+      } else if (reward.type === "free_spin") {
+        await tx
+          .update(usersTable)
+          .set({ freeSpins: sql`${usersTable.freeSpins} + 1` })
+          .where(eq(usersTable.id, req.userId!));
+      }
+
+      await tx.insert(wheelSpinsTable).values({
+        userId: req.userId!,
+        rewardType: reward.type,
+        rewardValue: reward.value?.toString() ?? null,
+      });
+
+      return { newBalance, newPoints };
     });
-  } else if (reward.type === "points" && reward.value) {
-    const updatedPoints = user.loyaltyPoints + reward.value;
-    newPoints = updatedPoints;
-    updates.loyaltyPoints = sql`${usersTable.loyaltyPoints} + ${reward.value}`;
-  } else if (reward.type === "free_spin") {
-    updates.freeSpins = sql`${usersTable.freeSpins} + 1`;
+
+    res.json(
+      SpinWheelResponse.parse({
+        reward: reward.label,
+        rewardType: reward.type,
+        rewardValue: reward.value,
+        message: reward.type === "nothing" ? "Pas de chance cette fois !" : `Félicitations ! ${reward.label}`,
+        newBalance: result.newBalance,
+        newPoints: result.newPoints,
+      })
+    );
+  } catch (err) {
+    const e = err as { status?: number; message?: string };
+    res.status(e.status ?? 500).json({ error: e.status ? e.message : "Erreur lors du tirage" });
   }
-
-  await db.update(usersTable).set(updates).where(eq(usersTable.id, req.userId!));
-
-  await db.insert(wheelSpinsTable).values({
-    userId: req.userId!,
-    rewardType: reward.type,
-    rewardValue: reward.value?.toString() ?? null,
-  });
-
-  res.json(
-    SpinWheelResponse.parse({
-      reward: reward.label,
-      rewardType: reward.type,
-      rewardValue: reward.value,
-      message: reward.type === "nothing" ? "Pas de chance cette fois !" : `Félicitations ! ${reward.label}`,
-      newBalance,
-      newPoints,
-    })
-  );
 });
 
 export default router;

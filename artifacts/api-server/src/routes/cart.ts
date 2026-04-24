@@ -253,27 +253,30 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       const { finalDiscount, couponApplied } = computeDiscount(subtotal, coupon);
       const totalCharged = Math.round(Math.max(0, subtotal - finalDiscount) * 100) / 100;
 
-      const [user] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
-      if (!user) {
-        throw Object.assign(new Error("User not found"), { status: 404 });
-      }
-      if (Number(user.balance) < totalCharged) {
-        throw Object.assign(new Error("Solde insuffisant. Veuillez recharger votre portefeuille."), { status: 400 });
-      }
-
       const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
-      const newBalance = Math.round((Number(user.balance) - totalCharged) * 100) / 100;
       const earnedPoints = Math.floor(totalCharged * POINTS_PER_EUR);
 
-      await tx
+      // Conditional debit: atomic balance check + decrement (no read-then-write race).
+      const debited = await tx
         .update(usersTable)
         .set({
-          balance: newBalance.toFixed(2),
+          balance: sql`${usersTable.balance} - ${totalCharged.toFixed(2)}`,
           purchaseCount: sql`${usersTable.purchaseCount} + ${totalQuantity}`,
           jackpotTickets: sql`${usersTable.jackpotTickets} + ${totalQuantity}`,
           loyaltyPoints: sql`${usersTable.loyaltyPoints} + ${earnedPoints}`,
         })
-        .where(eq(usersTable.id, req.userId!));
+        .where(and(
+          eq(usersTable.id, req.userId!),
+          sql`${usersTable.balance} >= ${totalCharged.toFixed(2)}`,
+        ))
+        .returning();
+
+      if (debited.length === 0) {
+        const [u] = await tx.select().from(usersTable).where(eq(usersTable.id, req.userId!));
+        if (!u) throw Object.assign(new Error("User not found"), { status: 404 });
+        throw Object.assign(new Error("Solde insuffisant. Veuillez recharger votre portefeuille."), { status: 400 });
+      }
+      const newBalance = Number(debited[0].balance);
 
       await tx.insert(transactionsTable).values({
         userId: req.userId!,
@@ -339,7 +342,7 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
     );
   } catch (err) {
     const e = err as { status?: number; message?: string };
-    res.status(e.status ?? 500).json({ error: e.message ?? "Erreur lors du checkout" });
+    res.status(e.status ?? 500).json({ error: e.status ? e.message : "Erreur lors du checkout" });
   }
 });
 

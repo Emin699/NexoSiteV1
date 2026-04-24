@@ -459,6 +459,7 @@ export const InitiateCryptoRechargeBody = zod.object({
 });
 
 export const InitiateCryptoRechargeResponse = zod.object({
+  sessionId: zod.number(),
   address: zod.string(),
   amountLtc: zod.number(),
   amountEur: zod.number(),
@@ -472,12 +473,181 @@ export const InitiateCryptoRechargeResponse = zod.object({
 export const VerifyCryptoRechargeBody = zod.object({
   txHash: zod.string(),
   amountEur: zod.number(),
+  sessionId: zod.number().nullish(),
 });
 
 export const VerifyCryptoRechargeResponse = zod.object({
   success: zod.boolean(),
   message: zod.string(),
   newBalance: zod.number().nullish(),
+});
+
+/**
+ * @summary List user's pending crypto recharges
+ */
+export const GetPendingCryptoRechargesResponseItem = zod.object({
+  id: zod.number(),
+  amountEur: zod.number(),
+  amountLtc: zod.number(),
+  address: zod.string(),
+  status: zod.string(),
+  expiresAt: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetPendingCryptoRechargesResponse = zod.array(
+  GetPendingCryptoRechargesResponseItem,
+);
+
+/**
+ * @summary Cancel a pending crypto recharge
+ */
+export const CancelPendingCryptoRechargeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CancelPendingCryptoRechargeResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
+ * @summary Get PayPal configuration (clientId + enabled flag)
+ */
+export const GetPaypalConfigResponse = zod.object({
+  enabled: zod.boolean(),
+  clientId: zod.string().nullish(),
+  env: zod.enum(["sandbox", "live"]),
+});
+
+/**
+ * @summary Create a PayPal order
+ */
+export const CreatePaypalOrderBody = zod.object({
+  amountEur: zod.number(),
+});
+
+export const CreatePaypalOrderResponse = zod.object({
+  orderId: zod.string(),
+  amountEur: zod.number(),
+});
+
+/**
+ * @summary Capture a PayPal order and credit the wallet
+ */
+export const CapturePaypalOrderBody = zod.object({
+  orderId: zod.string(),
+});
+
+export const CapturePaypalOrderResponse = zod.object({
+  success: zod.boolean(),
+  newBalance: zod.number(),
+  amountEur: zod.number(),
+});
+
+/**
+ * @summary List all users (admin)
+ */
+export const AdminGetUsersResponseItem = zod.object({
+  id: zod.number(),
+  email: zod.string().nullish(),
+  firstName: zod.string(),
+  username: zod.string().nullish(),
+  balance: zod.number(),
+  loyaltyPoints: zod.number(),
+  freeSpins: zod.number(),
+  jackpotTickets: zod.number(),
+  purchaseCount: zod.number(),
+  totalRecharged: zod.number(),
+  createdAt: zod.string(),
+});
+export const AdminGetUsersResponse = zod.array(AdminGetUsersResponseItem);
+
+/**
+ * @summary Adjust a user's balance/points/spins/tickets
+ */
+export const AdminAdjustUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminAdjustUserBody = zod.object({
+  field: zod.enum(["balance", "loyaltyPoints", "freeSpins", "jackpotTickets"]),
+  delta: zod.number(),
+  reason: zod.string().optional(),
+});
+
+export const AdminAdjustUserResponse = zod.object({
+  id: zod.number(),
+  balance: zod.number(),
+  loyaltyPoints: zod.number(),
+  freeSpins: zod.number(),
+  jackpotTickets: zod.number(),
+});
+
+/**
+ * @summary Draw a jackpot winner (weighted random)
+ */
+export const AdminDrawJackpotBody = zod.object({
+  prizeAmount: zod.number(),
+  resetTickets: zod.boolean().optional(),
+});
+
+export const AdminDrawJackpotResponse = zod.object({
+  success: zod.boolean(),
+  drawId: zod.number(),
+  winnerId: zod.number(),
+  winnerName: zod.string(),
+  winnerEmail: zod.string().nullish(),
+  prizeAmount: zod.number(),
+  totalTicketsAtDraw: zod.number(),
+  drawDate: zod.string(),
+});
+
+/**
+ * @summary List recent jackpot draws
+ */
+export const AdminGetJackpotDrawsResponseItem = zod.object({
+  id: zod.number(),
+  drawDate: zod.string(),
+  winnerId: zod.number(),
+  winnerName: zod.string(),
+  prizeAmount: zod.number(),
+  totalTicketsAtDraw: zod.number(),
+});
+export const AdminGetJackpotDrawsResponse = zod.array(
+  AdminGetJackpotDrawsResponseItem,
+);
+
+/**
+ * @summary Get recent transactions and orders for admin logs panel
+ */
+export const AdminGetLogsQueryParams = zod.object({
+  limit: zod.coerce.number().optional(),
+});
+
+export const AdminGetLogsResponse = zod.object({
+  transactions: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number(),
+      userEmail: zod.string().nullish(),
+      userName: zod.string().nullish(),
+      type: zod.string(),
+      amount: zod.number(),
+      description: zod.string(),
+      createdAt: zod.string(),
+    }),
+  ),
+  orders: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number(),
+      userEmail: zod.string().nullish(),
+      userName: zod.string().nullish(),
+      productName: zod.string(),
+      price: zod.number(),
+      status: zod.string(),
+      createdAt: zod.string(),
+    }),
+  ),
 });
 
 /**
@@ -543,22 +713,9 @@ export const GetJackpotResponse = zod.object({
   totalTickets: zod.number(),
   nextDrawDate: zod.string().nullish(),
   lastWinner: zod.string().nullish(),
+  lastPrize: zod.number().nullish(),
+  lastDrawDate: zod.string().nullish(),
 });
-
-/**
- * @summary Get pending crypto recharges
- */
-export const GetPendingRechargesResponseItem = zod.object({
-  id: zod.number(),
-  amountEur: zod.number(),
-  amountLtc: zod.number(),
-  address: zod.string(),
-  status: zod.enum(["pending", "delivered", "cancelled"]),
-  expiresAt: zod.string(),
-  createdAt: zod.string(),
-});
-
-export const GetPendingRechargesResponse = zod.array(GetPendingRechargesResponseItem);
 
 /**
  * @summary Get tier progression info

@@ -1,23 +1,40 @@
-import { useState } from "react";
-import { 
-  useGetWallet, 
-  useGetTransactions, 
+import { useState, useMemo } from "react";
+import {
+  useGetWallet,
+  useGetTransactions,
   useInitiateCryptoRecharge,
   useVerifyCryptoRecharge,
+  useGetPendingCryptoRecharges,
+  useCancelPendingCryptoRecharge,
+  useGetPaypalConfig,
+  useCreatePaypalOrder,
+  useCapturePaypalOrder,
   getGetWalletQueryKey,
   getGetMeQueryKey,
-  getGetTransactionsQueryKey
+  getGetTransactionsQueryKey,
+  getGetPendingCryptoRechargesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Wallet as WalletIcon, Coins, History, ArrowDownToLine, ArrowUpRight, Copy, Check, ShieldAlert } from "lucide-react";
+import {
+  Wallet as WalletIcon,
+  Coins,
+  History,
+  ArrowDownToLine,
+  ArrowUpRight,
+  Copy,
+  Check,
+  ShieldAlert,
+  Clock,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 
 const RECHARGE_AMOUNTS = [5, 10, 20, 30, 50];
 
@@ -25,45 +42,81 @@ export default function Wallet() {
   const queryClient = useQueryClient();
   const { data: wallet, isLoading: isLoadingWallet } = useGetWallet();
   const { data: transactions, isLoading: isLoadingTx } = useGetTransactions();
-  
+  const { data: pending } = useGetPendingCryptoRecharges();
+  const { data: paypalConfig } = useGetPaypalConfig();
+
   const initiateCrypto = useInitiateCryptoRecharge();
   const verifyCrypto = useVerifyCryptoRecharge();
+  const cancelPending = useCancelPendingCryptoRecharge();
+  const createPaypal = useCreatePaypalOrder();
+  const capturePaypal = useCapturePaypalOrder();
 
   const [selectedAmount, setSelectedAmount] = useState<number>(10);
-  const [rechargeSession, setRechargeSession] = useState<any>(null);
+  const [paypalAmount, setPaypalAmount] = useState<number>(10);
+  const [rechargeSession, setRechargeSession] = useState<{
+    id: number;
+    address: string;
+    amountLtc: number;
+    amountEur: number;
+    expiresAt: string;
+  } | null>(null);
   const [txHash, setTxHash] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const invalidateWallet = () => {
+    queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetTransactionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetPendingCryptoRechargesQueryKey() });
+  };
 
   const handleInitiateRecharge = async () => {
     try {
       const res = await initiateCrypto.mutateAsync({ data: { amountEur: selectedAmount } });
-      setRechargeSession(res);
+      setRechargeSession({
+        id: res.sessionId,
+        address: res.address,
+        amountLtc: res.amountLtc,
+        amountEur: res.amountEur,
+        expiresAt: res.expiresAt,
+      });
+      invalidateWallet();
       toast.success("Session de recharge créée");
-    } catch (e: any) {
-      toast.error(e.message || "Erreur lors de l'initiation de la recharge");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erreur lors de l'initiation";
+      toast.error(msg);
     }
   };
 
   const handleVerify = async () => {
     if (!txHash || !rechargeSession) return;
-    
     try {
-      const res = await verifyCrypto.mutateAsync({ 
-        data: { txHash, amountEur: rechargeSession.amountEur } 
+      const res = await verifyCrypto.mutateAsync({
+        data: { txHash, amountEur: rechargeSession.amountEur },
       });
-      
       if (res.success) {
         toast.success(res.message, { icon: "💰" });
         setRechargeSession(null);
         setTxHash("");
-        queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetTransactionsQueryKey() });
+        invalidateWallet();
       } else {
         toast.error(res.message);
       }
-    } catch (e: any) {
-      toast.error(e.message || "La transaction n'est pas encore confirmée");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Transaction non confirmée";
+      toast.error(msg);
+    }
+  };
+
+  const handleCancelPending = async (id: number) => {
+    try {
+      await cancelPending.mutateAsync({ id });
+      invalidateWallet();
+      if (rechargeSession?.id === id) setRechargeSession(null);
+      toast.success("Recharge annulée");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Erreur lors de l'annulation";
+      toast.error(msg);
     }
   };
 
@@ -73,6 +126,16 @@ export default function Wallet() {
     setTimeout(() => setCopied(false), 2000);
     toast.success("Copié dans le presse-papier");
   };
+
+  const paypalOptions = useMemo(() => {
+    if (!paypalConfig?.enabled || !paypalConfig.clientId) return null;
+    return {
+      clientId: paypalConfig.clientId,
+      currency: "EUR",
+      intent: "capture",
+      ...(paypalConfig.env === "sandbox" ? {} : {}),
+    };
+  }, [paypalConfig]);
 
   if (isLoadingWallet) {
     return <div className="p-4 animate-pulse h-screen bg-card/50"></div>;
@@ -86,7 +149,7 @@ export default function Wallet() {
       <Card className="bg-gradient-to-br from-primary/20 via-card to-secondary/20 border-primary/30 overflow-hidden relative shadow-lg shadow-primary/10">
         <div className="absolute top-0 right-0 -mr-12 -mt-12 w-40 h-40 bg-primary/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-40 h-40 bg-secondary/20 rounded-full blur-3xl"></div>
-        
+
         <CardContent className="p-6 relative z-10">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <WalletIcon className="w-4 h-4" />
@@ -95,7 +158,7 @@ export default function Wallet() {
           <div className="text-4xl font-mono font-bold text-foreground mb-6">
             {wallet?.balance.toFixed(2)}€
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-background/50 rounded-lg p-3 backdrop-blur-sm border border-white/5">
               <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
@@ -113,17 +176,79 @@ export default function Wallet() {
         </CardContent>
       </Card>
 
+      {/* Pending crypto rechargecards */}
+      {pending && pending.length > 0 && (
+        <Card className="bg-amber-500/5 border-amber-500/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2 text-amber-500">
+              <Clock className="w-4 h-4" />
+              Recharges en attente ({pending.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-0">
+            {pending.map((p) => {
+              const exp = new Date(p.expiresAt);
+              const minutes = Math.max(0, Math.floor((exp.getTime() - Date.now()) / 60000));
+              return (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between bg-background/40 rounded-lg p-3 border border-amber-500/10"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium">
+                      {p.amountEur.toFixed(2)}€ — {p.amountLtc} LTC
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate font-mono">
+                      {p.address}
+                    </div>
+                    <div className="text-[10px] text-amber-500 mt-1">
+                      Expire dans {minutes} min
+                    </div>
+                  </div>
+                  <div className="flex gap-1 shrink-0 ml-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => copyToClipboard(p.address)}
+                      title="Copier l'adresse"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleCancelPending(p.id)}
+                      disabled={cancelPending.isPending}
+                      title="Annuler"
+                    >
+                      <XCircle className="w-3 h-3 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="recharge" className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-card border border-border/50 p-1 rounded-xl">
-          <TabsTrigger value="recharge" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Recharger</TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary">Historique</TabsTrigger>
+          <TabsTrigger value="recharge" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+            Recharger
+          </TabsTrigger>
+          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
+            Historique
+          </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="recharge" className="mt-4 space-y-4">
+          {/* Crypto card */}
           <Card className="bg-card/50 border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#345D9D]/20 text-[#345D9D] flex items-center justify-center font-bold">Ł</div>
+                <div className="w-8 h-8 rounded-full bg-[#345D9D]/20 text-[#345D9D] flex items-center justify-center font-bold">
+                  Ł
+                </div>
                 Crypto (Litecoin)
               </CardTitle>
               <CardDescription>Recharge automatique rapide et sans frais via LTC.</CardDescription>
@@ -132,23 +257,27 @@ export default function Wallet() {
               {!rechargeSession ? (
                 <>
                   <div className="grid grid-cols-3 gap-2">
-                    {RECHARGE_AMOUNTS.map(amt => (
+                    {RECHARGE_AMOUNTS.map((amt) => (
                       <Button
                         key={amt}
                         variant={selectedAmount === amt ? "default" : "outline"}
-                        className={`h-12 ${selectedAmount === amt ? 'bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20' : 'bg-background hover:bg-muted'}`}
+                        className={`h-12 ${
+                          selectedAmount === amt
+                            ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                            : "bg-background hover:bg-muted"
+                        }`}
                         onClick={() => setSelectedAmount(amt)}
                       >
                         {amt}€
                       </Button>
                     ))}
                   </div>
-                  <Button 
+                  <Button
                     className="w-full mt-4 bg-gradient-to-r from-primary to-secondary text-white border-none rounded-xl h-12 font-medium"
                     onClick={handleInitiateRecharge}
                     disabled={initiateCrypto.isPending}
                   >
-                    Générer l'adresse de dépôt
+                    {initiateCrypto.isPending ? "Génération…" : "Générer l'adresse de dépôt"}
                   </Button>
                 </>
               ) : (
@@ -158,25 +287,21 @@ export default function Wallet() {
                     <div className="text-2xl font-mono font-bold text-center text-primary mb-4">
                       {rechargeSession.amountLtc} LTC
                     </div>
-                    
+
                     <div className="space-y-2 mb-4">
                       <Label className="text-xs text-muted-foreground">À l'adresse suivante :</Label>
                       <div className="flex gap-2">
-                        <Input 
-                          value={rechargeSession.address} 
-                          readOnly 
-                          className="font-mono text-xs bg-muted/50"
-                        />
-                        <Button 
-                          variant="secondary" 
-                          size="icon" 
+                        <Input value={rechargeSession.address} readOnly className="font-mono text-xs bg-muted/50" />
+                        <Button
+                          variant="secondary"
+                          size="icon"
                           onClick={() => copyToClipboard(rechargeSession.address)}
                         >
                           {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
                       <ShieldAlert className="w-3 h-3 text-orange-500" />
                       Réseau Litecoin (LTC) uniquement
@@ -186,14 +311,14 @@ export default function Wallet() {
                   <div className="space-y-2 pt-2 border-t border-border">
                     <Label className="text-sm font-medium">J'ai effectué le paiement</Label>
                     <div className="flex gap-2">
-                      <Input 
-                        placeholder="Hash de transaction (TXID)" 
+                      <Input
+                        placeholder="Hash de transaction (TXID)"
                         value={txHash}
                         onChange={(e) => setTxHash(e.target.value)}
                         className="font-mono text-xs bg-card"
                       />
-                      <Button 
-                        onClick={handleVerify} 
+                      <Button
+                        onClick={handleVerify}
                         disabled={!txHash || verifyCrypto.isPending}
                         className="bg-primary hover:bg-primary/90"
                       >
@@ -204,30 +329,91 @@ export default function Wallet() {
                       La vérification peut prendre quelques minutes selon le réseau.
                     </p>
                   </div>
-                  
-                  <Button 
-                    variant="ghost" 
+
+                  <Button
+                    variant="ghost"
                     className="w-full text-xs text-muted-foreground"
                     onClick={() => setRechargeSession(null)}
                   >
-                    Annuler
+                    Fermer (la session reste active)
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
-          
-          <Card className="bg-card/50 border-border/50 opacity-60">
-            <CardHeader>
+
+          {/* PayPal card */}
+          <Card className={`bg-card/50 border-border/50 ${!paypalConfig?.enabled ? "opacity-70" : ""}`}>
+            <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">P</div>
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">
+                  P
+                </div>
                 PayPal
+                {paypalConfig?.env === "sandbox" && (
+                  <span className="text-[10px] uppercase tracking-wide bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded">
+                    sandbox
+                  </span>
+                )}
               </CardTitle>
-              <CardDescription>Bientôt disponible</CardDescription>
+              <CardDescription>
+                {paypalConfig?.enabled
+                  ? "Paiement instantané par carte ou compte PayPal."
+                  : "Bientôt disponible — configuration serveur requise."}
+              </CardDescription>
             </CardHeader>
+            {paypalConfig?.enabled && paypalOptions && (
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-2">
+                  {RECHARGE_AMOUNTS.map((amt) => (
+                    <Button
+                      key={amt}
+                      variant={paypalAmount === amt ? "default" : "outline"}
+                      className={`h-12 ${
+                        paypalAmount === amt
+                          ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                          : "bg-background hover:bg-muted"
+                      }`}
+                      onClick={() => setPaypalAmount(amt)}
+                    >
+                      {amt}€
+                    </Button>
+                  ))}
+                </div>
+                <PayPalScriptProvider options={paypalOptions} key={`${paypalOptions.clientId}-${paypalAmount}`}>
+                  <PayPalButtons
+                    style={{ layout: "horizontal", tagline: false, shape: "rect", height: 45 }}
+                    createOrder={async () => {
+                      const res = await createPaypal.mutateAsync({
+                        data: { amountEur: paypalAmount },
+                      });
+                      return res.orderId;
+                    }}
+                    onApprove={async (data) => {
+                      try {
+                        const res = await capturePaypal.mutateAsync({
+                          data: { orderId: data.orderID },
+                        });
+                        if (res.success) {
+                          toast.success(`+${res.amountEur.toFixed(2)}€ crédités`, { icon: "💰" });
+                          invalidateWallet();
+                        }
+                      } catch (e) {
+                        const msg = e instanceof Error ? e.message : "Capture PayPal échouée";
+                        toast.error(msg);
+                      }
+                    }}
+                    onError={(err) => {
+                      console.error("PayPal error", err);
+                      toast.error("Erreur PayPal");
+                    }}
+                  />
+                </PayPalScriptProvider>
+              </CardContent>
+            )}
           </Card>
         </TabsContent>
-        
+
         <TabsContent value="history" className="mt-4">
           <Card className="bg-card/50 border-border/50">
             <CardHeader className="pb-3">
@@ -240,7 +426,9 @@ export default function Wallet() {
               <ScrollArea className="h-[400px]">
                 {isLoadingTx ? (
                   <div className="p-4 space-y-3">
-                    {[1,2,3,4].map(i => <div key={i} className="h-12 bg-muted/50 rounded animate-pulse" />)}
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-12 bg-muted/50 rounded animate-pulse" />
+                    ))}
                   </div>
                 ) : !transactions || transactions.length === 0 ? (
                   <div className="p-8 text-center text-muted-foreground">
@@ -249,24 +437,43 @@ export default function Wallet() {
                 ) : (
                   <div className="divide-y divide-border/50">
                     {transactions.map((tx) => (
-                      <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
+                      <div
+                        key={tx.id}
+                        className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors"
+                      >
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            tx.type === 'credit' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
-                          }`}>
-                            {tx.type === 'credit' ? <ArrowDownToLine className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              tx.type === "credit"
+                                ? "bg-green-500/10 text-green-500"
+                                : "bg-red-500/10 text-red-500"
+                            }`}
+                          >
+                            {tx.type === "credit" ? (
+                              <ArrowDownToLine className="w-4 h-4" />
+                            ) : (
+                              <ArrowUpRight className="w-4 h-4" />
+                            )}
                           </div>
                           <div>
                             <div className="font-medium text-sm">{tx.description}</div>
                             <div className="text-xs text-muted-foreground">
-                              {new Date(tx.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit' })}
+                              {new Date(tx.createdAt).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
                             </div>
                           </div>
                         </div>
-                        <div className={`font-mono font-bold ${
-                          tx.type === 'credit' ? 'text-green-500' : 'text-foreground'
-                        }`}>
-                          {tx.type === 'credit' ? '+' : '-'}{tx.amount.toFixed(2)}€
+                        <div
+                          className={`font-mono font-bold ${
+                            tx.type === "credit" ? "text-green-500" : "text-foreground"
+                          }`}
+                        >
+                          {tx.type === "credit" ? "+" : "-"}
+                          {tx.amount.toFixed(2)}€
                         </div>
                       </div>
                     ))}

@@ -18,7 +18,12 @@ import type {
 
 import type {
   AddToCartBody,
+  AdjustUserBody,
+  AdjustUserResult,
+  AdminGetLogsParams,
+  AdminLogsResponse,
   AdminProductBody,
+  AdminUser,
   AuthLoginBody,
   AuthRegisterBody,
   AuthResponse,
@@ -33,8 +38,17 @@ import type {
   CryptoRechargeResult,
   GetProductsParams,
   HealthStatus,
+  JackpotDraw,
+  JackpotDrawBody,
+  JackpotDrawResult,
   JackpotInfo,
   Order,
+  PaypalCaptureBody,
+  PaypalCaptureResult,
+  PaypalConfig,
+  PaypalCreateBody,
+  PaypalCreateResult,
+  PendingCryptoRecharge,
   Product,
   ReferralInfo,
   RegisterUserBody,
@@ -2344,6 +2358,833 @@ export const useVerifyCryptoRecharge = <
 > => {
   return useMutation(getVerifyCryptoRechargeMutationOptions(options));
 };
+
+/**
+ * @summary List user's pending crypto recharges
+ */
+export const getGetPendingCryptoRechargesUrl = () => {
+  return `/api/wallet/recharge/crypto/pending`;
+};
+
+export const getPendingCryptoRecharges = async (
+  options?: RequestInit,
+): Promise<PendingCryptoRecharge[]> => {
+  return customFetch<PendingCryptoRecharge[]>(
+    getGetPendingCryptoRechargesUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPendingCryptoRechargesQueryKey = () => {
+  return [`/api/wallet/recharge/crypto/pending`] as const;
+};
+
+export const getGetPendingCryptoRechargesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPendingCryptoRecharges>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPendingCryptoRecharges>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPendingCryptoRechargesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPendingCryptoRecharges>>
+  > = ({ signal }) => getPendingCryptoRecharges({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPendingCryptoRecharges>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPendingCryptoRechargesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPendingCryptoRecharges>>
+>;
+export type GetPendingCryptoRechargesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List user's pending crypto recharges
+ */
+
+export function useGetPendingCryptoRecharges<
+  TData = Awaited<ReturnType<typeof getPendingCryptoRecharges>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPendingCryptoRecharges>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPendingCryptoRechargesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Cancel a pending crypto recharge
+ */
+export const getCancelPendingCryptoRechargeUrl = (id: number) => {
+  return `/api/wallet/recharge/crypto/pending/${id}`;
+};
+
+export const cancelPendingCryptoRecharge = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SimpleOk> => {
+  return customFetch<SimpleOk>(getCancelPendingCryptoRechargeUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getCancelPendingCryptoRechargeMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelPendingCryptoRecharge>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelPendingCryptoRecharge>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["cancelPendingCryptoRecharge"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelPendingCryptoRecharge>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return cancelPendingCryptoRecharge(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelPendingCryptoRechargeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelPendingCryptoRecharge>>
+>;
+
+export type CancelPendingCryptoRechargeMutationError = ErrorType<void>;
+
+/**
+ * @summary Cancel a pending crypto recharge
+ */
+export const useCancelPendingCryptoRecharge = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelPendingCryptoRecharge>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof cancelPendingCryptoRecharge>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getCancelPendingCryptoRechargeMutationOptions(options));
+};
+
+/**
+ * @summary Get PayPal configuration (clientId + enabled flag)
+ */
+export const getGetPaypalConfigUrl = () => {
+  return `/api/wallet/recharge/paypal/config`;
+};
+
+export const getPaypalConfig = async (
+  options?: RequestInit,
+): Promise<PaypalConfig> => {
+  return customFetch<PaypalConfig>(getGetPaypalConfigUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPaypalConfigQueryKey = () => {
+  return [`/api/wallet/recharge/paypal/config`] as const;
+};
+
+export const getGetPaypalConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPaypalConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPaypalConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPaypalConfigQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPaypalConfig>>> = ({
+    signal,
+  }) => getPaypalConfig({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPaypalConfig>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPaypalConfigQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPaypalConfig>>
+>;
+export type GetPaypalConfigQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get PayPal configuration (clientId + enabled flag)
+ */
+
+export function useGetPaypalConfig<
+  TData = Awaited<ReturnType<typeof getPaypalConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPaypalConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPaypalConfigQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a PayPal order
+ */
+export const getCreatePaypalOrderUrl = () => {
+  return `/api/wallet/recharge/paypal/create`;
+};
+
+export const createPaypalOrder = async (
+  paypalCreateBody: PaypalCreateBody,
+  options?: RequestInit,
+): Promise<PaypalCreateResult> => {
+  return customFetch<PaypalCreateResult>(getCreatePaypalOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(paypalCreateBody),
+  });
+};
+
+export const getCreatePaypalOrderMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPaypalOrder>>,
+    TError,
+    { data: BodyType<PaypalCreateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPaypalOrder>>,
+  TError,
+  { data: BodyType<PaypalCreateBody> },
+  TContext
+> => {
+  const mutationKey = ["createPaypalOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPaypalOrder>>,
+    { data: BodyType<PaypalCreateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createPaypalOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePaypalOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPaypalOrder>>
+>;
+export type CreatePaypalOrderMutationBody = BodyType<PaypalCreateBody>;
+export type CreatePaypalOrderMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a PayPal order
+ */
+export const useCreatePaypalOrder = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPaypalOrder>>,
+    TError,
+    { data: BodyType<PaypalCreateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createPaypalOrder>>,
+  TError,
+  { data: BodyType<PaypalCreateBody> },
+  TContext
+> => {
+  return useMutation(getCreatePaypalOrderMutationOptions(options));
+};
+
+/**
+ * @summary Capture a PayPal order and credit the wallet
+ */
+export const getCapturePaypalOrderUrl = () => {
+  return `/api/wallet/recharge/paypal/capture`;
+};
+
+export const capturePaypalOrder = async (
+  paypalCaptureBody: PaypalCaptureBody,
+  options?: RequestInit,
+): Promise<PaypalCaptureResult> => {
+  return customFetch<PaypalCaptureResult>(getCapturePaypalOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(paypalCaptureBody),
+  });
+};
+
+export const getCapturePaypalOrderMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof capturePaypalOrder>>,
+    TError,
+    { data: BodyType<PaypalCaptureBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof capturePaypalOrder>>,
+  TError,
+  { data: BodyType<PaypalCaptureBody> },
+  TContext
+> => {
+  const mutationKey = ["capturePaypalOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof capturePaypalOrder>>,
+    { data: BodyType<PaypalCaptureBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return capturePaypalOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CapturePaypalOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof capturePaypalOrder>>
+>;
+export type CapturePaypalOrderMutationBody = BodyType<PaypalCaptureBody>;
+export type CapturePaypalOrderMutationError = ErrorType<void>;
+
+/**
+ * @summary Capture a PayPal order and credit the wallet
+ */
+export const useCapturePaypalOrder = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof capturePaypalOrder>>,
+    TError,
+    { data: BodyType<PaypalCaptureBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof capturePaypalOrder>>,
+  TError,
+  { data: BodyType<PaypalCaptureBody> },
+  TContext
+> => {
+  return useMutation(getCapturePaypalOrderMutationOptions(options));
+};
+
+/**
+ * @summary List all users (admin)
+ */
+export const getAdminGetUsersUrl = () => {
+  return `/api/admin/users`;
+};
+
+export const adminGetUsers = async (
+  options?: RequestInit,
+): Promise<AdminUser[]> => {
+  return customFetch<AdminUser[]>(getAdminGetUsersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetUsersQueryKey = () => {
+  return [`/api/admin/users`] as const;
+};
+
+export const getAdminGetUsersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetUsers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetUsers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetUsersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminGetUsers>>> = ({
+    signal,
+  }) => adminGetUsers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetUsers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetUsersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetUsers>>
+>;
+export type AdminGetUsersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all users (admin)
+ */
+
+export function useAdminGetUsers<
+  TData = Awaited<ReturnType<typeof adminGetUsers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetUsers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetUsersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Adjust a user's balance/points/spins/tickets
+ */
+export const getAdminAdjustUserUrl = (id: number) => {
+  return `/api/admin/users/${id}/adjust`;
+};
+
+export const adminAdjustUser = async (
+  id: number,
+  adjustUserBody: AdjustUserBody,
+  options?: RequestInit,
+): Promise<AdjustUserResult> => {
+  return customFetch<AdjustUserResult>(getAdminAdjustUserUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adjustUserBody),
+  });
+};
+
+export const getAdminAdjustUserMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminAdjustUser>>,
+    TError,
+    { id: number; data: BodyType<AdjustUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminAdjustUser>>,
+  TError,
+  { id: number; data: BodyType<AdjustUserBody> },
+  TContext
+> => {
+  const mutationKey = ["adminAdjustUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminAdjustUser>>,
+    { id: number; data: BodyType<AdjustUserBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminAdjustUser(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminAdjustUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminAdjustUser>>
+>;
+export type AdminAdjustUserMutationBody = BodyType<AdjustUserBody>;
+export type AdminAdjustUserMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Adjust a user's balance/points/spins/tickets
+ */
+export const useAdminAdjustUser = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminAdjustUser>>,
+    TError,
+    { id: number; data: BodyType<AdjustUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminAdjustUser>>,
+  TError,
+  { id: number; data: BodyType<AdjustUserBody> },
+  TContext
+> => {
+  return useMutation(getAdminAdjustUserMutationOptions(options));
+};
+
+/**
+ * @summary Draw a jackpot winner (weighted random)
+ */
+export const getAdminDrawJackpotUrl = () => {
+  return `/api/admin/jackpot/draw`;
+};
+
+export const adminDrawJackpot = async (
+  jackpotDrawBody: JackpotDrawBody,
+  options?: RequestInit,
+): Promise<JackpotDrawResult> => {
+  return customFetch<JackpotDrawResult>(getAdminDrawJackpotUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(jackpotDrawBody),
+  });
+};
+
+export const getAdminDrawJackpotMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDrawJackpot>>,
+    TError,
+    { data: BodyType<JackpotDrawBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDrawJackpot>>,
+  TError,
+  { data: BodyType<JackpotDrawBody> },
+  TContext
+> => {
+  const mutationKey = ["adminDrawJackpot"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDrawJackpot>>,
+    { data: BodyType<JackpotDrawBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminDrawJackpot(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDrawJackpotMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDrawJackpot>>
+>;
+export type AdminDrawJackpotMutationBody = BodyType<JackpotDrawBody>;
+export type AdminDrawJackpotMutationError = ErrorType<void>;
+
+/**
+ * @summary Draw a jackpot winner (weighted random)
+ */
+export const useAdminDrawJackpot = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDrawJackpot>>,
+    TError,
+    { data: BodyType<JackpotDrawBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDrawJackpot>>,
+  TError,
+  { data: BodyType<JackpotDrawBody> },
+  TContext
+> => {
+  return useMutation(getAdminDrawJackpotMutationOptions(options));
+};
+
+/**
+ * @summary List recent jackpot draws
+ */
+export const getAdminGetJackpotDrawsUrl = () => {
+  return `/api/admin/jackpot/draws`;
+};
+
+export const adminGetJackpotDraws = async (
+  options?: RequestInit,
+): Promise<JackpotDraw[]> => {
+  return customFetch<JackpotDraw[]>(getAdminGetJackpotDrawsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetJackpotDrawsQueryKey = () => {
+  return [`/api/admin/jackpot/draws`] as const;
+};
+
+export const getAdminGetJackpotDrawsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetJackpotDraws>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetJackpotDraws>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetJackpotDrawsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetJackpotDraws>>
+  > = ({ signal }) => adminGetJackpotDraws({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetJackpotDraws>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetJackpotDrawsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetJackpotDraws>>
+>;
+export type AdminGetJackpotDrawsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List recent jackpot draws
+ */
+
+export function useAdminGetJackpotDraws<
+  TData = Awaited<ReturnType<typeof adminGetJackpotDraws>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetJackpotDraws>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetJackpotDrawsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get recent transactions and orders for admin logs panel
+ */
+export const getAdminGetLogsUrl = (params?: AdminGetLogsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/logs?${stringifiedParams}`
+    : `/api/admin/logs`;
+};
+
+export const adminGetLogs = async (
+  params?: AdminGetLogsParams,
+  options?: RequestInit,
+): Promise<AdminLogsResponse> => {
+  return customFetch<AdminLogsResponse>(getAdminGetLogsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminGetLogsQueryKey = (params?: AdminGetLogsParams) => {
+  return [`/api/admin/logs`, ...(params ? [params] : [])] as const;
+};
+
+export const getAdminGetLogsQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminGetLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetLogsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminGetLogs>>> = ({
+    signal,
+  }) => adminGetLogs(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetLogs>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetLogsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetLogs>>
+>;
+export type AdminGetLogsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get recent transactions and orders for admin logs panel
+ */
+
+export function useAdminGetLogs<
+  TData = Awaited<ReturnType<typeof adminGetLogs>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: AdminGetLogsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof adminGetLogs>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetLogsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Spin the wheel of destiny

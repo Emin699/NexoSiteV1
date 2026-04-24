@@ -128,12 +128,18 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     "Unhandled request error",
   );
   if (res.headersSent) return;
-  res.status(500).json({
-    error: "Internal Server Error",
-    message: err?.message,
-    cause: causeMessage,
-    code: causeCode,
-  });
+  // In production we never leak internal error details to the client.
+  const isProd = process.env["NODE_ENV"] === "production";
+  if (isProd) {
+    res.status(500).json({ error: "Internal Server Error" });
+  } else {
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: err?.message,
+      cause: causeMessage,
+      code: causeCode,
+    });
+  }
 };
 app.use(errorHandler);
 
