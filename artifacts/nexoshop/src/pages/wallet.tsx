@@ -56,8 +56,19 @@ export default function Wallet() {
   const createPaypal = useCreatePaypalOrder();
   const capturePaypal = useCapturePaypalOrder();
 
-  const [selectedAmount, setSelectedAmount] = useState<number>(10);
-  const [paypalAmount, setPaypalAmount] = useState<number>(10);
+  const [selectedMode, setSelectedMode] = useState<number | "custom">(10);
+  const [customAmount, setCustomAmount] = useState<string>("");
+  const [paypalMode, setPaypalMode] = useState<number | "custom">(10);
+  const [paypalCustomAmount, setPaypalCustomAmount] = useState<string>("");
+
+  const parseCustom = (v: string): number => {
+    const n = Number(v.replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  };
+  const selectedAmount = selectedMode === "custom" ? parseCustom(customAmount) : selectedMode;
+  const paypalAmount = paypalMode === "custom" ? parseCustom(paypalCustomAmount) : paypalMode;
+  const isCryptoAmountValid = selectedAmount >= 5 && selectedAmount <= 5000;
+  const isPaypalAmountValid = paypalAmount >= 5 && paypalAmount <= 5000;
   const [rechargeSession, setRechargeSession] = useState<{
     id: number;
     address: string;
@@ -251,22 +262,55 @@ export default function Wallet() {
                     {RECHARGE_AMOUNTS.map((amt) => (
                       <Button
                         key={amt}
-                        variant={selectedAmount === amt ? "default" : "outline"}
+                        variant={selectedMode === amt ? "default" : "outline"}
                         className={`h-12 ${
-                          selectedAmount === amt
+                          selectedMode === amt
                             ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
                             : "bg-background hover:bg-muted"
                         }`}
-                        onClick={() => setSelectedAmount(amt)}
+                        onClick={() => setSelectedMode(amt)}
                       >
                         {amt}€
                       </Button>
                     ))}
+                    <Button
+                      variant={selectedMode === "custom" ? "default" : "outline"}
+                      className={`h-12 ${
+                        selectedMode === "custom"
+                          ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                          : "bg-background hover:bg-muted"
+                      }`}
+                      onClick={() => setSelectedMode("custom")}
+                    >
+                      Autre
+                    </Button>
                   </div>
+                  {selectedMode === "custom" && (
+                    <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          min={5}
+                          max={5000}
+                          step="0.01"
+                          placeholder="Montant en €"
+                          value={customAmount}
+                          onChange={(e) => setCustomAmount(e.target.value)}
+                          className="h-12 pr-10 text-base font-medium"
+                          autoFocus
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground px-1">
+                        Minimum 5€ — Maximum 5000€
+                      </p>
+                    </div>
+                  )}
                   <Button
-                    className="w-full mt-4 bg-gradient-to-r from-primary to-secondary text-white border-none rounded-xl h-12 font-medium"
+                    className="w-full mt-4 bg-gradient-to-r from-primary to-secondary text-white border-none rounded-xl h-12 font-medium disabled:opacity-50"
                     onClick={handleInitiateRecharge}
-                    disabled={initiateCrypto.isPending}
+                    disabled={initiateCrypto.isPending || !isCryptoAmountValid}
                   >
                     {initiateCrypto.isPending ? "Génération…" : "Générer l'adresse de dépôt"}
                   </Button>
@@ -365,18 +409,56 @@ export default function Wallet() {
                   {RECHARGE_AMOUNTS.map((amt) => (
                     <Button
                       key={amt}
-                      variant={paypalAmount === amt ? "default" : "outline"}
+                      variant={paypalMode === amt ? "default" : "outline"}
                       className={`h-12 ${
-                        paypalAmount === amt
+                        paypalMode === amt
                           ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
                           : "bg-background hover:bg-muted"
                       }`}
-                      onClick={() => setPaypalAmount(amt)}
+                      onClick={() => setPaypalMode(amt)}
                     >
                       {amt}€
                     </Button>
                   ))}
+                  <Button
+                    variant={paypalMode === "custom" ? "default" : "outline"}
+                    className={`h-12 ${
+                      paypalMode === "custom"
+                        ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                        : "bg-background hover:bg-muted"
+                    }`}
+                    onClick={() => setPaypalMode("custom")}
+                  >
+                    Autre
+                  </Button>
                 </div>
+                {paypalMode === "custom" && (
+                  <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        min={5}
+                        max={5000}
+                        step="0.01"
+                        placeholder="Montant en €"
+                        value={paypalCustomAmount}
+                        onChange={(e) => setPaypalCustomAmount(e.target.value)}
+                        className="h-12 pr-10 text-base font-medium"
+                        autoFocus
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground px-1">
+                      Minimum 5€ — Maximum 5000€
+                    </p>
+                  </div>
+                )}
+                {!isPaypalAmountValid ? (
+                  <div className="h-[45px] rounded-md bg-muted/50 border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">
+                    Entrez un montant entre 5€ et 5000€
+                  </div>
+                ) : (
                 <PayPalScriptProvider options={paypalOptions} key={`${paypalOptions.clientId}-${paypalAmount}`}>
                   <PayPalButtons
                     style={{ layout: "horizontal", tagline: false, shape: "rect", height: 45 }}
@@ -406,6 +488,7 @@ export default function Wallet() {
                     }}
                   />
                 </PayPalScriptProvider>
+                )}
               </CardContent>
             )}
           </Card>
