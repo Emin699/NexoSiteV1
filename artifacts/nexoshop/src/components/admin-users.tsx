@@ -63,8 +63,9 @@ export function AdminUsers() {
   const load = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("nexoshop_token") || "";
       const res = await fetch("/api/admin/users", {
-        headers: { "X-User-Id": localStorage.getItem("userId") || "" },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data: AdminUser[] = await res.json();
       setUsers(data);
@@ -96,11 +97,12 @@ export function AdminUsers() {
     }
     setSubmitting(true);
     try {
+      const token = localStorage.getItem("nexoshop_token") || "";
       const res = await fetch(`/api/admin/users/${adjustUser.id}/adjust`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": localStorage.getItem("userId") || "",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           field: adjustField,

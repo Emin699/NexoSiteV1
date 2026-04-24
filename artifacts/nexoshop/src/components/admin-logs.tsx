@@ -81,8 +81,9 @@ export function AdminLogs() {
   const load = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("nexoshop_token") || "";
       const res = await fetch("/api/admin/logs?limit=300", {
-        headers: { "X-User-Id": localStorage.getItem("userId") || "" },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
       const txEntries: LogEntry[] = (data.transactions as Tx[]).map((t) => ({

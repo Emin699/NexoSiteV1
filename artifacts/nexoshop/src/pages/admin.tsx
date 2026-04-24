@@ -119,12 +119,12 @@ export default function Admin() {
     if (!file) return;
     setUploading(true);
     try {
-      const userId = localStorage.getItem("nexoshop_user_id");
+      const token = localStorage.getItem("nexoshop_token");
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/admin/upload", {
         method: "POST",
-        headers: userId ? { "X-User-Id": userId } : {},
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd,
       });
       if (!res.ok) throw new Error("Upload failed");
