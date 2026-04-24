@@ -11,12 +11,29 @@ if (!process.env.DATABASE_URL) {
 }
 
 const dbUrl = new URL(process.env.DATABASE_URL);
+const sslMode = dbUrl.searchParams.get("sslmode");
 dbUrl.searchParams.delete("sslmode");
 dbUrl.searchParams.delete("channel_binding");
 
+const isProd = process.env.NODE_ENV === "production";
+const isLocalHost = dbUrl.hostname === "localhost" || dbUrl.hostname === "helium";
+
+// PRODUCTION: TLS is mandatory and certs MUST validate. Refuse to start if
+// the connection string explicitly disables SSL — silent plaintext transport
+// of credentials/customer data is unacceptable.
+if (isProd && (sslMode === "disable" || isLocalHost)) {
+  throw new Error(
+    "Refusing to start: DATABASE_URL must use TLS in production " +
+      "(sslmode=disable or local host detected).",
+  );
+}
+
+const sslDisabled = !isProd && (sslMode === "disable" || isLocalHost);
+const sslConfig = sslDisabled ? false : { rejectUnauthorized: isProd };
+
 export const pool = new Pool({
   connectionString: dbUrl.toString(),
-  ssl: { rejectUnauthorized: false },
+  ssl: sslConfig,
 });
 export const db = drizzle(pool, { schema });
 

@@ -89,22 +89,50 @@ router.post("/wallet/recharge/crypto", requireAuth, async (req, res): Promise<vo
   }
 
   const amountWithFees = amountEur * 1.02;
-  const amountLtc = Math.round((amountWithFees / exchangeRate) * 1e8) / 1e8;
+  const baseLtcSat = Math.round((amountWithFees / exchangeRate) * 1e8);
 
+  // Make the per-session amount UNIQUE among active pendings on the shared
+  // deposit address so the watcher can attribute on-chain txs unambiguously.
+  // Jitter adds 0..9999 satoshis (≈ 0.0001 LTC, ~ < 0.01€), invisible to users.
+  let amountLtcSat = baseLtcSat;
+  let amountLtc = amountLtcSat / 1e8;
+  let recharge: typeof cryptoRechargesTable.$inferSelect | undefined;
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
-  const [recharge] = await db
-    .insert(cryptoRechargesTable)
-    .values({
-      userId: req.userId!,
-      provider: "ltc",
-      amountEur: amountEur.toFixed(2),
-      amountLtc: amountLtc.toFixed(8),
-      address: LTC_WALLET_ADDRESS,
-      status: "pending",
-      expiresAt,
-    })
-    .returning();
+  // Race-free: rely on the partial UNIQUE INDEX
+  // (address, amount_ltc) WHERE status='pending' to reject duplicates atomically.
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const jitter = attempt === 0 ? 0 : Math.floor(Math.random() * 10_000);
+    amountLtcSat = baseLtcSat + jitter;
+    amountLtc = amountLtcSat / 1e8;
+    try {
+      [recharge] = await db
+        .insert(cryptoRechargesTable)
+        .values({
+          userId: req.userId!,
+          provider: "ltc",
+          amountEur: amountEur.toFixed(2),
+          amountLtc: amountLtc.toFixed(8),
+          address: LTC_WALLET_ADDRESS,
+          status: "pending",
+          expiresAt,
+        })
+        .returning();
+      break;
+    } catch (err) {
+      const e = err as { code?: string; cause?: { code?: string } };
+      const code = e.code ?? e.cause?.code;
+      if (code !== "23505") throw err;
+      // Amount collides with an active pending → retry with a fresh jitter.
+    }
+  }
+
+  if (!recharge) {
+    res.status(503).json({
+      error: "Trop de recharges en cours, réessaie dans quelques instants",
+    });
+    return;
+  }
 
   res.json(
     InitiateCryptoRechargeResponse.parse({
@@ -265,7 +293,7 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
   }
 
   // 2) On-chain verification — server fetches the tx and validates address+amount+confirmations.
-  const expectedLtc = Number(pending.amountLtc);
+  const expectedSat = Math.round(Number(pending.amountLtc) * 1e8);
   const verification = await verifyLitecoinTx(txHash, pending.address, 1);
   if (!verification.ok) {
     res.json(VerifyCryptoRechargeResponse.parse({
@@ -273,11 +301,35 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
     }));
     return;
   }
-  // Allow 1% under-payment tolerance for explorer rounding (but never less).
-  if (verification.ltcReceived + 1e-8 < expectedLtc * 0.99) {
+  // STRICT match in satoshis (±1 for rounding) — same rule as the watcher.
+  // Per-session amounts are jitter-unique so this prevents claiming an
+  // unrelated on-chain tx that happens to be on the shared deposit address.
+  const receivedSat = Math.round(verification.ltcReceived * 1e8);
+  if (Math.abs(receivedSat - expectedSat) > 1) {
     res.json(VerifyCryptoRechargeResponse.parse({
       success: false,
-      message: `Montant LTC reçu insuffisant (${verification.ltcReceived} / ${expectedLtc} LTC)`,
+      message: `Montant LTC reçu non conforme (${verification.ltcReceived} / ${(expectedSat / 1e8).toFixed(8)} LTC)`,
+      newBalance: null,
+    }));
+    return;
+  }
+  // FAIL-CLOSED temporal guard: require a confirmed block timestamp from the
+  // explorer and reject any tx older than the session (5s clock-skew slack).
+  // We never assume "now" when the timestamp is missing — that would let an
+  // unconfirmed/old tx slip through.
+  if (!verification.timestamp || verification.timestamp <= 0) {
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false,
+      message: "Transaction non encore inscrite dans un bloc — réessaie",
+      newBalance: null,
+    }));
+    return;
+  }
+  const txTimeMs = verification.timestamp * 1000;
+  if (txTimeMs < pending.createdAt.getTime() - 5_000) {
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: false,
+      message: "Transaction antérieure à la session — non attribuable",
       newBalance: null,
     }));
     return;

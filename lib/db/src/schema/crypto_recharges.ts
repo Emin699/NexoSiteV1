@@ -1,4 +1,5 @@
 import { pgTable, serial, integer, numeric, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -21,6 +22,12 @@ export const cryptoRechargesTable = pgTable(
     // Prevent the same on-chain tx from being claimed twice across the platform.
     // Postgres allows multiple NULLs so pending rows (txHash=null) are unaffected.
     txHashUnique: uniqueIndex("crypto_recharges_tx_hash_unique").on(t.txHash),
+    // Guarantees a unique deposit amount per shared address among ACTIVE pendings.
+    // Eliminates the SELECT-then-INSERT TOCTOU on session creation: two concurrent
+    // initiations cannot both insert the same (address, amount_ltc) pending row.
+    pendingAmountUnique: uniqueIndex("crypto_recharges_pending_addr_amount_unique")
+      .on(t.address, t.amountLtc)
+      .where(sql`status = 'pending'`),
   }),
 );
 

@@ -1,9 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useGetWallet,
   useGetTransactions,
   useInitiateCryptoRecharge,
-  useVerifyCryptoRecharge,
   useGetPendingCryptoRecharges,
   useCancelPendingCryptoRecharge,
   useGetPaypalConfig,
@@ -40,13 +39,18 @@ const RECHARGE_AMOUNTS = [5, 10, 20, 30, 50];
 
 export default function Wallet() {
   const queryClient = useQueryClient();
-  const { data: wallet, isLoading: isLoadingWallet } = useGetWallet();
-  const { data: transactions, isLoading: isLoadingTx } = useGetTransactions();
-  const { data: pending } = useGetPendingCryptoRecharges();
+  // Auto-refresh while a recharge session is active so the user sees the
+  // crediting happen as soon as the watcher detects the on-chain payment.
+  const [hasActiveRecharge, setHasActiveRecharge] = useState(false);
+  const refetchOpts = hasActiveRecharge
+    ? { query: { refetchInterval: 15_000 as const } }
+    : undefined;
+  const { data: wallet, isLoading: isLoadingWallet } = useGetWallet(refetchOpts);
+  const { data: transactions, isLoading: isLoadingTx } = useGetTransactions(refetchOpts);
+  const { data: pending } = useGetPendingCryptoRecharges(refetchOpts);
   const { data: paypalConfig } = useGetPaypalConfig();
 
   const initiateCrypto = useInitiateCryptoRecharge();
-  const verifyCrypto = useVerifyCryptoRecharge();
   const cancelPending = useCancelPendingCryptoRecharge();
   const createPaypal = useCreatePaypalOrder();
   const capturePaypal = useCapturePaypalOrder();
@@ -60,8 +64,14 @@ export default function Wallet() {
     amountEur: number;
     expiresAt: string;
   } | null>(null);
-  const [txHash, setTxHash] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // Toggle the auto-refresh whenever there's any pending recharge (active session
+  // or a previous one still waiting for its on-chain confirmation).
+  useEffect(() => {
+    const hasPending = (pending?.length ?? 0) > 0 || rechargeSession !== null;
+    setHasActiveRecharge(hasPending);
+  }, [pending, rechargeSession]);
 
   const invalidateWallet = () => {
     queryClient.invalidateQueries({ queryKey: getGetWalletQueryKey() });
@@ -84,26 +94,6 @@ export default function Wallet() {
       toast.success("Session de recharge créée");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erreur lors de l'initiation";
-      toast.error(msg);
-    }
-  };
-
-  const handleVerify = async () => {
-    if (!txHash || !rechargeSession) return;
-    try {
-      const res = await verifyCrypto.mutateAsync({
-        data: { txHash, amountEur: rechargeSession.amountEur },
-      });
-      if (res.success) {
-        toast.success(res.message, { icon: "💰" });
-        setRechargeSession(null);
-        setTxHash("");
-        invalidateWallet();
-      } else {
-        toast.error(res.message);
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Transaction non confirmée";
       toast.error(msg);
     }
   };
@@ -309,24 +299,16 @@ export default function Wallet() {
                   </div>
 
                   <div className="space-y-2 pt-2 border-t border-border">
-                    <Label className="text-sm font-medium">J'ai effectué le paiement</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Hash de transaction (TXID)"
-                        value={txHash}
-                        onChange={(e) => setTxHash(e.target.value)}
-                        className="font-mono text-xs bg-card"
-                      />
-                      <Button
-                        onClick={handleVerify}
-                        disabled={!txHash || verifyCrypto.isPending}
-                        className="bg-primary hover:bg-primary/90"
-                      >
-                        Vérifier
-                      </Button>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <p className="text-sm font-medium text-primary">
+                        En attente du paiement…
+                      </p>
                     </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      La vérification peut prendre quelques minutes selon le réseau.
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Une fois ton virement Litecoin confirmé sur le réseau (env. 2-5 min),
+                      ton solde sera crédité <span className="font-semibold text-foreground">automatiquement</span>.
+                      Aucune action de ta part requise.
                     </p>
                   </div>
 
@@ -335,7 +317,7 @@ export default function Wallet() {
                     className="w-full text-xs text-muted-foreground"
                     onClick={() => setRechargeSession(null)}
                   >
-                    Fermer (la session reste active)
+                    Fermer (la session reste active en arrière-plan)
                   </Button>
                 </div>
               )}

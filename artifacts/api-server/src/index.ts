@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { startRechargeWatcher } from "./lib/recharge-watcher";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,6 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+  // Start the background watcher that auto-credits confirmed LTC payments.
+  startRechargeWatcher();
 });
