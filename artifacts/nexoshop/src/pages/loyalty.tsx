@@ -72,8 +72,13 @@ export default function Loyalty() {
             <div className="text-4xl font-mono font-black text-yellow-500 mb-2">
               {isLoading ? "..." : availablePoints}
             </div>
-            <div className="text-xs bg-background/50 px-2 py-1 rounded border border-yellow-500/20">
-              {POINTS_PER_EUR} points = 1.00€
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="text-xs bg-background/50 px-2 py-1 rounded border border-yellow-500/20">
+                Gain : 1 point par 1€ dépensé
+              </div>
+              <div className="text-xs bg-background/50 px-2 py-1 rounded border border-yellow-500/20">
+                Conversion : {POINTS_PER_EUR} points = 1.00€
+              </div>
             </div>
           </CardContent>
         </Card>

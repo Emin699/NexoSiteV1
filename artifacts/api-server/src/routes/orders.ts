@@ -13,7 +13,9 @@ import {
 
 const router: IRouter = Router();
 
-const POINTS_PER_EUR = 20;
+// Loyalty: 1 point earned per euro spent (redemption rate is 20 pts = 1€,
+// handled in routes/loyalty.ts).
+const POINTS_EARNED_PER_EUR = 1;
 
 function parseFields(raw: string | null): string[] {
   if (!raw) return [];
@@ -160,7 +162,7 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
   // Single atomic operation: balance check + debit + N orders + transaction + stats
   try {
     const firstOrder = await db.transaction(async (tx) => {
-      const earnedPoints = Math.floor(total * POINTS_PER_EUR);
+      const earnedPoints = Math.floor(total * POINTS_EARNED_PER_EUR);
 
       // Conditional debit: only succeeds if balance >= total. No read-then-write race.
       const debited = await tx

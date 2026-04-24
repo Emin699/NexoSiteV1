@@ -14,7 +14,9 @@ import {
 
 const router: IRouter = Router();
 
-const POINTS_PER_EUR = 20;
+// Loyalty: 1 point earned per euro spent (redemption rate is 20 pts = 1€,
+// handled in routes/loyalty.ts).
+const POINTS_EARNED_PER_EUR = 1;
 const AUTO_DISCOUNT_THRESHOLD = 50;
 const AUTO_DISCOUNT_RATE = 0.05;
 
@@ -259,7 +261,7 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       const totalCharged = Math.round(Math.max(0, subtotal - finalDiscount) * 100) / 100;
 
       const totalQuantity = items.reduce((sum, i) => sum + i.quantity, 0);
-      const earnedPoints = Math.floor(totalCharged * POINTS_PER_EUR);
+      const earnedPoints = Math.floor(totalCharged * POINTS_EARNED_PER_EUR);
 
       // Snapshot of the buyer BEFORE the debit, so we can detect their first paid purchase.
       const [buyerBefore] = await tx
