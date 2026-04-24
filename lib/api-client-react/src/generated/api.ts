@@ -20,8 +20,10 @@ import type {
   AddToCartBody,
   AdjustUserBody,
   AdjustUserResult,
+  AdminDeliverOrderBody,
   AdminGetLogsParams,
   AdminLogsResponse,
+  AdminPendingOrdersResponse,
   AdminProductBody,
   AdminUser,
   AllReviewsResponse,
@@ -50,6 +52,7 @@ import type {
   PaypalCreateBody,
   PaypalCreateResult,
   PendingCryptoRecharge,
+  PendingOrdersCountResponse,
   Product,
   ReferralInfo,
   RegisterUserBody,
@@ -3006,6 +3009,249 @@ export const useAdminAdjustUser = <
 > => {
   return useMutation(getAdminAdjustUserMutationOptions(options));
 };
+
+/**
+ * @summary List pending manual orders awaiting delivery
+ */
+export const getAdminGetPendingOrdersUrl = () => {
+  return `/api/admin/orders/pending`;
+};
+
+export const adminGetPendingOrders = async (
+  options?: RequestInit,
+): Promise<AdminPendingOrdersResponse> => {
+  return customFetch<AdminPendingOrdersResponse>(
+    getAdminGetPendingOrdersUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getAdminGetPendingOrdersQueryKey = () => {
+  return [`/api/admin/orders/pending`] as const;
+};
+
+export const getAdminGetPendingOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminGetPendingOrders>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetPendingOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminGetPendingOrdersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof adminGetPendingOrders>>
+  > = ({ signal }) => adminGetPendingOrders({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetPendingOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminGetPendingOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminGetPendingOrders>>
+>;
+export type AdminGetPendingOrdersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List pending manual orders awaiting delivery
+ */
+
+export function useAdminGetPendingOrders<
+  TData = Awaited<ReturnType<typeof adminGetPendingOrders>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminGetPendingOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminGetPendingOrdersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Mark a manual order as delivered with credentials
+ */
+export const getAdminDeliverOrderUrl = (id: number) => {
+  return `/api/admin/orders/${id}/deliver`;
+};
+
+export const adminDeliverOrder = async (
+  id: number,
+  adminDeliverOrderBody: AdminDeliverOrderBody,
+  options?: RequestInit,
+): Promise<Order> => {
+  return customFetch<Order>(getAdminDeliverOrderUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(adminDeliverOrderBody),
+  });
+};
+
+export const getAdminDeliverOrderMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeliverOrder>>,
+    TError,
+    { id: number; data: BodyType<AdminDeliverOrderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeliverOrder>>,
+  TError,
+  { id: number; data: BodyType<AdminDeliverOrderBody> },
+  TContext
+> => {
+  const mutationKey = ["adminDeliverOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeliverOrder>>,
+    { id: number; data: BodyType<AdminDeliverOrderBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminDeliverOrder(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeliverOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeliverOrder>>
+>;
+export type AdminDeliverOrderMutationBody = BodyType<AdminDeliverOrderBody>;
+export type AdminDeliverOrderMutationError = ErrorType<void>;
+
+/**
+ * @summary Mark a manual order as delivered with credentials
+ */
+export const useAdminDeliverOrder = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeliverOrder>>,
+    TError,
+    { id: number; data: BodyType<AdminDeliverOrderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeliverOrder>>,
+  TError,
+  { id: number; data: BodyType<AdminDeliverOrderBody> },
+  TContext
+> => {
+  return useMutation(getAdminDeliverOrderMutationOptions(options));
+};
+
+/**
+ * @summary Get global pending manual orders count for queue indicator
+ */
+export const getGetPendingOrdersCountUrl = () => {
+  return `/api/orders/pending-count`;
+};
+
+export const getPendingOrdersCount = async (
+  options?: RequestInit,
+): Promise<PendingOrdersCountResponse> => {
+  return customFetch<PendingOrdersCountResponse>(
+    getGetPendingOrdersCountUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetPendingOrdersCountQueryKey = () => {
+  return [`/api/orders/pending-count`] as const;
+};
+
+export const getGetPendingOrdersCountQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPendingOrdersCount>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPendingOrdersCount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPendingOrdersCountQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPendingOrdersCount>>
+  > = ({ signal }) => getPendingOrdersCount({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPendingOrdersCount>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPendingOrdersCountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPendingOrdersCount>>
+>;
+export type GetPendingOrdersCountQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get global pending manual orders count for queue indicator
+ */
+
+export function useGetPendingOrdersCount<
+  TData = Awaited<ReturnType<typeof getPendingOrdersCount>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPendingOrdersCount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPendingOrdersCountQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Draw a jackpot winner (weighted random)

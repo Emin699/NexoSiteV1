@@ -6,18 +6,37 @@ import {
   useClearCart, 
   useValidateCoupon,
   useCheckout,
+  useGetPendingOrdersCount,
   getGetCartQueryKey,
   getGetMeQueryKey,
-  getGetMeStatsQueryKey
+  getGetMeStatsQueryKey,
+  getGetOrdersQueryKey,
+  getGetPendingOrdersCountQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, ShoppingCart, Tag, ArrowRight, CreditCard, ChevronLeft } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Trash2, ShoppingCart, Tag, CreditCard, ChevronLeft, CheckCircle2, Clock, Package, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+
+type CheckoutOrder = {
+  id: number;
+  productName: string;
+  productEmoji: string;
+  price: number;
+  status: string;
+  credentials?: string | null;
+  deliveryImageUrl?: string | null;
+};
 
 export default function Cart() {
   const [, setLocation] = useLocation();
@@ -26,10 +45,16 @@ export default function Cart() {
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
   const { data: cart, isLoading } = useGetCart();
+  const { data: pendingData } = useGetPendingOrdersCount({
+    query: { queryKey: getGetPendingOrdersCountQueryKey() },
+  });
   const removeFromCart = useRemoveFromCart();
   const clearCart = useClearCart();
   const validateCoupon = useValidateCoupon();
   const checkout = useCheckout();
+
+  const [resultOpen, setResultOpen] = useState(false);
+  const [resultOrders, setResultOrders] = useState<CheckoutOrder[]>([]);
 
   const handleRemove = async (productId: number) => {
     try {
@@ -71,16 +96,26 @@ export default function Cart() {
       });
       
       if (res.success) {
-        toast.success("Commande validée avec succès !", { icon: "🎉" });
         queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetMeStatsQueryKey() });
-        setLocation("/profile"); // Navigate to profile/orders
+        queryClient.invalidateQueries({ queryKey: getGetOrdersQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetPendingOrdersCountQueryKey() });
+        setResultOrders(res.orders as CheckoutOrder[]);
+        setResultOpen(true);
       }
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la commande (solde insuffisant ?)");
     }
   };
+
+  const closeResult = () => {
+    setResultOpen(false);
+    setLocation("/orders");
+  };
+
+  const queueCount = pendingData?.count ?? 0;
+  const QUEUE_THRESHOLD = 5;
 
   if (isLoading) {
     return (
@@ -92,7 +127,7 @@ export default function Cart() {
     );
   }
 
-  if (!cart || cart.items.length === 0) {
+  if ((!cart || cart.items.length === 0) && !resultOpen) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] p-4 text-center">
         <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-6">
@@ -197,17 +232,116 @@ export default function Cart() {
               <span className="font-mono font-bold text-2xl text-primary">{cart.total.toFixed(2)}€</span>
             </div>
           </CardContent>
-          <CardFooter className="p-4 pt-0">
+          <CardFooter className="p-4 pt-0 flex-col gap-2">
+            {queueCount >= QUEUE_THRESHOLD && cart.items.some((i) => i.deliveryType === "manual") && (
+              <div className="w-full flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-200">
+                  <span className="font-semibold">File d'attente chargée</span> · {queueCount} commandes manuelles en cours. Tes commandes manuelles peuvent prendre un peu plus de temps que d'habitude.
+                </p>
+              </div>
+            )}
             <Button 
               className="w-full h-12 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-medium text-lg rounded-xl shadow-lg shadow-primary/25 border-none"
               onClick={handleCheckout}
+              disabled={checkout.isPending}
             >
               <CreditCard className="w-5 h-5 mr-2" />
-              Payer maintenant
+              {checkout.isPending ? "Paiement..." : "Payer maintenant"}
             </Button>
           </CardFooter>
         </Card>
       </div>
+
+      {/* Result dialog after checkout */}
+      <Dialog open={resultOpen} onOpenChange={(o) => { if (!o) closeResult(); }}>
+        <DialogContent className="bg-card border-border max-w-sm max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              Commande confirmée !
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-3 py-2">
+            {(() => {
+              const auto = resultOrders.filter((o) => o.status === "delivered");
+              const manual = resultOrders.filter((o) => o.status === "pending");
+              return (
+                <>
+                  {/* Auto-delivered */}
+                  {auto.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-green-500 font-semibold">
+                        <Package className="w-3.5 h-3.5" />
+                        Livré immédiatement ({auto.length})
+                      </div>
+                      {auto.map((o) => (
+                        <div key={o.id} className="rounded-xl bg-green-500/5 border border-green-500/20 p-3 flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{o.productEmoji}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm">{o.productName}</p>
+                              <p className="text-[10px] text-muted-foreground">Commande #{o.id}</p>
+                            </div>
+                          </div>
+                          {o.credentials && (
+                            <div className="rounded-lg bg-background/60 border border-border/40 p-2.5 text-xs whitespace-pre-wrap break-words font-mono">
+                              {o.credentials}
+                            </div>
+                          )}
+                          {o.deliveryImageUrl && (
+                            <img
+                              src={o.deliveryImageUrl}
+                              alt=""
+                              className="w-full max-h-48 object-contain rounded-lg border border-border/40"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Manual pending */}
+                  {manual.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-amber-500 font-semibold">
+                        <Clock className="w-3.5 h-3.5" />
+                        En cours de préparation ({manual.length})
+                      </div>
+                      {manual.map((o) => (
+                        <div key={o.id} className="rounded-xl bg-amber-500/5 border border-amber-500/20 p-3 flex items-center gap-3">
+                          <span className="text-xl">{o.productEmoji}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">{o.productName}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              Commande <span className="font-mono">#{o.id}</span>
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      <p className="text-xs text-muted-foreground px-1">
+                        {queueCount >= QUEUE_THRESHOLD
+                          ? `⏳ La file d'attente est chargée (${queueCount} commandes). Ta livraison peut prendre un peu plus de temps que d'habitude.`
+                          : "Tu vas recevoir tes produits dans quelques instants."}
+                      </p>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+
+          <DialogFooter>
+            <Button
+              className="w-full bg-primary hover:bg-primary/90"
+              onClick={closeResult}
+            >
+              Voir mes commandes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

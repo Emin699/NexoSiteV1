@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   User, Settings, ChevronRight, Gift, Coins, 
   Crown, Ticket, Users, ShoppingBag, CreditCard,
-  LogOut, ShieldAlert, MessageSquare
+  LogOut, ShieldAlert, MessageSquare, Package
 } from "lucide-react";
 
 export default function Profile() {
@@ -15,6 +15,7 @@ export default function Profile() {
   const { data: stats, isLoading: isLoadingStats } = useGetMeStats();
 
   const menuItems = [
+    { href: "/orders", icon: Package, label: "Commandes passées", color: "text-cyan-500", bg: "bg-cyan-500/10" },
     { href: "/wheel", icon: Gift, label: "Roue de la Destinée", color: "text-purple-500", bg: "bg-purple-500/10" },
     { href: "/loyalty", icon: Coins, label: "Points de Fidélité", color: "text-yellow-500", bg: "bg-yellow-500/10" },
     { href: "/jackpot", icon: Ticket, label: "Jackpot Hebdomadaire", color: "text-red-500", bg: "bg-red-500/10" },

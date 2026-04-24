@@ -28,10 +28,10 @@ router.get("/products", async (req, res): Promise<void> => {
 
   res.json(
     GetProductsResponse.parse(
-      products.map((p) => ({
-        ...p,
-        price: Number(p.price),
-      }))
+      products.map((p) => {
+        const { digitalContent: _dc, digitalImageUrl: _di, ...rest } = p;
+        return { ...rest, price: Number(p.price) };
+      })
     )
   );
 });
@@ -55,9 +55,10 @@ router.get("/products/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const { digitalContent: _dc, digitalImageUrl: _di, ...rest } = product;
   res.json(
     GetProductResponse.parse({
-      ...product,
+      ...rest,
       price: Number(product.price),
     })
   );

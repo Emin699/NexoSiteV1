@@ -28,6 +28,10 @@ export interface Product {
   inStock: boolean;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  digitalContent?: string | null;
+  /** @nullable */
+  digitalImageUrl?: string | null;
 }
 
 export type AdminProductBodyDeliveryType =
@@ -47,6 +51,10 @@ export interface AdminProductBody {
   inStock: boolean;
   /** @nullable */
   imageUrl?: string | null;
+  /** @nullable */
+  digitalContent?: string | null;
+  /** @nullable */
+  digitalImageUrl?: string | null;
 }
 
 export interface UploadResponse {
@@ -214,10 +222,13 @@ export const OrderStatus = {
 export interface Order {
   id: number;
   productName: string;
+  productEmoji: string;
   price: number;
   status: OrderStatus;
   /** @nullable */
   credentials?: string | null;
+  /** @nullable */
+  deliveryImageUrl?: string | null;
   /** @nullable */
   deliveredAt?: string | null;
   createdAt: string;
@@ -228,6 +239,36 @@ export interface CheckoutResult {
   orders: Order[];
   totalCharged: number;
   newBalance: number;
+}
+
+export interface AdminPendingOrder {
+  id: number;
+  userId: number;
+  userPseudo: string;
+  userEmail: string;
+  productId: number;
+  productName: string;
+  productEmoji: string;
+  price: number;
+  createdAt: string;
+  /** @nullable */
+  digitalContent?: string | null;
+  /** @nullable */
+  digitalImageUrl?: string | null;
+}
+
+export interface AdminPendingOrdersResponse {
+  items: AdminPendingOrder[];
+}
+
+export interface AdminDeliverOrderBody {
+  credentials: string;
+  /** @nullable */
+  deliveryImageUrl?: string | null;
+}
+
+export interface PendingOrdersCountResponse {
+  count: number;
 }
 
 export interface BuyProductBody {

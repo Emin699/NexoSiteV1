@@ -12,6 +12,7 @@ export const productsTable = pgTable("products", {
   deliveryType: text("delivery_type").notNull().default("manual"),
   inStock: boolean("in_stock").notNull().default(true),
   digitalContent: text("digital_content"),
+  digitalImageUrl: text("digital_image_url"),
   imageUrl: text("image_url"),
 });
 

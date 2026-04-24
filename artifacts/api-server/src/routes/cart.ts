@@ -233,6 +233,8 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
           emoji: productsTable.emoji,
           price: productsTable.price,
           deliveryType: productsTable.deliveryType,
+          digitalContent: productsTable.digitalContent,
+          digitalImageUrl: productsTable.digitalImageUrl,
         })
         .from(cartItemsTable)
         .innerJoin(productsTable, eq(cartItemsTable.productId, productsTable.id))
@@ -296,21 +298,29 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
         userId: number;
         productId: number;
         productName: string;
+        productEmoji: string;
         price: string;
         status: string;
         credentials: string | null;
+        deliveryImageUrl: string | null;
         deliveredAt: Date | null;
       }> = [];
       for (const item of items) {
+        const isAuto = item.deliveryType === "auto";
+        const autoContent = item.digitalContent && item.digitalContent.trim()
+          ? item.digitalContent
+          : "Votre produit a été livré automatiquement.";
         for (let i = 0; i < item.quantity; i++) {
           orderRows.push({
             userId: req.userId!,
             productId: item.productId,
             productName: item.name,
+            productEmoji: item.emoji,
             price: item.price,
-            status: item.deliveryType === "auto" ? "delivered" : "pending",
-            credentials: item.deliveryType === "auto" ? "Livraison automatique en cours de traitement" : null,
-            deliveredAt: item.deliveryType === "auto" ? new Date() : null,
+            status: isAuto ? "delivered" : "pending",
+            credentials: isAuto ? autoContent : null,
+            deliveryImageUrl: isAuto ? (item.digitalImageUrl ?? null) : null,
+            deliveredAt: isAuto ? new Date() : null,
           });
         }
       }
@@ -325,9 +335,11 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
     const orders = result.insertedOrders.map((o) => ({
       id: o.id,
       productName: o.productName,
+      productEmoji: o.productEmoji,
       price: Number(o.price),
       status: o.status,
       credentials: o.credentials,
+      deliveryImageUrl: o.deliveryImageUrl,
       deliveredAt: o.deliveredAt?.toISOString() ?? null,
       createdAt: o.createdAt.toISOString(),
     }));

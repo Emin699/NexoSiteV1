@@ -34,3 +34,12 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Recharge crypto LTC**: vérification on-chain via Blockchair (`lib/ltc-verify.ts`), valide hash format, existence, confirmations, adresse destinataire, montant reçu. Index UNIQUE sur `crypto_recharges.tx_hash` (anti-replay).
 - **Recharge PayPal**: table `paypal_recharges` (orderId UNIQUE) liée à userId+amount à la création; `/capture` vérifie record + propriété + amount + transition atomique `created → captured`.
 - **Erreurs**: handler global masque tout en prod; routes ne renvoient `e.message` qu'avec `e.status` explicite (erreurs métier intentionnelles).
+- **Contenu digital privé**: `digitalContent` et `digitalImageUrl` (template livraison auto des produits) sont strippés des routes publiques `/products` et `/products/:id` pour empêcher la lecture du contenu sans achat. Visible seulement via `/admin/products` ou après checkout dans la commande personnelle.
+
+## NexoShop — Système de commandes/livraison
+
+- **Produits auto** (`deliveryType="auto"`): l'admin saisit `digitalContent` (texte long) + `digitalImageUrl` optionnel à la création. Au checkout, l'order passe direct en `status="delivered"` avec `credentials = product.digitalContent`. Le client voit le contenu instantanément dans le dialog post-paiement.
+- **Produits manuels** (`deliveryType="manual"`): order créé en `status="pending"`. L'admin livre via panel `/admin` → onglet "Commandes" → bouton "Envoyer la commande" → dialog avec textarea + upload image → `POST /admin/orders/:id/deliver`. L'order passe en `delivered` avec credentials saisies.
+- **File d'attente**: `GET /orders/pending-count` renvoie le nombre global de pending. Si ≥5, le dialog post-checkout client affiche un avertissement "file chargée".
+- **Page /orders** ("Commandes passées"): toutes les commandes du user, accessible depuis profil → menu, badge statut (Livrée/En cours), bouton "Voir" pour voir credentials/image dans dialog avec lightbox.
+- **Tables**: `products.digitalContent` (text), `products.digitalImageUrl` (text). `orders.productEmoji` (default 🛍️), `orders.deliveryImageUrl` (text).

@@ -10,6 +10,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AdminLogs } from "@/components/admin-logs";
 import { AdminUsers } from "@/components/admin-users";
+import { AdminOrders } from "@/components/admin-orders";
+import { Textarea } from "@/components/ui/textarea";
 import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,8 @@ type FormState = {
   deliveryType: "auto" | "manual";
   inStock: boolean;
   imageUrl: string;
+  digitalContent: string;
+  digitalImageUrl: string;
 };
 
 const DEFAULT_FORM: FormState = {
@@ -66,6 +70,8 @@ const DEFAULT_FORM: FormState = {
   deliveryType: "manual",
   inStock: true,
   imageUrl: "",
+  digitalContent: "",
+  digitalImageUrl: "",
 };
 
 export default function Admin() {
@@ -88,6 +94,9 @@ export default function Admin() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [digitalImagePreview, setDigitalImagePreview] = useState<string | null>(null);
+  const [uploadingDigital, setUploadingDigital] = useState(false);
+  const digitalFileRef = useRef<HTMLInputElement>(null);
 
   const invalidate = () =>
     qc.invalidateQueries({ queryKey: getAdminGetProductsQueryKey() });
@@ -109,8 +118,11 @@ export default function Admin() {
       deliveryType: p.deliveryType as "auto" | "manual",
       inStock: p.inStock,
       imageUrl: p.imageUrl ?? "",
+      digitalContent: p.digitalContent ?? "",
+      digitalImageUrl: p.digitalImageUrl ?? "",
     });
     setImagePreview(p.imageUrl ?? null);
+    setDigitalImagePreview(p.digitalImageUrl ?? null);
     setDialogOpen(true);
   };
 
@@ -139,6 +151,31 @@ export default function Admin() {
     }
   };
 
+  const handleDigitalFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDigital(true);
+    try {
+      const token = localStorage.getItem("nexoshop_token");
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      setForm((f) => ({ ...f, digitalImageUrl: url }));
+      setDigitalImagePreview(url);
+      toast.success("Image de livraison téléversée !");
+    } catch {
+      toast.error("Erreur lors du téléversement");
+    } finally {
+      setUploadingDigital(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.name || !form.price || !form.category) {
       toast.error("Nom, catégorie et prix sont obligatoires");
@@ -158,6 +195,8 @@ export default function Admin() {
       deliveryType: form.deliveryType,
       inStock: form.inStock,
       imageUrl: form.imageUrl || null,
+      digitalContent: form.deliveryType === "auto" ? (form.digitalContent || null) : null,
+      digitalImageUrl: form.deliveryType === "auto" ? (form.digitalImageUrl || null) : null,
     };
 
     try {
@@ -230,11 +269,16 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="grid grid-cols-3 w-full bg-card border border-border/50">
+        <TabsList className="grid grid-cols-4 w-full bg-card border border-border/50">
           <TabsTrigger value="products" className="text-xs">Produits</TabsTrigger>
+          <TabsTrigger value="orders" className="text-xs">Commandes</TabsTrigger>
           <TabsTrigger value="logs" className="text-xs">Logs</TabsTrigger>
-          <TabsTrigger value="users" className="text-xs">Utilisateurs</TabsTrigger>
+          <TabsTrigger value="users" className="text-xs">Users</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="orders" className="mt-4">
+          <AdminOrders />
+        </TabsContent>
 
         <TabsContent value="logs" className="mt-4">
           <AdminLogs />
@@ -501,7 +545,75 @@ export default function Admin() {
                   <SelectItem value="manual">Manuelle</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground">
+                {form.deliveryType === "auto"
+                  ? "Le client reçoit le contenu ci-dessous immédiatement après l'achat."
+                  : "Tu enverras la commande manuellement depuis l'onglet « Commandes »."}
+              </p>
             </div>
+
+            {/* Auto delivery content (only shown for auto) */}
+            {form.deliveryType === "auto" && (
+              <div className="flex flex-col gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                    Contenu de livraison automatique
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs text-muted-foreground">Texte affiché au client</Label>
+                  <Textarea
+                    placeholder="Identifiants, lien, code, instructions détaillées..."
+                    value={form.digitalContent}
+                    className="bg-background border-border/60 min-h-[100px] text-sm"
+                    onChange={(e) => setForm((f) => ({ ...f, digitalContent: e.target.value }))}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-xs text-muted-foreground">Image (optionnel)</Label>
+                  {digitalImagePreview && (
+                    <div className="relative w-full h-28 rounded-lg overflow-hidden border border-border/50 bg-muted/20">
+                      <img src={digitalImagePreview} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDigitalImagePreview(null);
+                          setForm((f) => ({ ...f, digitalImageUrl: "" }));
+                        }}
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center hover:bg-black/80"
+                      >
+                        <X className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
+                  )}
+                  <input
+                    ref={digitalFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleDigitalFileChange}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-border/60 text-sm"
+                    disabled={uploadingDigital}
+                    onClick={() => digitalFileRef.current?.click()}
+                  >
+                    <Upload className="w-3.5 h-3.5 mr-2" />
+                    {uploadingDigital
+                      ? "Téléversement..."
+                      : digitalImagePreview
+                      ? "Changer l'image"
+                      : "Ajouter une image"}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* In Stock */}
             <div className="flex items-center justify-between py-1">

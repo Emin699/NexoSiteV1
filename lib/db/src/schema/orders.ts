@@ -7,9 +7,11 @@ export const ordersTable = pgTable("orders", {
   userId: integer("user_id").notNull(),
   productId: integer("product_id").notNull(),
   productName: text("product_name").notNull(),
+  productEmoji: text("product_emoji").notNull().default("🛍️"),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("pending"),
   credentials: text("credentials"),
+  deliveryImageUrl: text("delivery_image_url"),
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

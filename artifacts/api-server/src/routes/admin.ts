@@ -53,6 +53,8 @@ const AdminProductSchema = z.object({
   deliveryType: z.enum(["auto", "manual"]).default("manual"),
   inStock: z.coerce.boolean().default(true),
   imageUrl: z.string().nullable().optional(),
+  digitalContent: z.string().nullable().optional(),
+  digitalImageUrl: z.string().nullable().optional(),
 });
 
 function mapProduct(p: typeof productsTable.$inferSelect) {
@@ -70,7 +72,7 @@ router.post("/admin/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { name, category, description, price, deliveryType, inStock, imageUrl } = parsed.data;
+  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl } = parsed.data;
   const [product] = await db
     .insert(productsTable)
     .values({
@@ -81,6 +83,8 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       deliveryType,
       inStock,
       imageUrl: imageUrl ?? null,
+      digitalContent: digitalContent ?? null,
+      digitalImageUrl: digitalImageUrl ?? null,
       emoji: "🛍️",
     })
     .returning();
@@ -94,10 +98,15 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
   const parsed = AdminProductSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const { name, category, description, price, deliveryType, inStock, imageUrl } = parsed.data;
+  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl } = parsed.data;
   const [product] = await db
     .update(productsTable)
-    .set({ name, category, description, price: price.toFixed(2), deliveryType, inStock, imageUrl: imageUrl ?? null })
+    .set({
+      name, category, description, price: price.toFixed(2), deliveryType, inStock,
+      imageUrl: imageUrl ?? null,
+      digitalContent: digitalContent ?? null,
+      digitalImageUrl: digitalImageUrl ?? null,
+    })
     .where(eq(productsTable.id, id))
     .returning();
 
@@ -322,6 +331,86 @@ router.post("/admin/users/:id/adjust", async (req, res): Promise<void> => {
 });
 
 // ============ JACKPOT DRAW ============
+// ============ PENDING ORDERS (manual delivery) ============
+router.get("/admin/orders/pending", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select({
+      id: ordersTable.id,
+      userId: ordersTable.userId,
+      productId: ordersTable.productId,
+      productName: ordersTable.productName,
+      productEmoji: ordersTable.productEmoji,
+      price: ordersTable.price,
+      createdAt: ordersTable.createdAt,
+      userPseudo: usersTable.firstName,
+      userEmail: usersTable.email,
+      digitalContent: productsTable.digitalContent,
+      digitalImageUrl: productsTable.digitalImageUrl,
+    })
+    .from(ordersTable)
+    .innerJoin(usersTable, eq(ordersTable.userId, usersTable.id))
+    .leftJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+    .where(eq(ordersTable.status, "pending"))
+    .orderBy(desc(ordersTable.createdAt))
+    .limit(200);
+
+  res.json({
+    items: rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      userPseudo: r.userPseudo,
+      userEmail: r.userEmail,
+      productId: r.productId,
+      productName: r.productName,
+      productEmoji: r.productEmoji,
+      price: Number(r.price),
+      createdAt: r.createdAt.toISOString(),
+      digitalContent: r.digitalContent,
+      digitalImageUrl: r.digitalImageUrl,
+    })),
+  });
+});
+
+const DeliverSchema = z.object({
+  credentials: z.string().min(1),
+  deliveryImageUrl: z.string().nullish(),
+});
+
+router.post("/admin/orders/:id/deliver", async (req, res): Promise<void> => {
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid order ID" }); return; }
+
+  const parsed = DeliverSchema.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
+  if (!order) { res.status(404).json({ error: "Commande introuvable" }); return; }
+  if (order.status !== "pending") { res.status(400).json({ error: "Cette commande n'est pas en attente" }); return; }
+
+  const [updated] = await db
+    .update(ordersTable)
+    .set({
+      status: "delivered",
+      credentials: parsed.data.credentials,
+      deliveryImageUrl: parsed.data.deliveryImageUrl ?? null,
+      deliveredAt: new Date(),
+    })
+    .where(eq(ordersTable.id, id))
+    .returning();
+
+  res.json({
+    id: updated.id,
+    productName: updated.productName,
+    productEmoji: updated.productEmoji,
+    price: Number(updated.price),
+    status: updated.status,
+    credentials: updated.credentials,
+    deliveryImageUrl: updated.deliveryImageUrl,
+    deliveredAt: updated.deliveredAt?.toISOString() ?? null,
+    createdAt: updated.createdAt.toISOString(),
+  });
+});
+
 const JackpotDrawSchema = z.object({
   prizeAmount: z.coerce.number().positive(),
   resetTickets: z.boolean().optional().default(true),

@@ -683,6 +683,59 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdjustUserResult"
 
+  /admin/orders/pending:
+    get:
+      operationId: adminGetPendingOrders
+      tags: [admin]
+      summary: List pending manual orders awaiting delivery
+      responses:
+        "200":
+          description: Pending orders
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPendingOrdersResponse"
+
+  /admin/orders/{id}/deliver:
+    post:
+      operationId: adminDeliverOrder
+      tags: [admin]
+      summary: Mark a manual order as delivered with credentials
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminDeliverOrderBody"
+      responses:
+        "200":
+          description: Delivered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+
+  /orders/pending-count:
+    get:
+      operationId: getPendingOrdersCount
+      tags: [orders]
+      summary: Get global pending manual orders count for queue indicator
+      responses:
+        "200":
+          description: Count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingOrdersCountResponse"
+
   /admin/jackpot/draw:
     post:
       operationId: adminDrawJackpot
@@ -857,6 +910,10 @@ components:
           type: boolean
         imageUrl:
           type: ["string", "null"]
+        digitalContent:
+          type: ["string", "null"]
+        digitalImageUrl:
+          type: ["string", "null"]
       required: [id, name, emoji, category, description, price, deliveryType, inStock]
 
     AdminProductBody:
@@ -876,6 +933,10 @@ components:
         inStock:
           type: boolean
         imageUrl:
+          type: ["string", "null"]
+        digitalContent:
+          type: ["string", "null"]
+        digitalImageUrl:
           type: ["string", "null"]
       required: [name, category, description, price, deliveryType, inStock]
 
@@ -1163,6 +1224,8 @@ components:
           type: integer
         productName:
           type: string
+        productEmoji:
+          type: string
         price:
           type: number
         status:
@@ -1170,11 +1233,65 @@ components:
           enum: [pending, delivered, cancelled]
         credentials:
           type: ["string", "null"]
+        deliveryImageUrl:
+          type: ["string", "null"]
         deliveredAt:
           type: ["string", "null"]
         createdAt:
           type: string
-      required: [id, productName, price, status, createdAt]
+      required: [id, productName, productEmoji, price, status, createdAt]
+
+    AdminPendingOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userPseudo:
+          type: string
+        userEmail:
+          type: string
+        productId:
+          type: integer
+        productName:
+          type: string
+        productEmoji:
+          type: string
+        price:
+          type: number
+        createdAt:
+          type: string
+        digitalContent:
+          type: ["string", "null"]
+        digitalImageUrl:
+          type: ["string", "null"]
+      required: [id, userId, userPseudo, userEmail, productId, productName, productEmoji, price, createdAt]
+
+    AdminPendingOrdersResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminPendingOrder"
+      required: [items]
+
+    AdminDeliverOrderBody:
+      type: object
+      properties:
+        credentials:
+          type: string
+        deliveryImageUrl:
+          type: ["string", "null"]
+      required: [credentials]
+
+    PendingOrdersCountResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+      required: [count]
 
     BuyProductBody:
       type: object

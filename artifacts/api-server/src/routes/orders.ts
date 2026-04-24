@@ -6,6 +6,7 @@ import {
   BuyProductBody,
   GetOrdersResponse,
   BuyProductResponse,
+  GetPendingOrdersCountResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -18,21 +19,31 @@ router.get("/orders", requireAuth, async (req, res): Promise<void> => {
     .from(ordersTable)
     .where(eq(ordersTable.userId, req.userId!))
     .orderBy(desc(ordersTable.createdAt))
-    .limit(50);
+    .limit(200);
 
   res.json(
     GetOrdersResponse.parse(
       orders.map((o) => ({
         id: o.id,
         productName: o.productName,
+        productEmoji: o.productEmoji,
         price: Number(o.price),
         status: o.status,
         credentials: o.credentials,
+        deliveryImageUrl: o.deliveryImageUrl,
         deliveredAt: o.deliveredAt?.toISOString() ?? null,
         createdAt: o.createdAt.toISOString(),
       }))
     )
   );
+});
+
+router.get("/orders/pending-count", requireAuth, async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(ordersTable)
+    .where(eq(ordersTable.status, "pending"));
+  res.json(GetPendingOrdersCountResponse.parse({ count: row?.count ?? 0 }));
 });
 
 router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
@@ -99,17 +110,21 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
           : `Achat : ${product.name}`,
       });
 
+      const isAuto = product.deliveryType === "auto";
+      const autoContent =
+        product.digitalContent && product.digitalContent.trim()
+          ? product.digitalContent
+          : "Votre produit a été livré automatiquement.";
       const orderRows = Array.from({ length: quantity }).map(() => ({
         userId: req.userId!,
         productId,
         productName: product.name,
+        productEmoji: product.emoji,
         price: product.price,
-        status: product.deliveryType === "auto" ? "delivered" : "pending",
-        credentials:
-          product.deliveryType === "auto"
-            ? product.digitalContent ?? "Livraison automatique en cours de traitement"
-            : null,
-        deliveredAt: product.deliveryType === "auto" ? new Date() : null,
+        status: isAuto ? "delivered" : "pending",
+        credentials: isAuto ? autoContent : null,
+        deliveryImageUrl: isAuto ? (product.digitalImageUrl ?? null) : null,
+        deliveredAt: isAuto ? new Date() : null,
       }));
 
       const inserted = await tx.insert(ordersTable).values(orderRows).returning();
@@ -120,13 +135,13 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
       BuyProductResponse.parse({
         id: firstOrder.id,
         productName: firstOrder.productName,
+        productEmoji: firstOrder.productEmoji,
         price: Number(firstOrder.price),
         status: firstOrder.status,
         credentials: firstOrder.credentials,
+        deliveryImageUrl: firstOrder.deliveryImageUrl,
         deliveredAt: firstOrder.deliveredAt?.toISOString() ?? null,
         createdAt: firstOrder.createdAt.toISOString(),
-        quantity,
-        totalCharged: total,
       })
     );
   } catch (err) {

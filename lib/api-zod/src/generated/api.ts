@@ -144,6 +144,8 @@ export const GetProductsResponseItem = zod.object({
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
   imageUrl: zod.string().nullish(),
+  digitalContent: zod.string().nullish(),
+  digitalImageUrl: zod.string().nullish(),
 });
 export const GetProductsResponse = zod.array(GetProductsResponseItem);
 
@@ -164,6 +166,8 @@ export const GetProductResponse = zod.object({
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
   imageUrl: zod.string().nullish(),
+  digitalContent: zod.string().nullish(),
+  digitalImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -179,6 +183,8 @@ export const AdminGetProductsResponseItem = zod.object({
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
   imageUrl: zod.string().nullish(),
+  digitalContent: zod.string().nullish(),
+  digitalImageUrl: zod.string().nullish(),
 });
 export const AdminGetProductsResponse = zod.array(AdminGetProductsResponseItem);
 
@@ -193,6 +199,8 @@ export const AdminCreateProductBody = zod.object({
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
   imageUrl: zod.string().nullish(),
+  digitalContent: zod.string().nullish(),
+  digitalImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -210,6 +218,8 @@ export const AdminUpdateProductBody = zod.object({
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
   imageUrl: zod.string().nullish(),
+  digitalContent: zod.string().nullish(),
+  digitalImageUrl: zod.string().nullish(),
 });
 
 export const AdminUpdateProductResponse = zod.object({
@@ -222,6 +232,8 @@ export const AdminUpdateProductResponse = zod.object({
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
   imageUrl: zod.string().nullish(),
+  digitalContent: zod.string().nullish(),
+  digitalImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -411,9 +423,11 @@ export const CheckoutResponse = zod.object({
     zod.object({
       id: zod.number(),
       productName: zod.string(),
+      productEmoji: zod.string(),
       price: zod.number(),
       status: zod.enum(["pending", "delivered", "cancelled"]),
       credentials: zod.string().nullish(),
+      deliveryImageUrl: zod.string().nullish(),
       deliveredAt: zod.string().nullish(),
       createdAt: zod.string(),
     }),
@@ -428,9 +442,11 @@ export const CheckoutResponse = zod.object({
 export const GetOrdersResponseItem = zod.object({
   id: zod.number(),
   productName: zod.string(),
+  productEmoji: zod.string(),
   price: zod.number(),
   status: zod.enum(["pending", "delivered", "cancelled"]),
   credentials: zod.string().nullish(),
+  deliveryImageUrl: zod.string().nullish(),
   deliveredAt: zod.string().nullish(),
   createdAt: zod.string(),
 });
@@ -446,9 +462,11 @@ export const BuyProductBody = zod.object({
 export const BuyProductResponse = zod.object({
   id: zod.number(),
   productName: zod.string(),
+  productEmoji: zod.string(),
   price: zod.number(),
   status: zod.enum(["pending", "delivered", "cancelled"]),
   credentials: zod.string().nullish(),
+  deliveryImageUrl: zod.string().nullish(),
   deliveredAt: zod.string().nullish(),
   createdAt: zod.string(),
 });
@@ -604,6 +622,58 @@ export const AdminAdjustUserResponse = zod.object({
   loyaltyPoints: zod.number(),
   freeSpins: zod.number(),
   jackpotTickets: zod.number(),
+});
+
+/**
+ * @summary List pending manual orders awaiting delivery
+ */
+export const AdminGetPendingOrdersResponse = zod.object({
+  items: zod.array(
+    zod.object({
+      id: zod.number(),
+      userId: zod.number(),
+      userPseudo: zod.string(),
+      userEmail: zod.string(),
+      productId: zod.number(),
+      productName: zod.string(),
+      productEmoji: zod.string(),
+      price: zod.number(),
+      createdAt: zod.string(),
+      digitalContent: zod.string().nullish(),
+      digitalImageUrl: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Mark a manual order as delivered with credentials
+ */
+export const AdminDeliverOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeliverOrderBody = zod.object({
+  credentials: zod.string(),
+  deliveryImageUrl: zod.string().nullish(),
+});
+
+export const AdminDeliverOrderResponse = zod.object({
+  id: zod.number(),
+  productName: zod.string(),
+  productEmoji: zod.string(),
+  price: zod.number(),
+  status: zod.enum(["pending", "delivered", "cancelled"]),
+  credentials: zod.string().nullish(),
+  deliveryImageUrl: zod.string().nullish(),
+  deliveredAt: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Get global pending manual orders count for queue indicator
+ */
+export const GetPendingOrdersCountResponse = zod.object({
+  count: zod.number(),
 });
 
 /**
