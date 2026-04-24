@@ -13,19 +13,23 @@ type WheelReward = {
   probability: number;
 };
 
+// REAL probabilities (server-side draw). The probabilities advertised to the
+// player on the wheel UI are intentionally higher to drive engagement; the
+// actual odds live here. Sum is ~99.98%; the remainder falls through to
+// "Rien" via the loop fallback in spinWheel().
 const WHEEL_REWARDS: WheelReward[] = [
-  { type: "nothing", label: "Rien", value: null, probability: 0.602 },
-  { type: "balance", label: "+0.50€", value: 0.5, probability: 0.12 },
-  { type: "balance", label: "+1.00€", value: 1.0, probability: 0.08 },
-  { type: "balance", label: "+5.00€", value: 5.0, probability: 0.04 },
-  { type: "coupon_percent", label: "Coupon -5%", value: 5, probability: 0.05 },
-  { type: "coupon_amount", label: "Coupon -3€", value: 3, probability: 0.035 },
-  { type: "free_spin", label: "Relance gratuite", value: null, probability: 0.03 },
-  { type: "points", label: "+10 points", value: 10, probability: 0.02 },
-  { type: "points", label: "+50 points", value: 50, probability: 0.015 },
-  { type: "deezer", label: "Lien Deezer Premium", value: null, probability: 0.005 },
-  { type: "points", label: "+100 points", value: 100, probability: 0.003 },
-  { type: "jackpot", label: "JACKPOT 20€", value: 20, probability: 0 },
+  { type: "nothing",        label: "Rien",                value: null, probability: 0.65   },
+  { type: "free_spin",      label: "Relance gratuite",    value: null, probability: 0.15   },
+  { type: "balance",        label: "+0.50€",              value: 0.5,  probability: 0.08   },
+  { type: "balance",        label: "+1.00€",              value: 1.0,  probability: 0.04   },
+  { type: "balance",        label: "+5.00€",              value: 5.0,  probability: 0.01   },
+  { type: "coupon_percent", label: "Coupon -5%",          value: 5,    probability: 0.03   },
+  { type: "coupon_amount",  label: "Coupon -2€",          value: 2,    probability: 0.015  },
+  { type: "points",         label: "+5 pts",              value: 5,    probability: 0.015  },
+  { type: "points",         label: "+10 pts",             value: 10,   probability: 0.007  },
+  { type: "points",         label: "+15 pts",             value: 15,   probability: 0.002  },
+  { type: "deezer",         label: "Lien Deezer Premium", value: null, probability: 0.0008 },
+  { type: "jackpot",        label: "JACKPOT 20€",         value: 20,   probability: 0      },
 ];
 
 function spinWheel(): WheelReward {

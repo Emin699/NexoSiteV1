@@ -41,19 +41,23 @@ type Reward = {
   glow: string;
 };
 
+// DISPLAYED probabilities (shown on the wheel UI). These are intentionally
+// boosted vs the real backend odds in routes/wheel.ts to drive engagement.
+// Labels for "points" entries MUST exactly match the backend labels so the
+// landing-segment match in handleSpin / getResultReward works.
 const REWARDS: Reward[] = [
-  { type: "nothing",        label: "Rien",           short: "Rien",     probability: 60.2,  icon: XCircle,   color: "text-zinc-400",     bg: "bg-zinc-500/10",     fill: "#27272a", iconColor: "#71717a", glow: "rgba(161,161,170,0.5)" },
+  { type: "nothing",        label: "Rien",           short: "Rien",     probability: 50,    icon: XCircle,   color: "text-zinc-400",     bg: "bg-zinc-500/10",     fill: "#27272a", iconColor: "#71717a", glow: "rgba(161,161,170,0.5)" },
   { type: "balance_05",     label: "+0.50€",         short: "0,50€",    probability: 12,    icon: Wallet,    color: "text-green-400",    bg: "bg-green-500/10",    fill: "#15803d", iconColor: "#86efac", glow: "rgba(74,222,128,0.95)"  },
   { type: "coupon_percent", label: "Coupon -5%",     short: "-5%",      probability: 5,     icon: Percent,   color: "text-blue-400",     bg: "bg-blue-500/10",     fill: "#1d4ed8", iconColor: "#93c5fd", glow: "rgba(96,165,250,0.95)"  },
   { type: "balance_1",      label: "+1.00€",         short: "1€",       probability: 8,     icon: Wallet,    color: "text-emerald-400",  bg: "bg-emerald-500/10",  fill: "#047857", iconColor: "#6ee7b7", glow: "rgba(52,211,153,0.95)"  },
-  { type: "points_10",      label: "+10 pts",        short: "10 pts",   probability: 2,     icon: Star,      color: "text-yellow-400",   bg: "bg-yellow-500/10",   fill: "#a16207", iconColor: "#fde047", glow: "rgba(250,204,21,0.95)"  },
+  { type: "points_5",       label: "+5 pts",         short: "5 pts",    probability: 2,     icon: Star,      color: "text-yellow-400",   bg: "bg-yellow-500/10",   fill: "#a16207", iconColor: "#fde047", glow: "rgba(250,204,21,0.95)"  },
   { type: "balance_5",      label: "+5.00€",         short: "5€",       probability: 4,     icon: Wallet,    color: "text-cyan-400",     bg: "bg-cyan-500/10",     fill: "#0e7490", iconColor: "#67e8f9", glow: "rgba(34,211,238,0.95)"  },
-  { type: "free_spin",      label: "Relance",        short: "Relance",  probability: 3,     icon: RefreshCw, color: "text-violet-400",   bg: "bg-violet-500/10",   fill: "#6d28d9", iconColor: "#c4b5fd", glow: "rgba(167,139,250,0.95)" },
-  { type: "coupon_amount",  label: "Coupon -3€",     short: "-3€",      probability: 3.5,   icon: Tag,       color: "text-indigo-400",   bg: "bg-indigo-500/10",   fill: "#4338ca", iconColor: "#a5b4fc", glow: "rgba(129,140,248,0.95)" },
-  { type: "points_50",      label: "+50 pts",        short: "50 pts",   probability: 1.5,   icon: Trophy,    color: "text-orange-400",   bg: "bg-orange-500/10",   fill: "#c2410c", iconColor: "#fdba74", glow: "rgba(251,146,60,0.95)"  },
+  { type: "free_spin",      label: "Relance",        short: "Relance",  probability: 20,    icon: RefreshCw, color: "text-violet-400",   bg: "bg-violet-500/10",   fill: "#6d28d9", iconColor: "#c4b5fd", glow: "rgba(167,139,250,0.95)" },
+  { type: "coupon_amount",  label: "Coupon -2€",     short: "-2€",      probability: 3.5,   icon: Tag,       color: "text-indigo-400",   bg: "bg-indigo-500/10",   fill: "#4338ca", iconColor: "#a5b4fc", glow: "rgba(129,140,248,0.95)" },
+  { type: "points_10",      label: "+10 pts",        short: "10 pts",   probability: 1.5,   icon: Trophy,    color: "text-orange-400",   bg: "bg-orange-500/10",   fill: "#c2410c", iconColor: "#fdba74", glow: "rgba(251,146,60,0.95)"  },
   { type: "deezer",         label: "Deezer Premium", short: "Deezer",   probability: 0.5,   icon: Music2,    color: "text-pink-400",     bg: "bg-pink-500/10",     fill: "#be185d", iconColor: "#f9a8d4", glow: "rgba(244,114,182,0.95)" },
-  { type: "points_100",     label: "+100 pts",       short: "100 pts",  probability: 0.3,   icon: Gift,      color: "text-rose-400",     bg: "bg-rose-500/10",     fill: "#be123c", iconColor: "#fda4af", glow: "rgba(251,113,133,0.95)" },
-  { type: "jackpot",        label: "JACKPOT 20€",    short: "JACKPOT",  probability: 0.01,  icon: Trophy,    color: "text-amber-300",    bg: "bg-amber-500/10",    fill: "#d97706", iconColor: "#fef3c7", glow: "rgba(252,211,77,1)"     },
+  { type: "points_15",      label: "+15 pts",        short: "15 pts",   probability: 0.5,   icon: Gift,      color: "text-rose-400",     bg: "bg-rose-500/10",     fill: "#be123c", iconColor: "#fda4af", glow: "rgba(251,113,133,0.95)" },
+  { type: "jackpot",        label: "JACKPOT 20€",    short: "JACKPOT",  probability: 0.1,   icon: Trophy,    color: "text-amber-300",    bg: "bg-amber-500/10",    fill: "#d97706", iconColor: "#fef3c7", glow: "rgba(252,211,77,1)"     },
 ];
 
 const SEG = 360 / REWARDS.length; // 30°
