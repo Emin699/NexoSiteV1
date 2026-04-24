@@ -1,0 +1,34 @@
+[TAILING] Tailing last 30 lines for [nexosite-api] process (change the value with --lines option)
+/root/.pm2/logs/nexosite-api-error.log last 30 lines:
+5|nexosite |     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/artifacts/api-server/src/routes/auth.ts:50:22)
+5|nexosite | (node:64560) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+5|nexosite | In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+5|nexosite |
+5|nexosite | To prepare for this change:
+5|nexosite | - If you want the current behavior, explicitly use 'sslmode=verify-full'
+5|nexosite | - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+5|nexosite |
+5|nexosite | See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+5|nexosite | (Use `node --trace-warnings ...` to show where the warning was created)
+5|nexosite | Error: Failed query: select "id", "email_verified" from "users" where "users"."email" = $1
+5|nexosite | params: eminozer6914@gmail.com
+5|nexosite |     at NodePgPreparedQuery.queryWithCache (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)
+5|nexosite |     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/artifacts/api-server/src/routes/auth.ts:50:22)
+5|nexosite | Error: Failed query: select "id", "name", "emoji", "category", "description", "price", "delivery_type", "in_stock", "digital_content", "image_url" from "products"
+5|nexosite | params:
+5|nexosite |     at NodePgPreparedQuery.queryWithCache (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)
+5|nexosite |     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/artifacts/api-server/src/routes/products.ts:26:16)
+5|nexosite | Error: Failed query: select "id", "email_verified" from "users" where "users"."email" = $1
+5|nexosite | params: nexxoshop01@gmail.com
+5|nexosite |     at NodePgPreparedQuery.queryWithCache (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/pg-core/session.ts:73:11)
+5|nexosite |     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.18.0_pg@8.20.0/node_modules/src/node-postgres/session.ts:154:19)
+5|nexosite |     at async <anonymous> (/var/www/nexosite/artifacts/api-server/src/routes/auth.ts:50:22)
+
+root@ubuntu:/var/www/nexosite#
