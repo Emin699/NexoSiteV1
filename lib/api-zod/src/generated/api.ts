@@ -546,6 +546,21 @@ export const GetJackpotResponse = zod.object({
 });
 
 /**
+ * @summary Get pending crypto recharges
+ */
+export const GetPendingRechargesResponseItem = zod.object({
+  id: zod.number(),
+  amountEur: zod.number(),
+  amountLtc: zod.number(),
+  address: zod.string(),
+  status: zod.enum(["pending", "delivered", "cancelled"]),
+  expiresAt: zod.string(),
+  createdAt: zod.string(),
+});
+
+export const GetPendingRechargesResponse = zod.array(GetPendingRechargesResponseItem);
+
+/**
  * @summary Get tier progression info
  */
 export const GetTiersResponse = zod.object({
