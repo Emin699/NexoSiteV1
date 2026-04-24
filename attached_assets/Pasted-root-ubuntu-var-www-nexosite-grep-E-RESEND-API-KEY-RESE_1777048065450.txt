@@ -1,0 +1,43 @@
+root@ubuntu:/var/www/nexosite# grep -E "^(RESEND_API_KEY|RESEND_FROM_EMAIL)" .env | sed 's|=.*|=***|'
+RESEND_API_KEY=***
+RESEND_FROM_EMAIL=***
+root@ubuntu:/var/www/nexosite# pm2 env 6 2>/dev/null | grep -E "^RESEND" | sed 's|=.*|=***|'
+RESEND_API_KEY: re_A3u67yr3_35kJi8f3x9wxFyiSo1cYHgkW
+root@ubuntu:/var/www/nexosite# set -a; source .env; set +a
+pm2 restart nexosite-api --update-env
+sleep 3
+pm2 env 6 2>/dev/null | grep -E "^RESEND" | sed 's|=.*|=***|'
+[PM2] Applying action restartProcessId on app [nexosite-api](ids: [ 6 ])
+[PM2] [nexosite-api](6) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 188.9mb  │
+│ 6  │ nexosite-api       │ fork     │ 6    │ online    │ 0%       │ 12.3mb   │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+RESEND_FROM_EMAIL: NexoShop <noreply@nexoshop69.com>
+RESEND_API_KEY: re_A3u67yr3_35kJi8f3x9wxFyiSo1cYHgkW
+root@ubuntu:/var/www/nexosite# echo 'RESEND_FROM_EMAIL="NexoShop <noreply@nexoshop69.com>"' >> .env
+root@ubuntu:/var/www/nexosite# echo 'RESEND_API_KEY="re_TA_CLE_RESEND_ICI"' >> .env
+root@ubuntu:/var/www/nexosite# set -a; source .env; set +a
+pm2 delete nexosite-api
+pm2 start "pnpm --filter @workspace/api-server run start" --name nexosite-api --cwd /var/www/nexosite --update-env
+pm2 save
+[PM2] Applying action deleteProcessId on app [nexosite-api](ids: [ 6 ])
+[PM2] [nexosite-api](6) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 188.6mb  │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Starting /usr/bin/bash in fork_mode (1 instance)
+[PM2] Done.
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 25   │ online    │ 0%       │ 188.6mb  │
+│ 7  │ nexosite-api       │ fork     │ 0    │ online    │ 0%       │ 1.9mb    │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
+root@ubuntu:/var/www/nexosite#
