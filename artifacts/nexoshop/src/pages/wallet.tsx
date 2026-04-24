@@ -15,6 +15,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -278,8 +279,22 @@ export default function Wallet() {
                       {rechargeSession.amountLtc} LTC
                     </div>
 
+                    <div className="flex justify-center mb-4">
+                      <div className="bg-white p-3 rounded-lg shadow-md">
+                        <QRCodeSVG
+                          value={`litecoin:${rechargeSession.address}?amount=${rechargeSession.amountLtc}`}
+                          size={180}
+                          level="M"
+                          includeMargin={false}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-center text-muted-foreground mb-4">
+                      Scanne avec ton portefeuille Litecoin
+                    </p>
+
                     <div className="space-y-2 mb-4">
-                      <Label className="text-xs text-muted-foreground">À l'adresse suivante :</Label>
+                      <Label className="text-xs text-muted-foreground">…ou copie l'adresse :</Label>
                       <div className="flex gap-2">
                         <Input value={rechargeSession.address} readOnly className="font-mono text-xs bg-muted/50" />
                         <Button
