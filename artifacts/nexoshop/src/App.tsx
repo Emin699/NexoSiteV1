@@ -28,7 +28,7 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient();
 
 function AppContent() {
-  const { isReady, isAuthenticated, handleAuth } = useAuth();
+  const { isReady, handleAuth } = useAuth();
 
   if (!isReady) {
     return (
@@ -41,31 +41,35 @@ function AppContent() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <AuthPage onAuth={handleAuth} />;
-  }
-
   return (
-    <Layout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/product/:id" component={ProductDetail} />
-        <Route path="/cart" component={Cart} />
-        <Route path="/wallet" component={Wallet} />
-        <Route path="/profile" component={Profile} />
-        <Route path="/wheel" component={Wheel} />
-        <Route path="/loyalty" component={Loyalty} />
-        <Route path="/jackpot" component={Jackpot} />
-        <Route path="/tiers" component={Tiers} />
-        <Route path="/referral" component={Referral} />
-        <Route path="/reviews" component={ReviewsPage} />
-        <Route path="/orders" component={OrdersPage} />
-        <Route path="/support" component={Support} />
-        <Route path="/support/:id" component={SupportTicketDetail} />
-        <Route path="/admin" component={Admin} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      {/* Auth page is the only route rendered outside the main layout. */}
+      <Route path="/auth">
+        <AuthPage onAuth={handleAuth} />
+      </Route>
+      <Route>
+        <Layout>
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/product/:id" component={ProductDetail} />
+            <Route path="/cart" component={Cart} />
+            <Route path="/wallet" component={Wallet} />
+            <Route path="/profile" component={Profile} />
+            <Route path="/wheel" component={Wheel} />
+            <Route path="/loyalty" component={Loyalty} />
+            <Route path="/jackpot" component={Jackpot} />
+            <Route path="/tiers" component={Tiers} />
+            <Route path="/referral" component={Referral} />
+            <Route path="/reviews" component={ReviewsPage} />
+            <Route path="/orders" component={OrdersPage} />
+            <Route path="/support" component={Support} />
+            <Route path="/support/:id" component={SupportTicketDetail} />
+            <Route path="/admin" component={Admin} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 

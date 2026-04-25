@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { hasAuthToken } from "@/hooks/use-auth";
 import { 
   useGetCart, 
   useRemoveFromCart, 
@@ -48,6 +49,12 @@ type CheckoutOrder = {
 export default function Cart() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!hasAuthToken()) setLocation("/auth");
+  }, [setLocation]);
+  if (!hasAuthToken()) return null;
+
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 

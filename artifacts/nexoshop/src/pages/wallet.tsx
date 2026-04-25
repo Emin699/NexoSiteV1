@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "wouter";
+import { hasAuthToken } from "@/hooks/use-auth";
 import {
   useGetWallet,
   useGetTransactions,
@@ -39,6 +41,12 @@ import { toast } from "sonner";
 const RECHARGE_AMOUNTS = [5, 10, 20, 30, 50];
 
 export default function Wallet() {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    if (!hasAuthToken()) setLocation("/auth");
+  }, [setLocation]);
+  if (!hasAuthToken()) return null;
+
   const queryClient = useQueryClient();
   // Auto-refresh while a recharge session is active so the user sees the
   // crediting happen as soon as the watcher detects the on-chain payment.

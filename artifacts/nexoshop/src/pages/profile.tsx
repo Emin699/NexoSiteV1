@@ -1,6 +1,7 @@
-import { Link } from "wouter";
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import { useGetMe, useGetMeStats } from "@workspace/api-client-react";
-import { clearAuth } from "@/hooks/use-auth";
+import { clearAuth, hasAuthToken } from "@/hooks/use-auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,8 +12,13 @@ import {
 } from "lucide-react";
 
 export default function Profile() {
-  const { data: user, isLoading: isLoadingUser } = useGetMe();
-  const { data: stats, isLoading: isLoadingStats } = useGetMeStats();
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    if (!hasAuthToken()) setLocation("/auth");
+  }, [setLocation]);
+  const { data: user, isLoading: isLoadingUser } = useGetMe({ query: { enabled: hasAuthToken() } });
+  const { data: stats, isLoading: isLoadingStats } = useGetMeStats({ query: { enabled: hasAuthToken() } });
+  if (!hasAuthToken()) return null;
 
   const menuItems = [
     { href: "/orders", icon: Package, label: "Commandes passées", color: "text-cyan-500", bg: "bg-cyan-500/10" },

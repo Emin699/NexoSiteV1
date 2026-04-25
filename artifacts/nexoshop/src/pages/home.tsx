@@ -24,6 +24,7 @@ import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetCartQueryKey } from "@workspace/api-client-react";
 import { toast } from "sonner";
+import { useRequireAuth } from "@/hooks/use-auth";
 
 const CATEGORIES_FALLBACK = [
   { value: "Tout", label: "Toutes les catégories" },
@@ -57,9 +58,10 @@ export default function Home() {
   const { data: dynamicCategories } = useGetCategories();
   const addToCart = useAddToCart();
   const buyProduct = useBuyProduct();
+  const requireAuth = useRequireAuth();
 
   const CATEGORIES = useMemo(() => {
-    if (dynamicCategories && dynamicCategories.length > 0) {
+    if (Array.isArray(dynamicCategories) && dynamicCategories.length > 0) {
       return [
         { value: "Tout", label: "Toutes les catégories" },
         ...dynamicCategories.map((c) => ({ value: c.name, label: c.name })),
@@ -69,6 +71,7 @@ export default function Home() {
   }, [dynamicCategories]);
 
   const handleAddToCart = async (productId: number) => {
+    if (!requireAuth("Connecte-toi pour ajouter au panier")) return;
     try {
       await addToCart.mutateAsync({ data: { productId, quantity: 1 } });
       queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
@@ -79,6 +82,7 @@ export default function Home() {
   };
 
   const handleBuyNow = async (productId: number, productName: string) => {
+    if (!requireAuth("Connecte-toi pour acheter ce produit")) return;
     try {
       await buyProduct.mutateAsync({ data: { productId } });
       toast.success("Achat réussi !");

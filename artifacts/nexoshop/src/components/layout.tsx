@@ -1,13 +1,23 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Wallet, User, Store, ShieldCheck } from "lucide-react";
+import { ShoppingCart, Wallet, User, Store, ShieldCheck, LogIn } from "lucide-react";
 import { useGetMe, useGetCart } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
+import { hasAuthToken, useRequireAuth } from "@/hooks/use-auth";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { data: user } = useGetMe();
-  const { data: cart } = useGetCart();
+  const requireAuth = useRequireAuth();
+  const isAuthed = hasAuthToken();
+  // Skip /me + /cart calls entirely for anonymous visitors so we don't fire 401s.
+  const { data: user } = useGetMe({ query: { enabled: isAuthed } });
+  const { data: cart } = useGetCart({ query: { enabled: isAuthed } });
+
+  const guard = (e: React.MouseEvent, msg: string) => {
+    if (isAuthed) return;
+    e.preventDefault();
+    requireAuth(msg);
+  };
 
   const isHome = location === "/";
   const isCart = location === "/cart";
@@ -25,14 +35,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Sticky Header */}
       <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/40">
         <div className="flex items-center justify-between px-4 h-14 max-w-screen-md mx-auto">
-          <Link href="/wallet" className="flex items-center gap-2 p-1 -ml-1 rounded-full hover:bg-muted/50 transition-colors">
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-              <Wallet className="w-4 h-4" />
-            </div>
-            <span className="font-mono font-bold text-sm">
-              {user?.balance.toFixed(2) || "0.00"}€
-            </span>
-          </Link>
+          {isAuthed ? (
+            <Link href="/wallet" className="flex items-center gap-2 p-1 -ml-1 rounded-full hover:bg-muted/50 transition-colors">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                <Wallet className="w-4 h-4" />
+              </div>
+              <span className="font-mono font-bold text-sm">
+                {user?.balance.toFixed(2) || "0.00"}€
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/auth"
+              className="flex items-center gap-1.5 px-3 py-1.5 -ml-1 rounded-full bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 transition-colors"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span className="text-xs font-bold">Connexion</span>
+            </Link>
+          )}
 
           <Link
             href="/"
@@ -52,7 +72,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             />
           </Link>
 
-          <Link href="/cart" className="relative p-2 -mr-2 rounded-full hover:bg-muted/50 transition-colors">
+          <Link
+            href="/cart"
+            onClick={(e) => guard(e, "Connecte-toi pour accéder à ton panier")}
+            className="relative p-2 -mr-2 rounded-full hover:bg-muted/50 transition-colors"
+          >
             <ShoppingCart className="w-5 h-5 text-foreground" />
             {cart?.itemCount ? (
               <Badge 
@@ -82,7 +106,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
           
           <Link 
-            href="/wallet" 
+            href="/wallet"
+            onClick={(e) => guard(e, "Connecte-toi pour accéder à ton portefeuille")}
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isWallet ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
           >
             <Wallet className="w-5 h-5" />
@@ -90,7 +115,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           <Link 
-            href="/profile" 
+            href="/profile"
+            onClick={(e) => guard(e, "Connecte-toi pour accéder à ton profil")}
             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isProfile ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
           >
             <User className="w-5 h-5" />

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Lock, User, Eye, EyeOff, ShoppingBag, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ShieldCheck, ArrowLeft, RefreshCw, Info } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface AuthPageProps {
   onAuth: (token: string | null | undefined, firstName: string, email: string) => void;
@@ -13,6 +14,7 @@ interface AuthPageProps {
 type Mode = "login" | "register" | "verify";
 
 export default function AuthPage({ onAuth }: AuthPageProps) {
+  const [, setLocation] = useLocation();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,6 +93,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         } else {
           onAuth(res.token, res.firstName, res.email);
           toast.success(`Bienvenue ${res.firstName} !`);
+          setLocation("/");
         }
       } else if (mode === "login") {
         const res = await authLogin.mutateAsync({ data: { email, password } });
@@ -100,6 +103,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         } else {
           onAuth(res.token, res.firstName, res.email);
           toast.success(`Bon retour ${res.firstName} !`);
+          setLocation("/");
         }
       }
     } catch (e: unknown) {
@@ -128,6 +132,7 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
       const res = await authVerify.mutateAsync({ data: { userId: pendingUserId, code } });
       onAuth(res.token, res.firstName, res.email);
       toast.success(`Bienvenue ${res.firstName} ! Email vérifié 🎉`);
+      setLocation("/");
     } catch (e: unknown) {
       const msg = (e as { data?: { error?: string } })?.data?.error || "Code incorrect";
       toast.error(msg);
@@ -158,13 +163,25 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
       <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-3">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
-            {mode === "verify" ? <ShieldCheck className="w-8 h-8 text-white" /> : <ShoppingBag className="w-8 h-8 text-white" />}
-          </div>
+          {mode === "verify" ? (
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
+              <ShieldCheck className="w-8 h-8 text-white" />
+            </div>
+          ) : (
+            <img
+              src="/nexoshop-icon.png"
+              alt="NexoShop"
+              className="w-16 h-16 rounded-2xl shadow-lg shadow-primary/30 select-none"
+              draggable={false}
+            />
+          )}
           <div className="text-center">
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-              NexoShop
-            </h1>
+            <img
+              src="/nexoshop-logo.png"
+              alt="NexoShop"
+              className="h-7 w-auto mx-auto select-none"
+              draggable={false}
+            />
             <p className="text-xs text-muted-foreground mt-1">Digital Goods · Instant Delivery</p>
           </div>
         </div>
@@ -291,6 +308,14 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
                       autoComplete="email"
                     />
                   </div>
+                  {mode === "register" && (
+                    <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground/90 mt-1 leading-snug">
+                      <Info className="w-3 h-3 mt-0.5 shrink-0 text-primary/70" />
+                      <span>
+                        Utilise un email <span className="text-foreground font-medium">valide</span> — un code de vérification va y être envoyé.
+                      </span>
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-1.5">

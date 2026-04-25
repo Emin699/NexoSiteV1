@@ -44,12 +44,12 @@ export function ProductCardHolo({ product, onOpen, onAddToCart, onBuy, busy }: P
   // Stock label dynamique
   const inStock = product.inStock;
   const stockLabel = !inStock
-    ? "Rupture"
+    ? "Plus de stock"
     : product.deliveryType === "auto" && hasVariants
       ? `${totalStock} en stock`
-      : "Stock";
+      : "En stock";
   const stockColor = !inStock
-    ? "text-rose-400"
+    ? "text-red-500"
     : product.deliveryType === "auto" && hasVariants && totalStock <= 5
       ? "text-amber-400"
       : "text-emerald-400";
@@ -195,7 +195,7 @@ export function ProductCardHolo({ product, onOpen, onAddToCart, onBuy, busy }: P
             >
               <Sparkles className="w-4 h-4" />
               {!inStock
-                ? "Indisponible"
+                ? "Plus de stock"
                 : hasVariants
                   ? "Choisir"
                   : "Acheter"}

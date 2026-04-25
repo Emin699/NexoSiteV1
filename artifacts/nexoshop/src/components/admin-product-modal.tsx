@@ -409,13 +409,20 @@ export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminP
                   )}
                 </SectionCard>
 
-                {/* Visibilité */}
-                <SectionCard icon={form.inStock ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />} title="Visibilité">
+                {/* Disponibilité (stock) */}
+                <SectionCard
+                  icon={form.inStock ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  title="Disponibilité"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{form.inStock ? "Visible sur le shop" : "Masqué"}</p>
+                      <p className={`text-sm font-medium ${form.inStock ? "text-emerald-400" : "text-red-500"}`}>
+                        {form.inStock ? "En stock" : "Plus de stock"}
+                      </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {form.inStock ? "Les clients peuvent voir et acheter ce produit." : "Le produit n'apparaît pas dans le catalogue."}
+                        {form.inStock
+                          ? "Le produit est visible et achetable par les clients."
+                          : "Le produit reste visible mais affiche « Plus de stock » et l'achat est bloqué."}
                       </p>
                     </div>
                     <Switch

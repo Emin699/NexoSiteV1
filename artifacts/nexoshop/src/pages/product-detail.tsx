@@ -33,6 +33,7 @@ import { ReviewModal } from "@/components/review-modal";
 import { ThankYouModal } from "@/components/thank-you-modal";
 import { Markdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
+import { useRequireAuth } from "@/hooks/use-auth";
 
 const CATEGORY_ICON: Record<string, React.ElementType> = {
   Streaming: Tv2,
@@ -52,6 +53,7 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useGetProduct(productId);
   const addToCart = useAddToCart();
   const buyProduct = useBuyProduct();
+  const requireAuth = useRequireAuth();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
@@ -126,6 +128,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = async () => {
     if (busy) return;
+    if (!requireAuth("Connecte-toi pour ajouter au panier")) return;
     if (mustPickVariant) {
       toast.error("Choisissez une variante");
       return;
@@ -151,6 +154,7 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (busy) return;
+    if (!requireAuth("Connecte-toi pour acheter ce produit")) return;
     if (mustPickVariant) {
       toast.error("Choisissez une variante");
       return;
