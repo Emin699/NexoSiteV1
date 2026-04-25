@@ -170,6 +170,23 @@ paths:
         "400":
           description: Invalid input or already reviewed
 
+  /reviews/me:
+    get:
+      operationId: getMyReviews
+      tags: [reviews]
+      summary: Get my reviews (for current user)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: My reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyReviewItem"
+
   /reviews/product/{productId}:
     get:
       operationId: getProductReviews
@@ -1626,9 +1643,25 @@ components:
           maximum: 5
         comment:
           type: string
+          minLength: 10
         imageUrl:
           type: ["string", "null"]
       required: [productId, rating, comment]
+
+    MyReviewItem:
+      type: object
+      properties:
+        productId:
+          type: integer
+        rating:
+          type: integer
+        comment:
+          type: string
+        isAuto:
+          type: boolean
+        createdAt:
+          type: string
+      required: [productId, rating, comment, isAuto, createdAt]
 
     ReviewResponse:
       type: object
@@ -1841,6 +1874,8 @@ components:
       properties:
         id:
           type: integer
+        productId:
+          type: integer
         productName:
           type: string
         productEmoji:
@@ -1867,7 +1902,7 @@ components:
           nullable: true
         createdAt:
           type: string
-      required: [id, productName, productEmoji, price, status, createdAt, customerInfoFields]
+      required: [id, productId, productName, productEmoji, price, status, createdAt, customerInfoFields]
 
     AdminPendingOrder:
       type: object

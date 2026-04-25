@@ -103,13 +103,27 @@ export const GetAllReviewsResponse = zod.object({
  */
 export const submitReviewBodyRatingMax = 5;
 
+export const submitReviewBodyCommentMin = 10;
+
 export const SubmitReviewBody = zod.object({
   productId: zod.number(),
   orderId: zod.number().nullish(),
   rating: zod.number().min(1).max(submitReviewBodyRatingMax),
-  comment: zod.string(),
+  comment: zod.string().min(submitReviewBodyCommentMin),
   imageUrl: zod.string().nullish(),
 });
+
+/**
+ * @summary Get my reviews (for current user)
+ */
+export const GetMyReviewsResponseItem = zod.object({
+  productId: zod.number(),
+  rating: zod.number(),
+  comment: zod.string(),
+  isAuto: zod.boolean(),
+  createdAt: zod.string(),
+});
+export const GetMyReviewsResponse = zod.array(GetMyReviewsResponseItem);
 
 /**
  * @summary Get reviews for a product
@@ -742,6 +756,7 @@ export const CheckoutResponse = zod.object({
   orders: zod.array(
     zod.object({
       id: zod.number(),
+      productId: zod.number(),
       productName: zod.string(),
       productEmoji: zod.string(),
       price: zod.number(),
@@ -763,6 +778,7 @@ export const CheckoutResponse = zod.object({
  */
 export const GetOrdersResponseItem = zod.object({
   id: zod.number(),
+  productId: zod.number(),
   productName: zod.string(),
   productEmoji: zod.string(),
   price: zod.number(),
@@ -785,6 +801,7 @@ export const BuyProductBody = zod.object({
 
 export const BuyProductResponse = zod.object({
   id: zod.number(),
+  productId: zod.number(),
   productName: zod.string(),
   productEmoji: zod.string(),
   price: zod.number(),
@@ -987,6 +1004,7 @@ export const AdminDeliverOrderBody = zod.object({
 
 export const AdminDeliverOrderResponse = zod.object({
   id: zod.number(),
+  productId: zod.number(),
   productName: zod.string(),
   productEmoji: zod.string(),
   price: zod.number(),
@@ -1012,6 +1030,7 @@ export const SubmitOrderCustomerInfoBody = zod.object({
 
 export const SubmitOrderCustomerInfoResponse = zod.object({
   id: zod.number(),
+  productId: zod.number(),
   productName: zod.string(),
   productEmoji: zod.string(),
   price: zod.number(),

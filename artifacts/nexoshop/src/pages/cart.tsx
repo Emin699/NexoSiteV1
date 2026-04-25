@@ -29,9 +29,12 @@ import {
 import { Trash2, ShoppingCart, Tag, CreditCard, ChevronLeft, CheckCircle2, Clock, Package, AlertCircle, ClipboardList, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { ThankYouModal } from "@/components/thank-you-modal";
+import { ReviewModal } from "@/components/review-modal";
 
 type CheckoutOrder = {
   id: number;
+  productId: number;
   productName: string;
   productEmoji: string;
   price: number;
@@ -59,6 +62,8 @@ export default function Cart() {
 
   const [resultOpen, setResultOpen] = useState(false);
   const [resultOrders, setResultOrders] = useState<CheckoutOrder[]>([]);
+  const [thankYouOpen, setThankYouOpen] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState<{ productId: number; productName: string } | null>(null);
   const submitInfo = useSubmitOrderCustomerInfo();
   const [infoOrder, setInfoOrder] = useState<CheckoutOrder | null>(null);
   const [infoValues, setInfoValues] = useState<Record<string, string>>({});
@@ -142,7 +147,7 @@ export default function Cart() {
         queryClient.invalidateQueries({ queryKey: getGetOrdersQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetPendingOrdersCountQueryKey() });
         setResultOrders(res.orders as CheckoutOrder[]);
-        setResultOpen(true);
+        setThankYouOpen(true);
       }
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de la commande (solde insuffisant ?)");
@@ -152,6 +157,25 @@ export default function Cart() {
   const closeResult = () => {
     setResultOpen(false);
     setLocation("/orders");
+  };
+
+  const firstDelivered = resultOrders.find((o) => o.status === "delivered");
+
+  const handleThankYouLater = () => {
+    setThankYouOpen(false);
+    setResultOpen(true);
+  };
+
+  const handleThankYouReview = () => {
+    setThankYouOpen(false);
+    if (firstDelivered) {
+      setReviewProduct({
+        productId: firstDelivered.productId,
+        productName: firstDelivered.productName,
+      });
+    } else {
+      setResultOpen(true);
+    }
   };
 
   const queueCount = pendingData?.count ?? 0;
@@ -479,6 +503,31 @@ export default function Cart() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* MERCI animation */}
+      <ThankYouModal
+        open={thankYouOpen}
+        onClose={handleThankYouLater}
+        onLeaveReview={handleThankYouReview}
+        productName={firstDelivered?.productName}
+      />
+
+      {/* Review modal */}
+      {reviewProduct && (
+        <ReviewModal
+          open={true}
+          onClose={() => {
+            setReviewProduct(null);
+            setResultOpen(true);
+          }}
+          productId={reviewProduct.productId}
+          productName={reviewProduct.productName}
+          onSubmitted={() => {
+            setReviewProduct(null);
+            setResultOpen(true);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -16,9 +16,10 @@ interface ReviewModalProps {
   onClose: () => void;
   productId: number;
   productName: string;
+  onSubmitted?: () => void;
 }
 
-export function ReviewModal({ open, onClose, productId, productName }: ReviewModalProps) {
+export function ReviewModal({ open, onClose, productId, productName, onSubmitted }: ReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -68,9 +69,13 @@ export function ReviewModal({ open, onClose, productId, productName }: ReviewMod
       toast.error("Veuillez sélectionner une note");
       return;
     }
+    if (comment.trim().length < 10) {
+      toast.error("Le commentaire doit contenir au moins 10 caractères.");
+      return;
+    }
     try {
       await submitReview.mutateAsync({
-        data: { productId, rating, comment, imageUrl: imageUrl ?? null },
+        data: { productId, rating, comment: comment.trim(), imageUrl: imageUrl ?? null },
       });
       toast.success("Avis envoyé ! +1 tour de roue offert !", {
         description: "Rendez-vous dans Profil > Roue du destin",
@@ -79,7 +84,8 @@ export function ReviewModal({ open, onClose, productId, productName }: ReviewMod
       setRating(0);
       setComment("");
       setImageUrl(null);
-      onClose();
+      if (onSubmitted) onSubmitted();
+      else onClose();
     } catch (e: unknown) {
       const msg = (e as { data?: { error?: string } })?.data?.error;
       toast.error(msg || "Erreur lors de l'envoi de l'avis");
@@ -142,14 +148,32 @@ export function ReviewModal({ open, onClose, productId, productName }: ReviewMod
           )}
 
           {/* Comment */}
-          <Textarea
-            placeholder="Laissez un commentaire (optionnel)..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="bg-background border-border/60 resize-none text-sm"
-            rows={3}
-            maxLength={500}
-          />
+          <div>
+            <Textarea
+              placeholder="Décrivez votre expérience (minimum 10 caractères)..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="bg-background border-border/60 resize-none text-sm"
+              rows={3}
+              maxLength={500}
+            />
+            <div className="flex items-center justify-between mt-1">
+              <span
+                className={`text-[10px] ${
+                  comment.trim().length >= 10
+                    ? "text-emerald-400"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {comment.trim().length < 10
+                  ? `Encore ${10 - comment.trim().length} caractère${10 - comment.trim().length > 1 ? "s" : ""} requis`
+                  : "Commentaire suffisant ✓"}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {comment.length}/500
+              </span>
+            </div>
+          </div>
 
           {/* Image upload */}
           <div>
@@ -220,7 +244,8 @@ export function ReviewModal({ open, onClose, productId, productName }: ReviewMod
               size="sm"
               className="flex-1 bg-gradient-to-r from-primary to-secondary border-none"
               onClick={handleSubmit}
-              disabled={submitReview.isPending || rating === 0}
+              disabled={submitReview.isPending || rating === 0 || comment.trim().length < 10}
+              data-testid="button-submit-review"
             >
               {submitReview.isPending ? "Envoi..." : "Envoyer"}
             </Button>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useGetProducts, useAddToCart, useBuyProduct, useGetCategories } from "@workspace/api-client-react";
 import { ReviewModal } from "@/components/review-modal";
+import { ThankYouModal } from "@/components/thank-you-modal";
 import { ProductCardHolo } from "@/components/product-card-holo";
 import { Card } from "@/components/ui/card";
 import {
@@ -48,6 +49,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const [pendingReview, setPendingReview] = useState<{ productId: number; productName: string } | null>(null);
+  const [thankYou, setThankYou] = useState<{ productId: number; productName: string } | null>(null);
 
   const { data: products, isLoading } = useGetProducts({
     category: activeCategory === "Tout" ? undefined : activeCategory,
@@ -80,7 +82,7 @@ export default function Home() {
     try {
       await buyProduct.mutateAsync({ data: { productId } });
       toast.success("Achat réussi !");
-      setPendingReview({ productId, productName });
+      setThankYou({ productId, productName });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : undefined;
       toast.error(msg || "Solde insuffisant ou erreur lors de l'achat");
@@ -156,12 +158,33 @@ export default function Home() {
         )}
       </div>
 
+      {/* MERCI animation */}
+      <ThankYouModal
+        open={!!thankYou}
+        onClose={() => {
+          setThankYou(null);
+          setLocation("/orders");
+        }}
+        onLeaveReview={() => {
+          if (thankYou) setPendingReview(thankYou);
+          setThankYou(null);
+        }}
+        productName={thankYou?.productName}
+      />
+
       {pendingReview && (
         <ReviewModal
           open={true}
-          onClose={() => setPendingReview(null)}
+          onClose={() => {
+            setPendingReview(null);
+            setLocation("/orders");
+          }}
           productId={pendingReview.productId}
           productName={pendingReview.productName}
+          onSubmitted={() => {
+            setPendingReview(null);
+            setLocation("/orders");
+          }}
         />
       )}
     </div>

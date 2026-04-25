@@ -183,9 +183,18 @@ export interface ReviewBody {
    * @maximum 5
    */
   rating: number;
+  /** @minLength 10 */
   comment: string;
   /** @nullable */
   imageUrl?: string | null;
+}
+
+export interface MyReviewItem {
+  productId: number;
+  rating: number;
+  comment: string;
+  isAuto: boolean;
+  createdAt: string;
 }
 
 export interface ReviewResponse {
@@ -316,6 +325,7 @@ export type OrderCustomerInfo = { [key: string]: string } | null;
 
 export interface Order {
   id: number;
+  productId: number;
   productName: string;
   productEmoji: string;
   price: number;

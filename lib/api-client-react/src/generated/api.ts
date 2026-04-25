@@ -53,6 +53,7 @@ import type {
   JackpotDrawBody,
   JackpotDrawResult,
   JackpotInfo,
+  MyReviewItem,
   Order,
   PaypalCaptureBody,
   PaypalCaptureResult,
@@ -678,6 +679,81 @@ export const useSubmitReview = <
 > => {
   return useMutation(getSubmitReviewMutationOptions(options));
 };
+
+/**
+ * @summary Get my reviews (for current user)
+ */
+export const getGetMyReviewsUrl = () => {
+  return `/api/reviews/me`;
+};
+
+export const getMyReviews = async (
+  options?: RequestInit,
+): Promise<MyReviewItem[]> => {
+  return customFetch<MyReviewItem[]>(getGetMyReviewsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMyReviewsQueryKey = () => {
+  return [`/api/reviews/me`] as const;
+};
+
+export const getGetMyReviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMyReviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyReviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMyReviewsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyReviews>>> = ({
+    signal,
+  }) => getMyReviews({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMyReviews>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMyReviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMyReviews>>
+>;
+export type GetMyReviewsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get my reviews (for current user)
+ */
+
+export function useGetMyReviews<
+  TData = Awaited<ReturnType<typeof getMyReviews>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMyReviews>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMyReviewsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get reviews for a product

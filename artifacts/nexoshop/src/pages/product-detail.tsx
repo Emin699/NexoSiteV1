@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ReviewModal } from "@/components/review-modal";
+import { ThankYouModal } from "@/components/thank-you-modal";
 import { Markdown } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 
@@ -58,6 +59,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [pendingReview, setPendingReview] = useState<{ productId: number; productName: string } | null>(null);
+  const [thankYou, setThankYou] = useState<{ productId: number; productName: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [descOpen, setDescOpen] = useState(true);
 
@@ -183,7 +185,7 @@ export default function ProductDetail() {
       }
       qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
       toast.success(`Achat réussi (×${quantity}) !`);
-      setPendingReview({ productId, productName: product.name });
+      setThankYou({ productId, productName: product.name });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Solde insuffisant ou erreur";
       toast.error(msg);
@@ -546,15 +548,33 @@ export default function ProductDetail() {
         </Card>
       </div>
 
+      {/* MERCI animation */}
+      <ThankYouModal
+        open={!!thankYou}
+        onClose={() => {
+          setThankYou(null);
+          setLocation("/orders");
+        }}
+        onLeaveReview={() => {
+          if (thankYou) setPendingReview(thankYou);
+          setThankYou(null);
+        }}
+        productName={thankYou?.productName}
+      />
+
       {pendingReview && (
         <ReviewModal
           open={true}
           onClose={() => {
             setPendingReview(null);
-            setLocation("/profile");
+            setLocation("/orders");
           }}
           productId={pendingReview.productId}
           productName={pendingReview.productName}
+          onSubmitted={() => {
+            setPendingReview(null);
+            setLocation("/orders");
+          }}
         />
       )}
     </div>

@@ -70,3 +70,16 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Markdown produit** : `lib/markdown.tsx` (mini parseur maison **gras** *italique* `code` + paragraphes + listes `- `). Page `/product/:id` rend la description longue avec `<Markdown source={...}>`. Helper visible dans le textarea description du modal admin.
 - **Sélecteur de variantes côté client** : page `/product/:id` montre la liste des variantes actives en cards cliquables (highlight primary border quand sélectionnée), prix + stock par variante, prix total live. Bouton "Acheter" avec variante = ajout panier + redirect `/cart` (la route `/buy` ne supporte pas variantId). "Choisissez une variante" requis avant action.
 - **Cards refondues** : `product-card-holo.tsx` retire le badge "✦ Catégorie" et le label "Livraison instantanée/manuelle". Description plus grande (`text-[13px]`, line-clamp-3, min-h-[54px]).
+
+## NexoShop — Animation MERCI + Reviews avec validation
+
+- **Schema `reviews.is_auto`** boolean + **index unique** `reviews_user_product_unique (user_id, product_id)` — anti-doublon atomique (`ON CONFLICT DO NOTHING`).
+- **POST /reviews** : validation `comment` minLength=10 (zod + front), contrôle d'éligibilité (l'utilisateur doit avoir au moins 1 commande livrée pour le `productId`, sinon 403), insertion idempotente via index unique. Toujours +1 spin gratuit après succès.
+- **GET /reviews/me** (auth) : retourne les reviews du user courant `[{productId, rating, comment, isAuto, createdAt}]`. Front l'utilise sur `/orders` pour cacher le bouton "Laisser un avis" si déjà reviewé.
+- **Auto-review sweep** : fonction `maybeRunAutoReviewSweep()` rate-limited 60s, déclenchée en arrière-plan sur GET /reviews et /reviews/me. Scanne les commandes `delivered_at <= now()-24h` sans review existante, insère une review 5 étoiles avec `isAuto=true` et un message random parmi 5 templates positifs.
+- **Order.productId** ajouté au schema OpenAPI Order (requis). Côté API, `GET /orders`, `POST /orders/buy` et `POST /orders/:id/customer-info` exposent `productId` (sinon 500 zod parse).
+- **Frontend** :
+  - `components/thank-you-modal.tsx` : modal "MERCI !" avec cœur fuchsia animé `heartbeat` + sparkles flottants. Phase 1 = animation seule (~1.4s), phase 2 = boutons "Plus tard" / "Laisser un avis". Cleanup setTimeout au unmount.
+  - `components/review-modal.tsx` : prop `onSubmitted` optionnelle (sinon `onClose`), bouton submit `disabled` si `comment.trim().length < 10`, compteur live "Encore X caractères requis" → "Commentaire suffisant ✓" en vert, compteur 500 max.
+  - Flow checkout : `cart.tsx` (panier), `home.tsx` (achat rapide depuis card), `product-detail.tsx` (achat direct) → ThankYouModal → soit `/orders` soit ReviewModal → `/orders` après envoi/skip.
+  - `pages/orders.tsx` : `useGetMyReviews` → `Set` des productId déjà reviewés. Pour chaque commande livrée : bouton fuchsia "Laisser un avis" si non reviewé, sinon badge vert "Avis déjà publié". Le bouton "Modifier mes infos" est masqué quand `status='delivered'`.

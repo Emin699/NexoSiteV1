@@ -56,6 +56,7 @@ router.get("/orders", requireAuth, async (req, res): Promise<void> => {
     GetOrdersResponse.parse(
       orders.map((o) => ({
         id: o.id,
+        productId: o.productId,
         productName: o.productName,
         productEmoji: o.productEmoji,
         price: Number(o.price),
@@ -110,6 +111,7 @@ router.post("/orders/:id/customer-info", requireAuth, async (req, res): Promise<
 
   res.json(SubmitOrderCustomerInfoResponse.parse({
     id: updated.id,
+    productId: updated.productId,
     productName: updated.productName,
     productEmoji: updated.productEmoji,
     price: Number(updated.price),
@@ -223,6 +225,7 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
     res.json(
       BuyProductResponse.parse({
         id: firstOrder.id,
+        productId: firstOrder.productId,
         productName: firstOrder.productName,
         productEmoji: firstOrder.productEmoji,
         price: Number(firstOrder.price),
