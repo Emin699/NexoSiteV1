@@ -1,0 +1,74 @@
+root@ubuntu:/var/www/nexosite# cd /var/www/nexosite
+git pull
+pnpm install
+pnpm run build
+set -a && source .env && set +a && pnpm --filter @workspace/db push --force
+pm2 restart all
+sudo systemctl reload nginx
+remote: Invalid username or token. Password authentication is not supported for Git operations.
+fatal: Authentication failed for 'https://github.com/Emin699/NexoSiteV1.git/'
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm…
+└─ Done in 11ms
+Done in 1s using pnpm v10.33.0
+
+> workspace@0.0.0 build /var/www/nexosite
+> pnpm run typecheck && pnpm -r --if-present run build
+
+
+> workspace@0.0.0 typecheck /var/www/nexosite
+> pnpm run typecheck:libs && pnpm -r --filter "./artifacts/**" --filter "./scripts" --if-present run typecheck
+
+
+> workspace@0.0.0 typecheck:libs /var/www/nexosite
+> tsc --build
+
+Scope: 4 of 9 workspace projects
+artifacts/api-server typecheck$ tsc -p tsconfig.json --noEmit
+│ src/lib/resend-client.ts(35,31): error TS18046: 'data' is of type 'unknown'.
+│ src/routes/orders.ts(75,23): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of t…
+│   Type 'string[]' is not assignable to type 'string'.
+│ src/routes/orders.ts(142,57): error TS2339: Property 'quantity' does not exist on type '{ productId: number; }'.
+│ src/routes/wallet.ts(188,23): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of …
+│   Type 'string[]' is not assignable to type 'string'.
+└─ Failed in 5.5s at /var/www/nexosite/artifacts/api-server
+artifacts/mockup-sandbox typecheck$ tsc -p tsconfig.json --noEmit
+└─ Running...
+/var/www/nexosite/artifacts/api-server:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 typecheck: `tsc -p tsconfig.json --noEmit`
+Exit status 2
+artifacts/nexoshop typecheck$ tsc -p tsconfig.json --noEmit
+└─ Running...
+ ELIFECYCLE  Command failed with exit code 2.
+ ELIFECYCLE  Command failed with exit code 2.
+
+> @workspace/db@0.0.0 push /var/www/nexosite/lib/db
+> drizzle-kit push --config ./drizzle.config.ts --force
+
+Reading config file '/var/www/nexosite/lib/db/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+(node:81057) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+[✓] Pulling schema from database...
+[i] No changes detected
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [all](ids: [ 0, 8 ])
+[PM2] [nexoshop-bot](0) ✓
+[PM2] [nexosite-api](8) ✓
+┌────┬────────────────────┬──────────┬──────┬───────────┬──────────┬──────────┐
+│ id │ name               │ mode     │ ↺    │ status    │ cpu      │ memory   │
+├────┼────────────────────┼──────────┼──────┼───────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot       │ fork     │ 29   │ online    │ 0%       │ 109.5mb  │
+│ 8  │ nexosite-api       │ fork     │ 31   │ online    │ 0%       │ 2.9mb    │
+└────┴────────────────────┴──────────┴──────┴───────────┴──────────┴──────────┘
+Failed to reload nginx.service: Unit nginx.service not found.
+root@ubuntu:/var/www/nexosite#
