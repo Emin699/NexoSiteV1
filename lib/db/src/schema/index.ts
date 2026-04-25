@@ -1,4 +1,5 @@
 export * from "./users";
+export * from "./categories";
 export * from "./products";
 export * from "./product_variants";
 export * from "./stock_items";

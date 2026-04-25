@@ -111,19 +111,6 @@ export function ProductCardHolo({ product, onOpen, onAddToCart, onBuy, busy }: P
           )}
           {/* Fade vers le bas */}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent" />
-
-          {/* Tag catégorie en haut à droite */}
-          <div
-            className="absolute top-3 right-3 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur border border-white/20 text-[9px] font-bold uppercase tracking-[0.15em]"
-            style={{
-              color: "transparent",
-              backgroundImage: "linear-gradient(90deg, #ff6ec4, #7873f5, #4ade80)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-            }}
-          >
-            ✦ {product.category}
-          </div>
         </div>
 
         {/* Contenu */}
@@ -142,13 +129,10 @@ export function ProductCardHolo({ product, onOpen, onAddToCart, onBuy, busy }: P
           {/* Stock indicator */}
           <div className="flex items-center gap-2 text-[11px]">
             <span className={`${stockColor} font-semibold`}>● {stockLabel}</span>
-            <span className="text-zinc-500 ml-auto capitalize">
-              {product.deliveryType === "auto" ? "Livraison instantanée" : "Livraison manuelle"}
-            </span>
           </div>
 
           {/* Description */}
-          <p className="text-[11px] text-zinc-400 leading-relaxed line-clamp-2 min-h-[28px]">
+          <p className="text-[13px] text-zinc-300 leading-relaxed line-clamp-3 min-h-[54px]">
             {product.description}
           </p>
 
@@ -177,10 +161,16 @@ export function ProductCardHolo({ product, onOpen, onAddToCart, onBuy, busy }: P
               disabled={!inStock || busy}
               onClick={(e) => {
                 e.stopPropagation();
-                onAddToCart();
+                if (hasVariants) {
+                  // Avec variantes : on doit ouvrir la page produit pour choisir
+                  onOpen();
+                } else {
+                  onAddToCart();
+                }
               }}
               className="w-11 h-11 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
-              aria-label="Ajouter au panier"
+              aria-label={hasVariants ? "Choisir une variante" : "Ajouter au panier"}
+              title={hasVariants ? "Choisir une variante" : "Ajouter au panier"}
             >
               <ShoppingCart className="w-4 h-4" />
             </button>

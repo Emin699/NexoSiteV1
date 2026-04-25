@@ -9,6 +9,7 @@ import {
   useAdminListStock,
   useAdminAddStockBulk,
   useAdminDeleteStockItem,
+  useGetCategories,
   getAdminListVariantsQueryKey,
   getAdminListStockQueryKey,
   getAdminGetProductsQueryKey,
@@ -60,7 +61,7 @@ import {
   EyeOff,
 } from "lucide-react";
 
-const CATEGORIES = ["Streaming", "Musique", "IA", "Sport", "Tech", "Spécial"];
+const CATEGORIES_FALLBACK = ["Streaming", "Musique", "IA", "Sport", "Tech", "Spécial"];
 
 const DURATION_PRESETS: Array<{ label: string; days: number; defaultName: string }> = [
   { label: "1 mois", days: 30, defaultName: "1 mois" },
@@ -76,6 +77,7 @@ type FormState = {
   price: string;
   deliveryType: "auto" | "manual";
   inStock: boolean;
+  unlimitedStock: boolean;
   imageUrl: string;
   digitalContent: string;
   digitalImageUrl: string;
@@ -90,6 +92,7 @@ const DEFAULT_FORM: FormState = {
   price: "",
   deliveryType: "auto",
   inStock: true,
+  unlimitedStock: false,
   imageUrl: "",
   digitalContent: "",
   digitalImageUrl: "",
@@ -114,6 +117,11 @@ export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminP
   const qc = useQueryClient();
   const createProduct = useAdminCreateProduct();
   const updateProduct = useAdminUpdateProduct();
+  const { data: categoriesData } = useGetCategories();
+  const categories =
+    categoriesData && categoriesData.length > 0
+      ? categoriesData.map((c) => c.name)
+      : CATEGORIES_FALLBACK;
 
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -137,6 +145,7 @@ export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminP
           price: String(editingProduct.price),
           deliveryType: editingProduct.deliveryType,
           inStock: editingProduct.inStock,
+          unlimitedStock: !!editingProduct.unlimitedStock,
           imageUrl: editingProduct.imageUrl ?? "",
           digitalContent: editingProduct.digitalContent ?? "",
           digitalImageUrl: editingProduct.digitalImageUrl ?? "",
@@ -215,6 +224,7 @@ export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminP
       price: isNaN(priceNum) ? 0 : priceNum,
       deliveryType: form.deliveryType,
       inStock: form.inStock,
+      unlimitedStock: form.unlimitedStock,
       imageUrl: form.imageUrl.trim() || null,
       digitalContent: form.digitalContent.trim() || null,
       digitalImageUrl: form.digitalImageUrl.trim() || null,
@@ -414,6 +424,26 @@ export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminP
                     />
                   </div>
                 </SectionCard>
+
+                {/* Stock illimité */}
+                <SectionCard icon={<Package className="w-3.5 h-3.5" />} title="Stock illimité" accent={form.unlimitedStock ? "primary" : undefined}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">
+                        {form.unlimitedStock ? "Illimité — pas de pool" : "Stock géré par variantes"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {form.unlimitedStock
+                          ? "Le produit reste vendable même sans stock dans la table. Le contenu de secours sera livré."
+                          : "Chaque vente consomme un code du pool de la variante (livraison automatique)."}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.unlimitedStock}
+                      onCheckedChange={(v) => setForm((f) => ({ ...f, unlimitedStock: v }))}
+                    />
+                  </div>
+                </SectionCard>
               </div>
 
               {/* === COL 2 : Infos + Prix === */}
@@ -435,18 +465,26 @@ export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminP
                       <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}>
                         <SelectTrigger className="bg-background border-border/60 h-9"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-card border-border">
-                          {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                          {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                         </SelectContent>
                       </Select>
+                      <p className="text-[10px] text-muted-foreground">
+                        Gérer les catégories depuis la page Admin → onglet Catégories.
+                      </p>
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <Label className="text-[11px] text-muted-foreground uppercase tracking-wider">Description</Label>
                       <Textarea
-                        placeholder="Description courte du produit..."
+                        placeholder={"Description du produit. Tu peux utiliser :\n**texte en gras**, *italique*, `code`\n\nNouveau paragraphe."}
                         value={form.description}
-                        className="bg-background border-border/60 text-sm min-h-[60px]"
+                        className="bg-background border-border/60 text-sm min-h-[140px] font-mono leading-relaxed"
                         onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                       />
+                      <p className="text-[10px] text-muted-foreground">
+                        Mise en forme : <code className="text-purple-300">**gras**</code>{" "}
+                        <code className="text-purple-300">*italique*</code>{" "}
+                        <code className="text-purple-300">`code`</code> · Sauter une ligne pour un paragraphe.
+                      </p>
                     </div>
                   </div>
                 </SectionCard>

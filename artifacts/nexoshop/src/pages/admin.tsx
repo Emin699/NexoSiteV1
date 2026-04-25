@@ -4,6 +4,7 @@ import {
   useAdminDeleteProduct,
   getAdminGetProductsQueryKey,
   useGetMe,
+  useGetCategories,
 } from "@workspace/api-client-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AdminLogs } from "@/components/admin-logs";
@@ -11,6 +12,7 @@ import { AdminUsers } from "@/components/admin-users";
 import { AdminOrders } from "@/components/admin-orders";
 import { AdminTickets } from "@/components/admin-tickets";
 import { AdminProductModal } from "@/components/admin-product-modal";
+import { AdminCategoriesManager } from "@/components/admin-categories-manager";
 import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -28,7 +30,6 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 
-const CATEGORIES = ["Streaming", "Musique", "IA", "Sport", "Tech", "Spécial"];
 
 export default function Admin() {
   const qc = useQueryClient();
@@ -38,6 +39,7 @@ export default function Admin() {
   const { data: products, isLoading } = useAdminGetProducts({
     query: { enabled: isAdmin, queryKey: getAdminGetProductsQueryKey() },
   });
+  const { data: catList } = useGetCategories();
   const deleteProduct = useAdminDeleteProduct();
 
   const [search, setSearch] = useState("");
@@ -112,13 +114,18 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full bg-card border border-border/50">
+        <TabsList className="grid grid-cols-6 w-full bg-card border border-border/50">
           <TabsTrigger value="products" className="text-[10px] px-1">Produits</TabsTrigger>
+          <TabsTrigger value="categories" className="text-[10px] px-1">Catégories</TabsTrigger>
           <TabsTrigger value="orders" className="text-[10px] px-1">Commandes</TabsTrigger>
           <TabsTrigger value="tickets" className="text-[10px] px-1">Tickets</TabsTrigger>
           <TabsTrigger value="logs" className="text-[10px] px-1">Logs</TabsTrigger>
           <TabsTrigger value="users" className="text-[10px] px-1">Users</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="categories" className="mt-4">
+          <AdminCategoriesManager />
+        </TabsContent>
 
         <TabsContent value="orders" className="mt-4">
           <AdminOrders />
@@ -158,7 +165,7 @@ export default function Admin() {
         {[
           { label: "Produits", value: products?.length ?? 0, icon: Package },
           { label: "En stock", value: products?.filter((p) => p.inStock).length ?? 0, icon: ShieldCheck },
-          { label: "Catégories", value: CATEGORIES.length, icon: Search },
+          { label: "Catégories", value: catList?.length ?? 0, icon: Search },
         ].map(({ label, value, icon: Icon }) => (
           <Card key={label} className="bg-card/50 border-border/50">
             <CardContent className="p-3 flex flex-col items-center gap-1">

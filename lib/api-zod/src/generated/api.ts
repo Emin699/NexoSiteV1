@@ -149,6 +149,11 @@ export const GetProductsResponseItem = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  unlimitedStock: zod
+    .boolean()
+    .describe(
+      "Si true, le produit est toujours achetable sans consommer de stock_items (livraison via digitalContent répété).",
+    ),
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
@@ -174,6 +179,69 @@ export const GetProductsResponseItem = zod.object({
 export const GetProductsResponse = zod.array(GetProductsResponseItem);
 
 /**
+ * @summary List public categories
+ */
+export const GetCategoriesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  icon: zod.string(),
+  sortOrder: zod.number(),
+});
+export const GetCategoriesResponse = zod.array(GetCategoriesResponseItem);
+
+/**
+ * @summary List categories (admin)
+ */
+export const AdminListCategoriesResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  icon: zod.string(),
+  sortOrder: zod.number(),
+});
+export const AdminListCategoriesResponse = zod.array(
+  AdminListCategoriesResponseItem,
+);
+
+/**
+ * @summary Create category
+ */
+export const AdminCreateCategoryBody = zod.object({
+  name: zod.string(),
+  icon: zod.string().optional(),
+  sortOrder: zod.number().optional(),
+});
+
+/**
+ * @summary Update category
+ */
+export const AdminUpdateCategoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminUpdateCategoryBody = zod.object({
+  name: zod.string(),
+  icon: zod.string().optional(),
+  sortOrder: zod.number().optional(),
+});
+
+export const AdminUpdateCategoryResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  slug: zod.string(),
+  icon: zod.string(),
+  sortOrder: zod.number(),
+});
+
+/**
+ * @summary Delete category
+ */
+export const AdminDeleteCategoryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary Get product by ID
  */
 export const GetProductParams = zod.object({
@@ -189,6 +257,11 @@ export const GetProductResponse = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  unlimitedStock: zod
+    .boolean()
+    .describe(
+      "Si true, le produit est toujours achetable sans consommer de stock_items (livraison via digitalContent répété).",
+    ),
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
@@ -224,6 +297,11 @@ export const AdminGetProductsResponseItem = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  unlimitedStock: zod
+    .boolean()
+    .describe(
+      "Si true, le produit est toujours achetable sans consommer de stock_items (livraison via digitalContent répété).",
+    ),
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
@@ -258,6 +336,7 @@ export const AdminCreateProductBody = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  unlimitedStock: zod.boolean().optional(),
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
@@ -279,6 +358,7 @@ export const AdminUpdateProductBody = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  unlimitedStock: zod.boolean().optional(),
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),
@@ -295,6 +375,11 @@ export const AdminUpdateProductResponse = zod.object({
   price: zod.number(),
   deliveryType: zod.enum(["auto", "manual"]),
   inStock: zod.boolean(),
+  unlimitedStock: zod
+    .boolean()
+    .describe(
+      "Si true, le produit est toujours achetable sans consommer de stock_items (livraison via digitalContent répété).",
+    ),
   imageUrl: zod.string().nullish(),
   digitalContent: zod.string().nullish(),
   digitalImageUrl: zod.string().nullish(),

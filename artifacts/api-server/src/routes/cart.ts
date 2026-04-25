@@ -193,6 +193,19 @@ router.post("/cart", requireAuth, async (req, res): Promise<void> => {
       res.status(400).json({ error: "Cette variante n'est plus disponible" });
       return;
     }
+  } else {
+    // Pas de variantId : refuser si le produit a des variantes actives (sauf stock illimité)
+    const activeVariants = await db
+      .select({ id: productVariantsTable.id })
+      .from(productVariantsTable)
+      .where(and(
+        eq(productVariantsTable.productId, productId),
+        eq(productVariantsTable.isActive, true),
+      ));
+    if (activeVariants.length > 0 && !product.unlimitedStock) {
+      res.status(400).json({ error: "Veuillez choisir une variante" });
+      return;
+    }
   }
 
   const variantCondition = variantId != null
@@ -317,6 +330,7 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
           productEmoji: productsTable.emoji,
           productPrice: productsTable.price,
           productDeliveryType: productsTable.deliveryType,
+          productUnlimitedStock: productsTable.unlimitedStock,
           digitalContent: productsTable.digitalContent,
           digitalImageUrl: productsTable.digitalImageUrl,
           requiresCustomerInfo: productsTable.requiresCustomerInfo,
@@ -335,11 +349,11 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
 
       // Reserve stock_items per cart row that has variantId + deliveryType=auto.
       // Use FOR UPDATE SKIP LOCKED so concurrent checkouts don't double-consume.
-      // Map: cartItemId -> array of stockItem rows reserved (one per quantity)
+      // Skip the pool entirely if the product is flagged unlimitedStock.
       const reservedStockByCartItem = new Map<number, { id: number; content: string }[]>();
       for (const item of items) {
         const isAuto = item.productDeliveryType === "auto";
-        if (!isAuto || item.variantId == null) continue;
+        if (!isAuto || item.variantId == null || item.productUnlimitedStock) continue;
 
         const reserved = await tx.execute(sql`
           SELECT id, content FROM stock_items

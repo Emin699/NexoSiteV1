@@ -60,3 +60,13 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 - **Frontend**: `pages/support.tsx` (3 boutons + dialog catégorie, replacement → choix Basic Fit/Autre puis form dynamique), `pages/support-ticket.tsx` (vue chat, polling 15s), `components/admin-tickets.tsx` (liste filtrable + dialog admin avec reply + close/rouvrir).
 - **Champs Basic Fit**: nom, prénom, dateNaissance, dateAchat, dernierMail (tous obligatoires). **Autre**: nomProduit, identifiant (obligatoires) + autresInfos (optionnel). Sauvegardés dans `tickets.formData` JSON, affichés dans card "Infos transmises".
 - **Notif visuelle**: pastille violette à côté du ticket si `lastReplyBy=admin` (côté user) ou `lastReplyBy=user` (côté admin).
+
+## NexoShop — Catégories dynamiques + Stock illimité + Markdown
+
+- **Table `categories`**: id serial, name unique, slug unique (slugify), icon text, sortOrder int. Seed initial des 6 catégories d'origine.
+- **Routes**: `GET /categories` (public), `GET/POST /admin/categories`, `PATCH/DELETE /admin/categories/:id` (admin). DELETE refusé si produits liés (409). PATCH propage le rename vers `products.category` dans une transaction.
+- **Frontend**: `useGetCategories` partout (home, modal admin, fallback hardcodé si pending). Page admin onglet "Catégories" → `components/admin-categories-manager.tsx` (CRUD avec inline edit).
+- **Stock illimité** : `products.unlimitedStock` boolean. Toggle dans modal admin onglet Infos. Si activé : checkout `cart.ts` skip la réservation `stock_items` même si variantId présent → livre via `digitalContent` (template). Pas de FOR UPDATE consommé.
+- **Markdown produit** : `lib/markdown.tsx` (mini parseur maison **gras** *italique* `code` + paragraphes + listes `- `). Page `/product/:id` rend la description longue avec `<Markdown source={...}>`. Helper visible dans le textarea description du modal admin.
+- **Sélecteur de variantes côté client** : page `/product/:id` montre la liste des variantes actives en cards cliquables (highlight primary border quand sélectionnée), prix + stock par variante, prix total live. Bouton "Acheter" avec variante = ajout panier + redirect `/cart` (la route `/buy` ne supporte pas variantId). "Choisissez une variante" requis avant action.
+- **Cards refondues** : `product-card-holo.tsx` retire le badge "✦ Catégorie" et le label "Livraison instantanée/manuelle". Description plus grande (`text-[13px]`, line-clamp-3, min-h-[54px]).

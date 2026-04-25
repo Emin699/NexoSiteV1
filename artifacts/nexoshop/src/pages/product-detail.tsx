@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import {
   useGetProduct,
@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ReviewModal } from "@/components/review-modal";
+import { Markdown } from "@/lib/markdown";
+import { cn } from "@/lib/utils";
 
 const CATEGORY_ICON: Record<string, React.ElementType> = {
   Streaming: Tv2,
@@ -50,8 +52,24 @@ export default function ProductDetail() {
   const buyProduct = useBuyProduct();
 
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [pendingReview, setPendingReview] = useState<{ productId: number; productName: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const activeVariants = useMemo(
+    () => (product?.variants ?? []).filter((v) => v.isActive),
+    [product]
+  );
+  const hasVariants = activeVariants.length > 0;
+  const unlimited = !!product?.unlimitedStock;
+
+  const selectedVariant = useMemo(
+    () => activeVariants.find((v) => v.id === selectedVariantId) ?? null,
+    [activeVariants, selectedVariantId]
+  );
+
+  const unitPrice = selectedVariant ? selectedVariant.price : (product?.price ?? 0);
+  const totalCharged = (unitPrice * quantity).toFixed(2);
 
   if (isLoading) {
     return (
@@ -76,15 +94,35 @@ export default function ProductDetail() {
   }
 
   const Icon = CATEGORY_ICON[product.category] ?? Package;
-  const total = (product.price * quantity).toFixed(2);
+
+  const variantStock = selectedVariant?.stockCount ?? 0;
+  const stockBlocking =
+    hasVariants &&
+    !unlimited &&
+    product.deliveryType === "auto" &&
+    selectedVariant != null &&
+    variantStock < quantity;
+
+  const mustPickVariant = hasVariants && selectedVariant == null;
 
   const handleAddToCart = async () => {
     if (busy) return;
+    if (mustPickVariant) {
+      toast.error("Choisissez une variante");
+      return;
+    }
+    if (stockBlocking) {
+      toast.error(`Stock insuffisant (${variantStock} disponible${variantStock > 1 ? "s" : ""})`);
+      return;
+    }
     setBusy(true);
     try {
-      await addToCart.mutateAsync({ data: { productId, quantity } });
+      await addToCart.mutateAsync({
+        data: { productId, quantity, variantId: selectedVariant?.id ?? null },
+      });
       qc.invalidateQueries({ queryKey: getGetCartQueryKey() });
-      toast.success(`${quantity} × ${product.name} ajouté au panier`);
+      const label = selectedVariant ? `${product.name} — ${selectedVariant.name}` : product.name;
+      toast.success(`${quantity} × ${label} ajouté au panier`);
     } catch {
       toast.error("Erreur lors de l'ajout au panier");
     } finally {
@@ -94,6 +132,32 @@ export default function ProductDetail() {
 
   const handleBuyNow = async () => {
     if (busy) return;
+    if (mustPickVariant) {
+      toast.error("Choisissez une variante");
+      return;
+    }
+    if (stockBlocking) {
+      toast.error(`Stock insuffisant (${variantStock} disponible${variantStock > 1 ? "s" : ""})`);
+      return;
+    }
+    // Si variante : passe par le panier puis checkout (la route /buy ne gère pas variantId).
+    if (selectedVariant) {
+      setBusy(true);
+      try {
+        await addToCart.mutateAsync({
+          data: { productId, quantity, variantId: selectedVariant.id },
+        });
+        qc.invalidateQueries({ queryKey: getGetCartQueryKey() });
+        toast.success("Ajouté au panier — finalisez votre commande");
+        setLocation("/cart");
+      } catch {
+        toast.error("Erreur lors de l'ajout au panier");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    // Pas de variante : achat direct
     setBusy(true);
     try {
       for (let i = 0; i < quantity; i++) {
@@ -159,25 +223,98 @@ export default function ProductDetail() {
           </h2>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-black text-primary font-mono">
-              {product.price.toFixed(2)}€
+              {unitPrice.toFixed(2)}€
             </span>
             <span className="text-xs text-muted-foreground">par unité</span>
           </div>
         </div>
 
+        {/* Variantes */}
+        {hasVariants && (
+          <Card className="bg-card/50 border-border/40">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Choisir une variante
+                </h3>
+                {mustPickVariant && (
+                  <span className="text-[10px] text-amber-400 font-semibold">Requis</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {activeVariants.map((v) => {
+                  const isSelected = selectedVariantId === v.id;
+                  const stock = v.stockCount ?? 0;
+                  const out =
+                    !unlimited &&
+                    product.deliveryType === "auto" &&
+                    stock <= 0;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      disabled={out}
+                      onClick={() => setSelectedVariantId(v.id)}
+                      className={cn(
+                        "w-full text-left rounded-xl border px-3 py-3 transition flex items-center justify-between gap-3",
+                        isSelected
+                          ? "border-primary/60 bg-primary/10"
+                          : "border-border/50 bg-card hover:border-primary/40",
+                        out && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      <div>
+                        <div className="font-semibold text-foreground text-sm">{v.name}</div>
+                        {v.durationDays != null && (
+                          <div className="text-[11px] text-muted-foreground">
+                            {v.durationDays} jour{v.durationDays > 1 ? "s" : ""}
+                          </div>
+                        )}
+                        {!unlimited && product.deliveryType === "auto" && (
+                          <div
+                            className={cn(
+                              "text-[11px] mt-0.5 font-medium",
+                              out ? "text-rose-400" : stock <= 5 ? "text-amber-400" : "text-emerald-400"
+                            )}
+                          >
+                            {out ? "Épuisé" : `${stock} en stock`}
+                          </div>
+                        )}
+                      </div>
+                      <div className="font-mono font-bold text-primary text-sm">
+                        {v.price.toFixed(2)}€
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Description avec markdown */}
         <Card className="bg-card/50 border-border/40">
           <CardContent className="p-4 space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               Description
             </h3>
-            <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">
-              {product.description || "Aucune description disponible."}
-            </p>
+            {product.description ? (
+              <Markdown
+                source={product.description}
+                className="text-sm text-foreground/90"
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground italic">
+                Aucune description disponible.
+              </p>
+            )}
             <div className="flex items-center gap-2 pt-2 border-t border-border/40 mt-2">
               {product.inStock ? (
                 <>
                   <CheckCircle2 className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-green-400 font-medium">En stock</span>
+                  <span className="text-xs text-green-400 font-medium">
+                    {unlimited ? "Disponible (stock illimité)" : "En stock"}
+                  </span>
                 </>
               ) : (
                 <>
@@ -195,7 +332,7 @@ export default function ProductDetail() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold">Quantité</span>
               <span className="text-xs text-muted-foreground">
-                Total : <span className="font-mono font-bold text-primary">{total}€</span>
+                Total : <span className="font-mono font-bold text-primary">{totalCharged}€</span>
               </span>
             </div>
             <div className="flex items-center justify-center gap-4">
@@ -243,7 +380,7 @@ export default function ProductDetail() {
             disabled={!product.inStock || busy}
           >
             <Zap className="w-4 h-4 mr-2" />
-            Acheter {total}€
+            Acheter {totalCharged}€
           </Button>
         </div>
       </div>

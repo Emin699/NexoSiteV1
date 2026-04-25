@@ -11,6 +11,7 @@ export const productsTable = pgTable("products", {
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   deliveryType: text("delivery_type").notNull().default("manual"),
   inStock: boolean("in_stock").notNull().default(true),
+  unlimitedStock: boolean("unlimited_stock").notNull().default(false),
   digitalContent: text("digital_content"),
   digitalImageUrl: text("digital_image_url"),
   imageUrl: text("image_url"),

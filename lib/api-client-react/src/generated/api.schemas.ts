@@ -39,6 +39,8 @@ export interface Product {
   price: number;
   deliveryType: ProductDeliveryType;
   inStock: boolean;
+  /** Si true, le produit est toujours achetable sans consommer de stock_items (livraison via digitalContent répété). */
+  unlimitedStock: boolean;
   /** @nullable */
   imageUrl?: string | null;
   /** @nullable */
@@ -48,6 +50,20 @@ export interface Product {
   requiresCustomerInfo: boolean;
   customerInfoFields: string[];
   variants: ProductVariant[];
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  sortOrder: number;
+}
+
+export interface CategoryInput {
+  name: string;
+  icon?: string;
+  sortOrder?: number;
 }
 
 export interface ProductVariantInput {
@@ -104,6 +120,7 @@ export interface AdminProductBody {
   price: number;
   deliveryType: AdminProductBodyDeliveryType;
   inStock: boolean;
+  unlimitedStock?: boolean;
   /** @nullable */
   imageUrl?: string | null;
   /** @nullable */

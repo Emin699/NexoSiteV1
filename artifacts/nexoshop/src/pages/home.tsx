@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useGetProducts, useAddToCart, useBuyProduct } from "@workspace/api-client-react";
+import { useMemo, useState } from "react";
+import { useGetProducts, useAddToCart, useBuyProduct, useGetCategories } from "@workspace/api-client-react";
 import { ReviewModal } from "@/components/review-modal";
 import { ProductCardHolo } from "@/components/product-card-holo";
 import { Card } from "@/components/ui/card";
@@ -24,7 +24,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getGetCartQueryKey } from "@workspace/api-client-react";
 import { toast } from "sonner";
 
-const CATEGORIES = [
+const CATEGORIES_FALLBACK = [
   { value: "Tout", label: "Toutes les catégories" },
   { value: "Streaming", label: "Streaming" },
   { value: "Musique", label: "Musique" },
@@ -52,8 +52,19 @@ export default function Home() {
   const { data: products, isLoading } = useGetProducts({
     category: activeCategory === "Tout" ? undefined : activeCategory,
   });
+  const { data: dynamicCategories } = useGetCategories();
   const addToCart = useAddToCart();
   const buyProduct = useBuyProduct();
+
+  const CATEGORIES = useMemo(() => {
+    if (dynamicCategories && dynamicCategories.length > 0) {
+      return [
+        { value: "Tout", label: "Toutes les catégories" },
+        ...dynamicCategories.map((c) => ({ value: c.name, label: c.name })),
+      ];
+    }
+    return CATEGORIES_FALLBACK;
+  }, [dynamicCategories]);
 
   const handleAddToCart = async (productId: number) => {
     try {

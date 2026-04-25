@@ -212,6 +212,91 @@ paths:
                 items:
                   $ref: "#/components/schemas/Product"
 
+  /categories:
+    get:
+      operationId: getCategories
+      tags: [products]
+      summary: List public categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /admin/categories:
+    get:
+      operationId: adminListCategories
+      tags: [admin]
+      summary: List categories (admin)
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      operationId: adminCreateCategory
+      tags: [admin]
+      summary: Create category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+
+  /admin/categories/{id}:
+    patch:
+      operationId: adminUpdateCategory
+      tags: [admin]
+      summary: Update category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+    delete:
+      operationId: adminDeleteCategory
+      tags: [admin]
+      summary: Delete category
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /products/{id}:
     get:
       operationId: getProduct
@@ -1297,6 +1382,9 @@ components:
           enum: [auto, manual]
         inStock:
           type: boolean
+        unlimitedStock:
+          type: boolean
+          description: "Si true, le produit est toujours achetable sans consommer de stock_items (livraison via digitalContent répété)."
         imageUrl:
           type: ["string", "null"]
         digitalContent:
@@ -1313,7 +1401,33 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ProductVariant"
-      required: [id, name, emoji, category, description, price, deliveryType, inStock, requiresCustomerInfo, customerInfoFields, variants]
+      required: [id, name, emoji, category, description, price, deliveryType, inStock, unlimitedStock, requiresCustomerInfo, customerInfoFields, variants]
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        icon:
+          type: string
+        sortOrder:
+          type: integer
+      required: [id, name, slug, icon, sortOrder]
+
+    CategoryInput:
+      type: object
+      properties:
+        name:
+          type: string
+        icon:
+          type: string
+        sortOrder:
+          type: integer
+      required: [name]
 
     ProductVariant:
       type: object
@@ -1406,6 +1520,8 @@ components:
           type: string
           enum: [auto, manual]
         inStock:
+          type: boolean
+        unlimitedStock:
           type: boolean
         imageUrl:
           type: ["string", "null"]

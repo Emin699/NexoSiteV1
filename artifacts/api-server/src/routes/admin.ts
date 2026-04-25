@@ -52,6 +52,7 @@ const AdminProductSchema = z.object({
   price: z.coerce.number().positive(),
   deliveryType: z.enum(["auto", "manual"]).default("manual"),
   inStock: z.coerce.boolean().default(true),
+  unlimitedStock: z.coerce.boolean().default(false),
   imageUrl: z.string().nullable().optional(),
   digitalContent: z.string().nullable().optional(),
   digitalImageUrl: z.string().nullable().optional(),
@@ -94,7 +95,7 @@ router.post("/admin/products", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl, requiresCustomerInfo, customerInfoFields } = parsed.data;
+  const { name, category, description, price, deliveryType, inStock, unlimitedStock, imageUrl, digitalContent, digitalImageUrl, requiresCustomerInfo, customerInfoFields } = parsed.data;
   const [product] = await db
     .insert(productsTable)
     .values({
@@ -104,6 +105,7 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       price: price.toFixed(2),
       deliveryType,
       inStock,
+      unlimitedStock,
       imageUrl: imageUrl ?? null,
       digitalContent: digitalContent ?? null,
       digitalImageUrl: digitalImageUrl ?? null,
@@ -122,11 +124,11 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
   const parsed = AdminProductSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
-  const { name, category, description, price, deliveryType, inStock, imageUrl, digitalContent, digitalImageUrl, requiresCustomerInfo, customerInfoFields } = parsed.data;
+  const { name, category, description, price, deliveryType, inStock, unlimitedStock, imageUrl, digitalContent, digitalImageUrl, requiresCustomerInfo, customerInfoFields } = parsed.data;
   const [product] = await db
     .update(productsTable)
     .set({
-      name, category, description, price: price.toFixed(2), deliveryType, inStock,
+      name, category, description, price: price.toFixed(2), deliveryType, inStock, unlimitedStock,
       imageUrl: imageUrl ?? null,
       digitalContent: digitalContent ?? null,
       digitalImageUrl: digitalImageUrl ?? null,
