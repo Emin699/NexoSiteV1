@@ -73,9 +73,9 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## NexoShop — Animation MERCI + Reviews avec validation
 
-- **Schema `reviews.is_auto`** boolean + **index unique** `reviews_user_product_unique (user_id, product_id)` — anti-doublon atomique (`ON CONFLICT DO NOTHING`).
-- **POST /reviews** : validation `comment` minLength=10 (zod + front), contrôle d'éligibilité (l'utilisateur doit avoir au moins 1 commande livrée pour le `productId`, sinon 403), insertion idempotente via index unique. Toujours +1 spin gratuit après succès.
-- **GET /reviews/me** (auth) : retourne les reviews du user courant `[{productId, rating, comment, isAuto, createdAt}]`. Front l'utilise sur `/orders` pour cacher le bouton "Laisser un avis" si déjà reviewé.
+- **Schema `reviews.is_auto`** boolean. **Plusieurs avis par (user, product) sont autorisés** — pas de contrainte unique.
+- **POST /reviews** : validation `comment` minLength=10 (zod + front), contrôle d'éligibilité (l'utilisateur doit avoir au moins 1 commande livrée pour le `productId`, sinon 403). Toujours +1 spin gratuit après succès. Pas de blocage si l'utilisateur a déjà reviewé.
+- **GET /reviews/me** (auth) : retourne les reviews du user courant `[{productId, rating, comment, isAuto, createdAt}]`. Conservé pour l'historique mais plus utilisé pour gating front (le bouton "Laisser un avis" est désormais toujours affiché sur les commandes livrées).
 - **Auto-review sweep** : fonction `maybeRunAutoReviewSweep()` rate-limited 60s, déclenchée en arrière-plan sur GET /reviews et /reviews/me. Scanne les commandes `delivered_at <= now()-24h` sans review existante, insère une review 5 étoiles avec `isAuto=true` et un message random parmi 5 templates positifs.
 - **Order.productId** ajouté au schema OpenAPI Order (requis). Côté API, `GET /orders`, `POST /orders/buy` et `POST /orders/:id/customer-info` exposent `productId` (sinon 500 zod parse).
 - **Frontend** :

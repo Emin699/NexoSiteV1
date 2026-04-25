@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import {
   useGetOrders,
   getGetOrdersQueryKey,
   useSubmitOrderCustomerInfo,
-  useGetMyReviews,
   getGetMyReviewsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,20 +43,12 @@ export default function Orders() {
   const { data: orders, isLoading } = useGetOrders({
     query: { queryKey: getGetOrdersQueryKey() },
   });
-  const { data: myReviews } = useGetMyReviews({
-    query: { queryKey: getGetMyReviewsQueryKey() },
-  });
   const submitInfo = useSubmitOrderCustomerInfo();
   const [selected, setSelected] = useState<Order | null>(null);
   const [imageOpen, setImageOpen] = useState(false);
   const [infoOrder, setInfoOrder] = useState<Order | null>(null);
   const [infoValues, setInfoValues] = useState<Record<string, string>>({});
   const [reviewProduct, setReviewProduct] = useState<{ productId: number; productName: string } | null>(null);
-
-  const reviewedProductIds = useMemo(
-    () => new Set((myReviews ?? []).map((r) => r.productId)),
-    [myReviews]
-  );
 
   const openInfoDialog = (order: Order) => {
     setInfoOrder(order);
@@ -162,7 +153,6 @@ export default function Orders() {
             const isDelivered = order.status === "delivered";
             const needsInfo = (order.customerInfoFields?.length ?? 0) > 0;
             const infoSubmitted = needsInfo && !!order.customerInfo && Object.keys(order.customerInfo).length > 0;
-            const alreadyReviewed = reviewedProductIds.has(order.productId);
             return (
               <Card
                 key={order.id}
@@ -239,7 +229,7 @@ export default function Orders() {
                     </Button>
                   )}
 
-                  {isDelivered && !alreadyReviewed && (
+                  {isDelivered && (
                     <Button
                       size="sm"
                       className="w-full h-8 bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:opacity-90 text-white font-semibold border-none shadow-md shadow-fuchsia-500/20"
@@ -254,13 +244,6 @@ export default function Orders() {
                       <Star className="w-3.5 h-3.5 mr-1.5" />
                       Laisser un avis
                     </Button>
-                  )}
-
-                  {isDelivered && alreadyReviewed && (
-                    <div className="w-full h-8 flex items-center justify-center gap-1.5 text-[11px] text-emerald-400 border border-emerald-500/30 rounded-md bg-emerald-500/5">
-                      <Check className="w-3.5 h-3.5" />
-                      Avis déjà publié
-                    </div>
                   )}
                 </CardContent>
               </Card>

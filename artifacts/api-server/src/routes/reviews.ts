@@ -83,20 +83,17 @@ async function maybeRunAutoReviewSweep(): Promise<void> {
     for (const row of rows) {
       const msg = AUTO_REVIEW_MESSAGES[Math.floor(Math.random() * AUTO_REVIEW_MESSAGES.length)];
       try {
-        await db
-          .insert(reviewsTable)
-          .values({
-            userId: row.user_id,
-            productId: row.product_id,
-            orderId: row.order_id,
-            rating: 5,
-            comment: msg,
-            imageUrl: null,
-            isAuto: true,
-          })
-          .onConflictDoNothing({ target: [reviewsTable.userId, reviewsTable.productId] });
+        await db.insert(reviewsTable).values({
+          userId: row.user_id,
+          productId: row.product_id,
+          orderId: row.order_id,
+          rating: 5,
+          comment: msg,
+          imageUrl: null,
+          isAuto: true,
+        });
       } catch {
-        // ignore (e.g. concurrent unique conflict on retries)
+        // ignore — au pire on réessaiera au prochain sweep
       }
     }
   } catch (e) {
@@ -135,8 +132,8 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  // Insertion idempotente grâce à l'index unique (user_id, product_id) — pas de race possible.
-  const inserted = await db
+  // Plusieurs avis sont autorisés pour le même produit.
+  const [review] = await db
     .insert(reviewsTable)
     .values({
       userId,
@@ -147,13 +144,7 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
       imageUrl: imageUrl ?? null,
       isAuto: false,
     })
-    .onConflictDoNothing({ target: [reviewsTable.userId, reviewsTable.productId] })
     .returning();
-
-  if (inserted.length === 0) {
-    res.status(400).json({ error: "Vous avez déjà laissé un avis pour ce produit." });
-    return;
-  }
 
   await db
     .update(usersTable)
@@ -161,7 +152,7 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
     .where(eq(usersTable.id, userId));
 
   res.status(201).json({
-    id: inserted[0].id,
+    id: review.id,
     message: "Avis enregistré ! Vous avez reçu un tour de roue bonus.",
     bonusSpin: true,
   });
