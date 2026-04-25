@@ -481,9 +481,9 @@ export function AdminProductModal({ open, onOpenChange, editingProduct }: AdminP
                         onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                       />
                       <p className="text-[10px] text-muted-foreground">
-                        Mise en forme : <code className="text-purple-300">**gras**</code>{" "}
-                        <code className="text-purple-300">*italique*</code>{" "}
-                        <code className="text-purple-300">`code`</code> · Sauter une ligne pour un paragraphe.
+                        Mise en forme : <code className="text-primary">**gras**</code>{" "}
+                        <code className="text-primary">*italique*</code>{" "}
+                        <code className="text-primary">`code`</code> · Sauter une ligne pour un paragraphe.
                       </p>
                     </div>
                   </div>

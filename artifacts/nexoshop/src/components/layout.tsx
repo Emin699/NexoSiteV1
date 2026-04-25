@@ -34,11 +34,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
 
-          <div className="flex items-center">
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary absolute left-1/2 -translate-x-1/2">
-              NexoShop
-            </h1>
-          </div>
+          <Link
+            href="/"
+            className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2"
+          >
+            <img
+              src="/nexoshop-icon.png"
+              alt=""
+              aria-hidden="true"
+              className="w-7 h-7 rounded-md shadow-md shadow-primary/20"
+            />
+            <img
+              src="/nexoshop-logo.png"
+              alt="NexoShop"
+              className="h-6 w-auto select-none"
+              draggable={false}
+            />
+          </Link>
 
           <Link href="/cart" className="relative p-2 -mr-2 rounded-full hover:bg-muted/50 transition-colors">
             <ShoppingCart className="w-5 h-5 text-foreground" />

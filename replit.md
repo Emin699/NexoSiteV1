@@ -83,3 +83,12 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
   - `components/review-modal.tsx` : prop `onSubmitted` optionnelle (sinon `onClose`), bouton submit `disabled` si `comment.trim().length < 10`, compteur live "Encore X caractères requis" → "Commentaire suffisant ✓" en vert, compteur 500 max.
   - Flow checkout : `cart.tsx` (panier), `home.tsx` (achat rapide depuis card), `product-detail.tsx` (achat direct) → ThankYouModal → soit `/orders` soit ReviewModal → `/orders` après envoi/skip.
   - `pages/orders.tsx` : `useGetMyReviews` → `Set` des productId déjà reviewés. Pour chaque commande livrée : bouton fuchsia "Laisser un avis" si non reviewé, sinon badge vert "Avis déjà publié". Le bouton "Modifier mes infos" est masqué quand `status='delivered'`.
+
+## NexoShop — Refonte DA logo (avril 2026)
+
+- **Palette CSS** (`src/index.css`) : `--primary: 211 100% 56%` (bleu logo `#1E90FF`), `--secondary: 28 100% 55%` (orange logo `#FF8C00`), `--accent` = orange. Cards/bg ajustés `222 35% 13%`.
+- **Logos** dans `public/` : `nexoshop-icon.png` (carré favicon + header) + `nexoshop-logo.png` (wordmark).
+- **`index.html`** : favicon `/nexoshop-icon.png`, theme-color `#1E90FF`.
+- **`layout.tsx`** : header centré, `<Link href="/">` avec icône 7×7 + wordmark h-6.
+- **Remplacements globaux** `fuchsia/pink/purple/violet` → `primary/secondary` dans : thank-you-modal, orders, product-detail, product-card-holo, markdown, profile, admin-product-modal, admin-logs, admin-users, admin-tickets, support, support-ticket, wheel (sauf segments roue qui gardent leurs couleurs sémantiques individuelles).
+- **product-card-holo** : `CATEGORY_GRADIENTS` repensés sur palette bleu/orange + halo conique `#1E90FF / #FF8C00`.

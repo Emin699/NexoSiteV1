@@ -16,13 +16,13 @@ export default function Profile() {
 
   const menuItems = [
     { href: "/orders", icon: Package, label: "Commandes passées", color: "text-cyan-500", bg: "bg-cyan-500/10" },
-    { href: "/wheel", icon: Gift, label: "Roue de la Destinée", color: "text-purple-500", bg: "bg-purple-500/10" },
+    { href: "/wheel", icon: Gift, label: "Roue de la Destinée", color: "text-secondary", bg: "bg-secondary/10" },
     { href: "/loyalty", icon: Coins, label: "Points de Fidélité", color: "text-yellow-500", bg: "bg-yellow-500/10" },
     { href: "/jackpot", icon: Ticket, label: "Jackpot Hebdomadaire", color: "text-red-500", bg: "bg-red-500/10" },
     { href: "/tiers", icon: Crown, label: "Niveaux VIP", color: "text-amber-500", bg: "bg-amber-500/10" },
     { href: "/referral", icon: Users, label: "Parrainage", color: "text-blue-500", bg: "bg-blue-500/10" },
     { href: "/reviews", icon: MessageSquare, label: "Avis clients", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { href: "/support", icon: LifeBuoy, label: "Support & Tickets", color: "text-pink-500", bg: "bg-pink-500/10" },
+    { href: "/support", icon: LifeBuoy, label: "Support & Tickets", color: "text-primary", bg: "bg-primary/10" },
   ];
 
   if (isLoadingUser || isLoadingStats) {

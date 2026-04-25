@@ -52,7 +52,7 @@ const REWARDS: Reward[] = [
   { type: "balance_1",      label: "+1.00€",         short: "1€",       probability: 8,     icon: Wallet,    color: "text-emerald-400",  bg: "bg-emerald-500/10",  fill: "#047857", iconColor: "#6ee7b7", glow: "rgba(52,211,153,0.95)"  },
   { type: "points_5",       label: "+5 pts",         short: "5 pts",    probability: 2,     icon: Star,      color: "text-yellow-400",   bg: "bg-yellow-500/10",   fill: "#a16207", iconColor: "#fde047", glow: "rgba(250,204,21,0.95)"  },
   { type: "balance_5",      label: "+5.00€",         short: "5€",       probability: 4,     icon: Wallet,    color: "text-cyan-400",     bg: "bg-cyan-500/10",     fill: "#0e7490", iconColor: "#67e8f9", glow: "rgba(34,211,238,0.95)"  },
-  { type: "free_spin",      label: "Relance",        short: "Relance",  probability: 20,    icon: RefreshCw, color: "text-violet-400",   bg: "bg-violet-500/10",   fill: "#6d28d9", iconColor: "#c4b5fd", glow: "rgba(167,139,250,0.95)" },
+  { type: "free_spin",      label: "Relance",        short: "Relance",  probability: 20,    icon: RefreshCw, color: "text-primary",   bg: "bg-primary/10",   fill: "#6d28d9", iconColor: "#c4b5fd", glow: "rgba(167,139,250,0.95)" },
   { type: "coupon_amount",  label: "Coupon -2€",     short: "-2€",      probability: 3.5,   icon: Tag,       color: "text-indigo-400",   bg: "bg-indigo-500/10",   fill: "#4338ca", iconColor: "#a5b4fc", glow: "rgba(129,140,248,0.95)" },
   { type: "points_10",      label: "+10 pts",        short: "10 pts",   probability: 1.5,   icon: Trophy,    color: "text-orange-400",   bg: "bg-orange-500/10",   fill: "#c2410c", iconColor: "#fdba74", glow: "rgba(251,146,60,0.95)"  },
   { type: "deezer",         label: "Deezer Premium", short: "Deezer",   probability: 0.5,   icon: Music2,    color: "text-pink-400",     bg: "bg-pink-500/10",     fill: "#be185d", iconColor: "#f9a8d4", glow: "rgba(244,114,182,0.95)" },
@@ -168,8 +168,8 @@ export default function Wheel() {
 
       <div className="flex-1 flex flex-col items-center p-4 gap-5 overflow-y-auto pb-8 relative">
         {/* Background glow */}
-        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-violet-600/15 rounded-full blur-[120px] pointer-events-none" />
-        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-primary/15 rounded-full blur-[120px] pointer-events-none" />
+        <div className="fixed top-1/3 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-secondary/10 rounded-full blur-[100px] pointer-events-none" />
 
         {/* Spin counter */}
         <div className="w-full max-w-sm z-10">
@@ -178,18 +178,18 @@ export default function Wheel() {
           ) : (
             <div className={`flex items-center justify-between rounded-2xl border px-5 py-3.5 backdrop-blur-md ${
               status?.canSpin
-                ? "bg-violet-500/10 border-violet-500/30 shadow-[0_0_20px_rgba(139,92,246,0.15)]"
+                ? "bg-primary/10 border-primary/30 shadow-[0_0_20px_rgba(139,92,246,0.15)]"
                 : "bg-muted/20 border-border/40"
             }`}>
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  status?.canSpin ? "bg-violet-500/20" : "bg-muted/30"
+                  status?.canSpin ? "bg-primary/20" : "bg-muted/30"
                 }`}>
-                  <RefreshCw className={`w-5 h-5 ${status?.canSpin ? "text-violet-400" : "text-muted-foreground"}`} />
+                  <RefreshCw className={`w-5 h-5 ${status?.canSpin ? "text-primary" : "text-muted-foreground"}`} />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Tours disponibles</p>
-                  <p className={`text-2xl font-black leading-none ${status?.canSpin ? "text-violet-300" : "text-muted-foreground"}`}>
+                  <p className={`text-2xl font-black leading-none ${status?.canSpin ? "text-primary" : "text-muted-foreground"}`}>
                     {availableSpins}
                   </p>
                 </div>
@@ -200,7 +200,7 @@ export default function Wheel() {
                   <span className="font-mono font-bold">{formatTime(status.hoursUntilNextSpin)}</span>
                 </div>
               ) : status?.canSpin ? (
-                <span className="text-xs text-violet-400 font-bold uppercase tracking-wider">Prêt !</span>
+                <span className="text-xs text-primary font-bold uppercase tracking-wider">Prêt !</span>
               ) : null}
             </div>
           )}
@@ -209,7 +209,7 @@ export default function Wheel() {
         {/* SVG Wheel */}
         <div className="relative w-[320px] h-[340px] z-10 shrink-0 flex items-center justify-center">
           {/* Outer glow ring */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-violet-500/30 via-pink-500/20 to-amber-400/20 blur-2xl" />
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/30 via-secondary/20 to-amber-400/20 blur-2xl" />
 
           {/* Pointer (top) */}
           <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-30 drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]">
@@ -339,7 +339,7 @@ export default function Wheel() {
         {/* Result or Spin Button */}
         <div className="w-full max-w-sm z-10">
           {result ? (
-            <Card className="bg-card/90 border-violet-500/40 animate-in zoom-in-95 duration-300 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
+            <Card className="bg-card/90 border-primary/40 animate-in zoom-in-95 duration-300 shadow-[0_0_30px_rgba(168,85,247,0.3)]">
               <CardContent className="p-5 text-center">
                 {(() => {
                   const reward = getResultReward();
@@ -352,7 +352,7 @@ export default function Wheel() {
                       <p className={`text-2xl font-black mb-1 ${reward.color}`}>{result.reward}</p>
                       <p className="text-sm text-muted-foreground">{result.message}</p>
                       <Button
-                        className="mt-4 w-full bg-violet-600 hover:bg-violet-700 border-none"
+                        className="mt-4 w-full bg-primary hover:bg-primary/90 border-none"
                         onClick={() => setResult(null)}
                       >
                         Continuer
@@ -364,7 +364,7 @@ export default function Wheel() {
             </Card>
           ) : (
             <Button
-              className="w-full h-14 text-lg font-black bg-gradient-to-r from-violet-600 via-pink-600 to-amber-500 hover:opacity-90 shadow-[0_0_25px_rgba(139,92,246,0.5)] border-none rounded-2xl uppercase tracking-wider"
+              className="w-full h-14 text-lg font-black bg-gradient-to-r from-primary via-secondary to-amber-500 hover:opacity-90 shadow-[0_0_25px_rgba(30,144,255,0.5)] border-none rounded-2xl uppercase tracking-wider"
               onClick={handleSpin}
               disabled={isLoading || !status?.canSpin || spinning}
             >

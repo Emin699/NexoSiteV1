@@ -24,7 +24,7 @@ export function ThankYouModal({ open, onClose, onLeaveReview, productName }: Tha
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent
-        className="bg-gradient-to-b from-card via-card to-fuchsia-500/5 border-fuchsia-500/30 max-w-sm overflow-hidden p-0"
+        className="bg-gradient-to-b from-card via-card to-primary/5 border-primary/30 max-w-sm overflow-hidden p-0"
       >
         {/* Animation block */}
         <div className="relative px-6 pt-10 pb-4 flex flex-col items-center text-center overflow-hidden">
@@ -33,7 +33,7 @@ export function ThankYouModal({ open, onClose, onLeaveReview, productName }: Tha
             {[...Array(8)].map((_, i) => (
               <Sparkles
                 key={i}
-                className="absolute text-fuchsia-400/60 animate-ping"
+                className={`absolute animate-ping ${i % 2 === 0 ? "text-primary/60" : "text-secondary/60"}`}
                 style={{
                   width: `${10 + (i % 3) * 4}px`,
                   height: `${10 + (i % 3) * 4}px`,
@@ -48,15 +48,15 @@ export function ThankYouModal({ open, onClose, onLeaveReview, productName }: Tha
 
           {/* Heart with pulse */}
           <div className="relative z-10 mb-3">
-            <div className="absolute inset-0 rounded-full bg-fuchsia-500/30 blur-xl animate-pulse" />
-            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center shadow-2xl shadow-fuchsia-500/40 animate-[heartbeat_1.2s_ease-in-out_infinite]">
+            <div className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-pulse" />
+            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-2xl shadow-primary/40 animate-[heartbeat_1.2s_ease-in-out_infinite]">
               <Heart className="w-10 h-10 text-white fill-white" strokeWidth={2.5} />
             </div>
           </div>
 
           {/* MERCI */}
           <h1
-            className="relative z-10 text-5xl font-black bg-gradient-to-br from-fuchsia-300 via-pink-300 to-fuchsia-500 bg-clip-text text-transparent tracking-wider animate-in zoom-in fade-in duration-700"
+            className="relative z-10 text-5xl font-black bg-gradient-to-br from-primary via-secondary to-primary bg-clip-text text-transparent tracking-wider animate-in zoom-in fade-in duration-700"
             style={{ letterSpacing: "0.05em" }}
           >
             MERCI&nbsp;!
@@ -97,7 +97,7 @@ export function ThankYouModal({ open, onClose, onLeaveReview, productName }: Tha
               Plus tard
             </Button>
             <Button
-              className="flex-1 bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:opacity-90 text-white border-none font-bold shadow-md shadow-fuchsia-500/30"
+              className="flex-1 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white border-none font-bold shadow-md shadow-primary/30"
               onClick={onLeaveReview}
               disabled={phase !== "cta"}
             >

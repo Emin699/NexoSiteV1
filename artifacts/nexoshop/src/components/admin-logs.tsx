@@ -46,16 +46,16 @@ const TYPE_META: Record<string, { label: string; icon: React.ElementType; color:
   purchase: { label: "Achat", icon: ShoppingBag, color: "text-blue-400", bg: "bg-blue-500/10" },
   deposit: { label: "Dépôt", icon: ArrowDownRight, color: "text-green-400", bg: "bg-green-500/10" },
   withdrawal: { label: "Retrait", icon: ArrowUpRight, color: "text-orange-400", bg: "bg-orange-500/10" },
-  wheel_win: { label: "Roue", icon: Gift, color: "text-violet-400", bg: "bg-violet-500/10" },
+  wheel_win: { label: "Roue", icon: Gift, color: "text-secondary", bg: "bg-secondary/10" },
   loyalty: { label: "Fidélité", icon: Star, color: "text-yellow-400", bg: "bg-yellow-500/10" },
-  jackpot: { label: "Jackpot", icon: Trophy, color: "text-pink-400", bg: "bg-pink-500/10" },
+  jackpot: { label: "Jackpot", icon: Trophy, color: "text-primary", bg: "bg-primary/10" },
   referral: { label: "Parrainage", icon: UsersIcon, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-  free_spin: { label: "Tour bonus", icon: RefreshCw, color: "text-violet-400", bg: "bg-violet-500/10" },
+  free_spin: { label: "Tour bonus", icon: RefreshCw, color: "text-secondary", bg: "bg-secondary/10" },
   admin_credit: { label: "Crédit admin", icon: ShieldCheck, color: "text-emerald-400", bg: "bg-emerald-500/10" },
   admin_debit: { label: "Débit admin", icon: ShieldCheck, color: "text-red-400", bg: "bg-red-500/10" },
   admin_loyaltyPoints: { label: "Admin points", icon: ShieldCheck, color: "text-yellow-400", bg: "bg-yellow-500/10" },
-  admin_freeSpins: { label: "Admin spins", icon: ShieldCheck, color: "text-violet-400", bg: "bg-violet-500/10" },
-  admin_jackpotTickets: { label: "Admin tickets", icon: ShieldCheck, color: "text-pink-400", bg: "bg-pink-500/10" },
+  admin_freeSpins: { label: "Admin spins", icon: ShieldCheck, color: "text-secondary", bg: "bg-secondary/10" },
+  admin_jackpotTickets: { label: "Admin tickets", icon: ShieldCheck, color: "text-primary", bg: "bg-primary/10" },
   default: { label: "Événement", icon: Activity, color: "text-muted-foreground", bg: "bg-muted/30" },
 };
 
@@ -167,7 +167,7 @@ export function AdminLogs() {
         </div>
         <div className="bg-card/50 border border-border/50 rounded-lg p-2 text-center">
           <p className="text-[10px] text-muted-foreground uppercase">Transactions</p>
-          <p className="text-lg font-bold text-violet-400">
+          <p className="text-lg font-bold text-secondary">
             {entries.filter((e) => e.kind === "tx").length}
           </p>
         </div>

@@ -278,7 +278,7 @@ export default function ProductDetail() {
                     className={cn(
                       "px-2 py-0.5 rounded-md text-[11px] font-bold",
                       unlimited
-                        ? "bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30"
+                        ? "bg-secondary/15 text-secondary border border-secondary/30"
                         : (totalStock ?? 1) > 0 || product.inStock
                         ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
                         : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
@@ -292,7 +292,7 @@ export default function ProductDetail() {
                     className={cn(
                       "h-full rounded-full transition-all",
                       unlimited
-                        ? "bg-gradient-to-r from-fuchsia-500 to-purple-500"
+                        ? "bg-gradient-to-r from-primary to-secondary"
                         : "bg-gradient-to-r from-emerald-400 to-emerald-500"
                     )}
                     style={{ width: `${stockPct}%` }}
@@ -403,7 +403,7 @@ export default function ProductDetail() {
               {/* Actions */}
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <Button
-                  className="h-12 bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:opacity-90 text-white border-none font-bold shadow-md shadow-fuchsia-500/30"
+                  className="h-12 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white border-none font-bold shadow-md shadow-primary/30"
                   onClick={handleAddToCart}
                   disabled={(!product.inStock && !unlimited) || busy}
                 >
@@ -430,7 +430,7 @@ export default function ProductDetail() {
           <button
             type="button"
             onClick={() => setDescOpen((o) => !o)}
-            className="w-full flex items-center justify-between gap-2 px-5 py-4 bg-gradient-to-r from-fuchsia-500/10 via-purple-500/5 to-transparent border-b border-border/50 hover:bg-fuchsia-500/15 transition"
+            className="w-full flex items-center justify-between gap-2 px-5 py-4 bg-gradient-to-r from-primary/10 via-secondary/5 to-transparent border-b border-border/50 hover:bg-primary/15 transition"
           >
             <div className="flex items-center gap-2">
               <span className="text-base">🇫🇷</span>
@@ -467,7 +467,7 @@ export default function ProductDetail() {
                           "w-full grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 text-left transition",
                           idx > 0 && "border-t border-border/40",
                           isSelected
-                            ? "bg-fuchsia-500/10"
+                            ? "bg-primary/10"
                             : "hover:bg-white/[0.03]",
                           out && "opacity-50 cursor-not-allowed"
                         )}

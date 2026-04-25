@@ -232,7 +232,7 @@ export default function Orders() {
                   {isDelivered && (
                     <Button
                       size="sm"
-                      className="w-full h-8 bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:opacity-90 text-white font-semibold border-none shadow-md shadow-fuchsia-500/20"
+                      className="w-full h-8 bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white font-semibold border-none shadow-md shadow-primary/20"
                       onClick={() =>
                         setReviewProduct({
                           productId: order.productId,

@@ -49,8 +49,8 @@ type Field = "balance" | "loyaltyPoints" | "freeSpins" | "jackpotTickets";
 const FIELD_META: Record<Field, { label: string; icon: React.ElementType; color: string; unit: string; suffix: string }> = {
   balance: { label: "Solde", icon: Wallet, color: "text-green-400", unit: "€", suffix: "€" },
   loyaltyPoints: { label: "Points", icon: Star, color: "text-yellow-400", unit: "pts", suffix: "pts" },
-  freeSpins: { label: "Tours", icon: RefreshCw, color: "text-violet-400", unit: "tour(s)", suffix: "" },
-  jackpotTickets: { label: "Tickets", icon: Trophy, color: "text-pink-400", unit: "ticket(s)", suffix: "" },
+  freeSpins: { label: "Tours", icon: RefreshCw, color: "text-secondary", unit: "tour(s)", suffix: "" },
+  jackpotTickets: { label: "Tickets", icon: Trophy, color: "text-primary", unit: "ticket(s)", suffix: "" },
 };
 
 export function AdminUsers() {
@@ -282,7 +282,7 @@ export function AdminUsers() {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="font-bold text-sm truncate">{user.firstName}</p>
                       {user.isAdmin && (
-                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-bold uppercase">
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary/20 text-primary font-bold uppercase">
                           Admin
                         </span>
                       )}

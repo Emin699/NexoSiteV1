@@ -41,8 +41,8 @@ const CATEGORY_META: Record<Category, { label: string; icon: typeof Headphones; 
   support: {
     label: "Support",
     icon: Headphones,
-    color: "text-violet-400",
-    bg: "bg-violet-500/15",
+    color: "text-primary",
+    bg: "bg-primary/15",
   },
   question: {
     label: "Question",
@@ -231,7 +231,7 @@ export default function Support() {
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="font-medium text-sm truncate">{t.subject}</p>
                           {needsRead && (
-                            <span className="w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)] shrink-0" />
+                            <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_6px_rgba(167,139,250,0.9)] shrink-0" />
                           )}
                         </div>
                         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
@@ -434,7 +434,7 @@ export default function Support() {
               <Button
                 onClick={onSubmit}
                 disabled={createTicket.isPending}
-                className="bg-violet-600 hover:bg-violet-700"
+                className="bg-primary hover:bg-primary/90"
               >
                 <MessageCircle className="w-4 h-4 mr-1" />
                 {createTicket.isPending ? "Envoi…" : "Envoyer"}

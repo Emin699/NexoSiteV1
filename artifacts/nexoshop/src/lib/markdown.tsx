@@ -24,7 +24,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
       tokens.push(
         <code
           key={`${keyPrefix}-c-${i}`}
-          className="px-1.5 py-0.5 rounded bg-white/10 text-purple-200 text-[0.9em] font-mono"
+          className="px-1.5 py-0.5 rounded bg-white/10 text-primary text-[0.9em] font-mono"
         >
           {m[6]}
         </code>
@@ -36,7 +36,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
           href={m[9]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-fuchsia-400 hover:text-fuchsia-300 underline underline-offset-2 break-all"
+          className="text-primary hover:text-secondary underline underline-offset-2 break-all"
         >
           {m[8]}
         </a>
@@ -48,7 +48,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
           href={m[11]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-fuchsia-400 hover:text-fuchsia-300 underline underline-offset-2 break-all"
+          className="text-primary hover:text-secondary underline underline-offset-2 break-all"
         >
           {m[11]}
         </a>

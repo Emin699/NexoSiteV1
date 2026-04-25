@@ -32,7 +32,7 @@ import {
 import { toast } from "sonner";
 
 const CATEGORY_META: Record<string, { label: string; icon: typeof Headphones; color: string; bg: string }> = {
-  support: { label: "Support", icon: Headphones, color: "text-violet-400", bg: "bg-violet-500/15" },
+  support: { label: "Support", icon: Headphones, color: "text-primary", bg: "bg-primary/15" },
   question: { label: "Question", icon: HelpCircle, color: "text-cyan-400", bg: "bg-cyan-500/15" },
   replacement: { label: "Remplacement", icon: Package, color: "text-amber-400", bg: "bg-amber-500/15" },
 };
@@ -96,7 +96,7 @@ export function AdminTickets() {
             size="sm"
             variant={filter === f ? "default" : "outline"}
             onClick={() => setFilter(f)}
-            className={filter === f ? "bg-violet-600 hover:bg-violet-700" : ""}
+            className={filter === f ? "bg-primary hover:bg-primary/90" : ""}
           >
             {f === "open" ? "Ouverts" : f === "closed" ? "Fermés" : "Tous"}
           </Button>
@@ -129,7 +129,7 @@ export function AdminTickets() {
                 onClick={() => setOpenId(t.id)}
                 className={`w-full text-left rounded-xl border p-3 flex items-center gap-3 transition ${
                   pending
-                    ? "bg-violet-500/10 border-violet-500/40 hover:bg-violet-500/15"
+                    ? "bg-primary/10 border-primary/40 hover:bg-primary/15"
                     : "bg-card/40 border-border/40 hover:bg-card/70"
                 }`}
               >
@@ -140,7 +140,7 @@ export function AdminTickets() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm truncate">{t.subject}</p>
                     {pending && (
-                      <span className="w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_6px_rgba(167,139,250,0.9)] shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-primary shadow-[0_0_6px_rgba(167,139,250,0.9)] shrink-0" />
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
@@ -292,7 +292,7 @@ function AdminTicketDialog({
                     <div
                       className={`max-w-[78%] rounded-2xl px-3 py-2 ${
                         isAdmin
-                          ? "bg-violet-600 text-white rounded-tr-sm"
+                          ? "bg-primary/80 text-white rounded-tr-sm"
                           : "bg-card/80 border border-border/40 rounded-tl-sm"
                       }`}
                     >
@@ -309,8 +309,8 @@ function AdminTicketDialog({
                       <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
                     </div>
                     {isAdmin && (
-                      <div className="w-7 h-7 rounded-full bg-violet-500/30 flex items-center justify-center shrink-0">
-                        <ShieldCheck className="w-3.5 h-3.5 text-violet-300" />
+                      <div className="w-7 h-7 rounded-full bg-primary/30 flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                       </div>
                     )}
                   </div>
@@ -354,7 +354,7 @@ function AdminTicketDialog({
                   size="sm"
                   onClick={send}
                   disabled={post.isPending || !reply.trim() || ticket.status === "closed"}
-                  className="flex-1 bg-violet-600 hover:bg-violet-700"
+                  className="flex-1 bg-primary hover:bg-primary/90"
                 >
                   <Send className="w-3.5 h-3.5 mr-1" />
                   {post.isPending ? "Envoi…" : "Envoyer"}

@@ -77,48 +77,48 @@
   --border: 225 21% 15%;
 
   /* #1a1f2e for cards */
-  --card: 225 28% 14%;
+  --card: 222 35% 13%;
   --card-foreground: 210 40% 98%;
-  --card-border: 225 21% 20%;
+  --card-border: 218 28% 22%;
 
-  --sidebar: 225 28% 14%;
+  --sidebar: 222 35% 13%;
   --sidebar-foreground: 210 40% 98%;
-  --sidebar-border: 225 21% 20%;
-  --sidebar-primary: 213 94% 64%;
+  --sidebar-border: 218 28% 22%;
+  --sidebar-primary: 211 100% 56%;
   --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 225 28% 20%;
+  --sidebar-accent: 222 30% 19%;
   --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-ring: 213 94% 64%;
+  --sidebar-ring: 211 100% 56%;
 
-  --popover: 225 28% 14%;
+  --popover: 222 35% 13%;
   --popover-foreground: 210 40% 98%;
-  --popover-border: 225 21% 20%;
+  --popover-border: 218 28% 22%;
 
-  /* Electric blue #4f9cf9 -> 213 94% 64% */
-  --primary: 213 94% 64%;
+  /* NexoShop logo blue (#1E90FF / #2196F3) */
+  --primary: 211 100% 56%;
   --primary-foreground: 210 40% 98%;
 
-  /* Violet #8b5cf6 -> 258 90% 66% */
-  --secondary: 258 90% 66%;
-  --secondary-foreground: 210 40% 98%;
+  /* NexoShop logo orange (#FF8C00) */
+  --secondary: 28 100% 55%;
+  --secondary-foreground: 222 47% 11%;
 
-  --muted: 225 28% 20%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted: 222 30% 19%;
+  --muted-foreground: 215 18% 65%;
 
-  --accent: 225 28% 25%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 28 100% 55%;
+  --accent-foreground: 222 47% 11%;
 
-  --destructive: 0 84.2% 60.2%;
+  --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
 
-  --input: 225 28% 25%;
-  --ring: 213 94% 64%;
+  --input: 222 30% 22%;
+  --ring: 211 100% 56%;
 
-  --chart-1: 213 94% 64%;
-  --chart-2: 258 90% 66%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  --chart-1: 211 100% 56%;
+  --chart-2: 28 100% 55%;
+  --chart-3: 195 90% 55%;
+  --chart-4: 38 95% 60%;
+  --chart-5: 220 90% 65%;
 
   --app-font-sans: 'Plus Jakarta Sans', sans-serif;
   --app-font-serif: Georgia, serif;
