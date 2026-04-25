@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   ChevronLeft,
+  ChevronUp,
+  ChevronDown,
   Minus,
   Plus,
   ShoppingCart,
@@ -24,8 +26,10 @@ import {
   Cpu,
   Sparkles,
   Package,
-  CheckCircle2,
-  XCircle,
+  ShieldCheck,
+  Leaf,
+  Truck,
+  Hand,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ReviewModal } from "@/components/review-modal";
@@ -55,6 +59,7 @@ export default function ProductDetail() {
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
   const [pendingReview, setPendingReview] = useState<{ productId: number; productName: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [descOpen, setDescOpen] = useState(true);
 
   const activeVariants = useMemo(
     () => (product?.variants ?? []).filter((v) => v.isActive),
@@ -68,8 +73,23 @@ export default function ProductDetail() {
     [activeVariants, selectedVariantId]
   );
 
-  const unitPrice = selectedVariant ? selectedVariant.price : (product?.price ?? 0);
+  const unitPrice = selectedVariant
+    ? selectedVariant.price
+    : hasVariants
+    ? Math.min(...activeVariants.map((v) => v.price))
+    : (product?.price ?? 0);
   const totalCharged = (unitPrice * quantity).toFixed(2);
+
+  // Stock total visible (somme des variantes ou stock du produit). Pour produits "manuel", on n'affiche pas.
+  const totalStock = useMemo(() => {
+    if (unlimited) return null;
+    if (!product) return 0;
+    if (product.deliveryType !== "auto") return null;
+    if (hasVariants) {
+      return activeVariants.reduce((sum, v) => sum + (v.stockCount ?? 0), 0);
+    }
+    return null;
+  }, [product, unlimited, hasVariants, activeVariants]);
 
   if (isLoading) {
     return (
@@ -140,7 +160,6 @@ export default function ProductDetail() {
       toast.error(`Stock insuffisant (${variantStock} disponible${variantStock > 1 ? "s" : ""})`);
       return;
     }
-    // Si variante : passe par le panier puis checkout (la route /buy ne gère pas variantId).
     if (selectedVariant) {
       setBusy(true);
       try {
@@ -157,7 +176,6 @@ export default function ProductDetail() {
       }
       return;
     }
-    // Pas de variante : achat direct
     setBusy(true);
     try {
       for (let i = 0; i < quantity; i++) {
@@ -174,10 +192,27 @@ export default function ProductDetail() {
     }
   };
 
+  // Stock bar : si unlimited → 100%, sinon ratio sur 50 (cap visuel)
+  const stockPct = unlimited
+    ? 100
+    : totalStock == null
+    ? 100
+    : Math.max(4, Math.min(100, Math.round((totalStock / 50) * 100)));
+
+  const stockLabel = unlimited
+    ? "Illimité"
+    : totalStock == null
+    ? product.inStock ? "Disponible" : "Indisponible"
+    : `${totalStock} en stock`;
+
+  const deliveryBadge = product.deliveryType === "auto"
+    ? { Icon: Zap, label: "Livraison instantanée" }
+    : { Icon: Hand, label: "Livraison manuelle" };
+
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-background pb-8">
+    <div className="flex flex-col min-h-[100dvh] bg-background pb-12">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border/40 p-3 flex items-center gap-2">
+      <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border/40 p-3 flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
@@ -189,200 +224,326 @@ export default function ProductDetail() {
         <h1 className="text-base font-bold truncate flex-1">{product.name}</h1>
       </div>
 
-      {/* Image */}
-      <div className="relative w-full aspect-square max-h-[380px] bg-gradient-to-br from-primary/10 via-card to-secondary/10 flex items-center justify-center overflow-hidden">
-        {product.imageUrl ? (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <Icon className="w-32 h-32 text-primary/40" strokeWidth={1.2} />
-        )}
-        {!product.inStock && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-            <Badge variant="destructive" className="text-base px-4 py-1.5">
-              Rupture de stock
-            </Badge>
+      <div className="max-w-6xl mx-auto w-full px-3 lg:px-6 pt-4 lg:pt-6 space-y-4 lg:space-y-6">
+        {/* TOP — Image + Info */}
+        <div className="grid lg:grid-cols-[1.15fr_1fr] gap-4 lg:gap-6">
+          {/* Image */}
+          <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-gradient-to-br from-primary/10 via-card to-secondary/10 aspect-square lg:aspect-auto lg:min-h-[420px] flex items-center justify-center">
+            {product.imageUrl ? (
+              <img
+                src={product.imageUrl}
+                alt={product.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Icon className="w-32 h-32 text-primary/40" strokeWidth={1.2} />
+            )}
+            {!product.inStock && !unlimited && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <Badge variant="destructive" className="text-base px-4 py-1.5">
+                  Rupture de stock
+                </Badge>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Info */}
-      <div className="p-4 space-y-4">
-        <div>
-          <Badge
-            variant="outline"
-            className="mb-2 border-primary/40 text-primary/90 text-xs"
-          >
-            <Icon className="w-3 h-3 mr-1" /> {product.category}
-          </Badge>
-          <h2 className="text-2xl font-black text-foreground leading-tight mb-1">
-            {product.name}
-          </h2>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-primary font-mono">
-              {unitPrice.toFixed(2)}€
-            </span>
-            <span className="text-xs text-muted-foreground">par unité</span>
-          </div>
-        </div>
+          {/* Right info card */}
+          <Card className="bg-card/60 border-border/50 backdrop-blur">
+            <CardContent className="p-5 lg:p-6 space-y-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Badge
+                    variant="outline"
+                    className="mb-2 border-primary/40 text-primary/90 text-[11px] px-2 py-0.5"
+                  >
+                    <Icon className="w-3 h-3 mr-1" /> {product.category}
+                  </Badge>
+                  <h2 className="text-2xl lg:text-3xl font-black text-foreground leading-tight">
+                    {product.name}
+                  </h2>
+                </div>
+              </div>
 
-        {/* Variantes */}
-        {hasVariants && (
-          <Card className="bg-card/50 border-border/40">
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Choisir une variante
-                </h3>
-                {mustPickVariant && (
-                  <span className="text-[10px] text-amber-400 font-semibold">Requis</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-foreground font-mono">
+                  {unitPrice.toFixed(2)}€
+                </span>
+                {hasVariants && !selectedVariant && (
+                  <span className="text-xs text-muted-foreground">
+                    à partir de
+                  </span>
                 )}
               </div>
-              <div className="grid grid-cols-1 gap-2">
-                {activeVariants.map((v) => {
-                  const isSelected = selectedVariantId === v.id;
-                  const stock = v.stockCount ?? 0;
-                  const out =
-                    !unlimited &&
-                    product.deliveryType === "auto" &&
-                    stock <= 0;
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      disabled={out}
-                      onClick={() => setSelectedVariantId(v.id)}
-                      className={cn(
-                        "w-full text-left rounded-xl border px-3 py-3 transition flex items-center justify-between gap-3",
-                        isSelected
-                          ? "border-primary/60 bg-primary/10"
-                          : "border-border/50 bg-card hover:border-primary/40",
-                        out && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <div>
-                        <div className="font-semibold text-foreground text-sm">{v.name}</div>
-                        {v.durationDays != null && (
-                          <div className="text-[11px] text-muted-foreground">
-                            {v.durationDays} jour{v.durationDays > 1 ? "s" : ""}
-                          </div>
-                        )}
-                        {!unlimited && product.deliveryType === "auto" && (
-                          <div
-                            className={cn(
-                              "text-[11px] mt-0.5 font-medium",
-                              out ? "text-rose-400" : stock <= 5 ? "text-amber-400" : "text-emerald-400"
-                            )}
-                          >
-                            {out ? "Épuisé" : `${stock} en stock`}
-                          </div>
-                        )}
-                      </div>
-                      <div className="font-mono font-bold text-primary text-sm">
-                        {v.price.toFixed(2)}€
-                      </div>
-                    </button>
-                  );
-                })}
+
+              {/* Stock bar */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] uppercase tracking-wider">
+                  <span className="text-muted-foreground font-semibold">Stock</span>
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-md text-[11px] font-bold",
+                      unlimited
+                        ? "bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30"
+                        : (totalStock ?? 1) > 0 || product.inStock
+                        ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                        : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                    )}
+                  >
+                    {stockLabel}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      unlimited
+                        ? "bg-gradient-to-r from-fuchsia-500 to-purple-500"
+                        : "bg-gradient-to-r from-emerald-400 to-emerald-500"
+                    )}
+                    style={{ width: `${stockPct}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Trust badges */}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-background/40 py-2 px-1 text-[11px] text-foreground/80">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="truncate">Vérifié</span>
+                </div>
+                <div className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-background/40 py-2 px-1 text-[11px] text-foreground/80">
+                  {product.deliveryType === "auto" ? (
+                    <Truck className="w-3.5 h-3.5 text-fuchsia-400" />
+                  ) : (
+                    <Hand className="w-3.5 h-3.5 text-amber-400" />
+                  )}
+                  <span className="truncate">{deliveryBadge.label}</span>
+                </div>
+                <div className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-background/40 py-2 px-1 text-[11px] text-foreground/80">
+                  <Leaf className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="truncate">Frais</span>
+                </div>
+              </div>
+
+              {/* Quantity */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Quantité
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Total :{" "}
+                    <span className="font-mono font-bold text-foreground">
+                      {totalCharged}€
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-background/50 border border-border/50 px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity <= 1 || busy}
+                    className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-border/50 flex items-center justify-center text-foreground transition disabled:opacity-40"
+                    aria-label="Diminuer"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="text-2xl font-black text-foreground font-mono">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+                    disabled={quantity >= 99 || busy}
+                    className="w-9 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-border/50 flex items-center justify-center text-foreground transition disabled:opacity-40"
+                    aria-label="Augmenter"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Variantes (compact) */}
+              {hasVariants && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Choisir une variante
+                    </span>
+                    {mustPickVariant && (
+                      <span className="text-[10px] text-amber-400 font-semibold uppercase">
+                        Requis
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {activeVariants.map((v) => {
+                      const isSelected = selectedVariantId === v.id;
+                      const stock = v.stockCount ?? 0;
+                      const out =
+                        !unlimited &&
+                        product.deliveryType === "auto" &&
+                        stock <= 0;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          disabled={out}
+                          onClick={() => setSelectedVariantId(v.id)}
+                          className={cn(
+                            "rounded-xl border px-3 py-2.5 text-left transition flex flex-col gap-0.5",
+                            isSelected
+                              ? "border-primary/70 bg-primary/10 shadow-sm shadow-primary/20"
+                              : "border-border/50 bg-background/40 hover:border-primary/40",
+                            out && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                            {v.name}
+                          </span>
+                          <span className="font-mono font-black text-foreground text-base">
+                            {v.price.toFixed(2)}€
+                          </span>
+                          {!unlimited && product.deliveryType === "auto" && (
+                            <span
+                              className={cn(
+                                "text-[10px] font-medium",
+                                out
+                                  ? "text-rose-400"
+                                  : stock <= 5
+                                  ? "text-amber-400"
+                                  : "text-emerald-400"
+                              )}
+                            >
+                              {out ? "Épuisé" : `${stock} dispo`}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Button
+                  className="h-12 bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:opacity-90 text-white border-none font-bold shadow-md shadow-fuchsia-500/30"
+                  onClick={handleAddToCart}
+                  disabled={(!product.inStock && !unlimited) || busy}
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Ajouter au panier
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-12 bg-background/60 hover:bg-primary/10 hover:text-primary border-border/60 font-bold"
+                  onClick={handleBuyNow}
+                  disabled={(!product.inStock && !unlimited) || busy}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Acheter maintenant
+                </Button>
               </div>
             </CardContent>
           </Card>
-        )}
+        </div>
 
-        {/* Description avec markdown */}
-        <Card className="bg-card/50 border-border/40">
-          <CardContent className="p-4 space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Description
-            </h3>
-            {product.description ? (
-              <Markdown
-                source={product.description}
-                className="text-sm text-foreground/90"
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground italic">
-                Aucune description disponible.
-              </p>
-            )}
-            <div className="flex items-center gap-2 pt-2 border-t border-border/40 mt-2">
-              {product.inStock ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                  <span className="text-xs text-green-400 font-medium">
-                    {unlimited ? "Disponible (stock illimité)" : "En stock"}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <XCircle className="w-4 h-4 text-red-400" />
-                  <span className="text-xs text-red-400 font-medium">Indisponible</span>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quantity Selector */}
-        <Card className="bg-card/50 border-border/40">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold">Quantité</span>
-              <span className="text-xs text-muted-foreground">
-                Total : <span className="font-mono font-bold text-primary">{totalCharged}€</span>
+        {/* DESCRIPTION CARD */}
+        <Card className="bg-card/60 border-border/50 overflow-hidden">
+          {/* Header bar collapsible */}
+          <button
+            type="button"
+            onClick={() => setDescOpen((o) => !o)}
+            className="w-full flex items-center justify-between gap-2 px-5 py-4 bg-gradient-to-r from-fuchsia-500/10 via-purple-500/5 to-transparent border-b border-border/50 hover:bg-fuchsia-500/15 transition"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">🇫🇷</span>
+              <span className="font-bold text-foreground text-sm uppercase tracking-wider">
+                Description du produit
               </span>
             </div>
-            <div className="flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-12 h-12 rounded-full bg-card border-border"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                disabled={quantity <= 1 || busy}
-              >
-                <Minus className="w-5 h-5" />
-              </Button>
-              <div className="w-20 text-center">
-                <span className="text-3xl font-black text-foreground font-mono">
-                  {quantity}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-12 h-12 rounded-full bg-card border-border"
-                onClick={() => setQuantity((q) => Math.min(99, q + 1))}
-                disabled={quantity >= 99 || busy}
-              >
-                <Plus className="w-5 h-5" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            {descOpen ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            )}
+          </button>
 
-        {/* Actions */}
-        <div className="flex gap-2 pt-2">
-          <Button
-            variant="outline"
-            className="flex-1 h-12 bg-card hover:bg-primary/10 hover:text-primary border-border"
-            onClick={handleAddToCart}
-            disabled={!product.inStock || busy}
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Panier
-          </Button>
-          <Button
-            className="flex-1 h-12 bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md shadow-primary/20 border-none font-bold"
-            onClick={handleBuyNow}
-            disabled={!product.inStock || busy}
-          >
-            <Zap className="w-4 h-4 mr-2" />
-            Acheter {totalCharged}€
-          </Button>
-        </div>
+          {descOpen && (
+            <CardContent className="p-5 space-y-5">
+              {/* Tableau des variantes (si présentes) */}
+              {hasVariants && (
+                <div className="rounded-xl border border-border/50 overflow-hidden bg-background/40">
+                  {activeVariants.map((v, idx) => {
+                    const stock = v.stockCount ?? 0;
+                    const out =
+                      !unlimited &&
+                      product.deliveryType === "auto" &&
+                      stock <= 0;
+                    const isSelected = selectedVariantId === v.id;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => !out && setSelectedVariantId(v.id)}
+                        disabled={out}
+                        className={cn(
+                          "w-full grid grid-cols-[1fr_auto] items-center gap-3 px-4 py-3 text-left transition",
+                          idx > 0 && "border-t border-border/40",
+                          isSelected
+                            ? "bg-fuchsia-500/10"
+                            : "hover:bg-white/[0.03]",
+                          out && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-bold text-foreground text-sm uppercase tracking-wider truncate">
+                            {v.name}
+                          </span>
+                          {v.durationDays != null && (
+                            <span className="text-[11px] text-muted-foreground">
+                              · {v.durationDays}j
+                            </span>
+                          )}
+                          {!unlimited && product.deliveryType === "auto" && (
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold ml-2 px-1.5 py-0.5 rounded",
+                                out
+                                  ? "text-rose-300 bg-rose-500/10"
+                                  : stock <= 5
+                                  ? "text-amber-300 bg-amber-500/10"
+                                  : "text-emerald-300 bg-emerald-500/10"
+                              )}
+                            >
+                              {out ? "Épuisé" : `${stock}`}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-mono font-black text-emerald-400 text-base whitespace-nowrap">
+                          {v.price.toFixed(2)}€
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Markdown body */}
+              {product.description ? (
+                <Markdown
+                  source={product.description}
+                  className="text-sm text-foreground/85"
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground italic">
+                  Aucune description disponible.
+                </p>
+              )}
+            </CardContent>
+          )}
+        </Card>
       </div>
 
       {pendingReview && (
