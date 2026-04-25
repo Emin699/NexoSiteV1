@@ -26,9 +26,6 @@ import {
   Cpu,
   Sparkles,
   Package,
-  ShieldCheck,
-  Leaf,
-  Truck,
   Hand,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -207,10 +204,6 @@ export default function ProductDetail() {
     ? product.inStock ? "Disponible" : "Indisponible"
     : `${totalStock} en stock`;
 
-  const deliveryBadge = product.deliveryType === "auto"
-    ? { Icon: Zap, label: "Livraison instantanée" }
-    : { Icon: Hand, label: "Livraison manuelle" };
-
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background pb-12">
       {/* Header */}
@@ -304,26 +297,6 @@ export default function ProductDetail() {
                     )}
                     style={{ width: `${stockPct}%` }}
                   />
-                </div>
-              </div>
-
-              {/* Trust badges */}
-              <div className="grid grid-cols-3 gap-2">
-                <div className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-background/40 py-2 px-1 text-[11px] text-foreground/80">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="truncate">Vérifié</span>
-                </div>
-                <div className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-background/40 py-2 px-1 text-[11px] text-foreground/80">
-                  {product.deliveryType === "auto" ? (
-                    <Truck className="w-3.5 h-3.5 text-fuchsia-400" />
-                  ) : (
-                    <Hand className="w-3.5 h-3.5 text-amber-400" />
-                  )}
-                  <span className="truncate">{deliveryBadge.label}</span>
-                </div>
-                <div className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-background/40 py-2 px-1 text-[11px] text-foreground/80">
-                  <Leaf className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="truncate">Frais</span>
                 </div>
               </div>
 
