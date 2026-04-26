@@ -1,0 +1,117 @@
+Last login: Sat Apr 25 20:05:43 2026 from 81.185.169.4
+root@ubuntu:~# cd /var/www/nexosite \
+  && set -a && source .env && set +a \
+  && git pull origin main \
+  && pnpm install \
+  && pnpm --filter @workspace/api-spec run codegen \
+  && pnpm --filter @workspace/api-server run build \
+  && PORT=18424 BASE_PATH=/ pnpm --filter @workspace/nexoshop run build \
+  && pnpm --filter @workspace/db run push-force \
+  && pm2 restart nexosite-api --update-env
+remote: Enumerating objects: 42, done.
+remote: Counting objects: 100% (42/42), done.
+remote: Compressing objects: 100% (4/4), done.
+remote: Total 23 (delta 19), reused 23 (delta 19), pack-reused 0 (from 0)
+Unpacking objects: 100% (23/23), 5.62 KiB | 575.00 KiB/s, done.
+From https://github.com/Emin699/NexoSiteV1
+ * branch            main       -> FETCH_HEAD
+   3b17e9e..87dfd34  main       -> origin/main
+Updating 3b17e9e..87dfd34
+Fast-forward
+ .replit                                                   | 49 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ artifacts/nexoshop/src/App.tsx                            | 54 +++++++++++++++++++++++++++++-------------------------
+ artifacts/nexoshop/src/components/admin-product-modal.tsx | 15 +++++++++++----
+ artifacts/nexoshop/src/components/layout.tsx              | 54 ++++++++++++++++++++++++++++++++++++++++--------------
+ artifacts/nexoshop/src/components/product-card-holo.tsx   |  8 ++++----
+ artifacts/nexoshop/src/hooks/use-auth.ts                  | 30 +++++++++++++++++++++++++++++-
+ artifacts/nexoshop/src/pages/auth.tsx                     | 39 ++++++++++++++++++++++++++++++++-------
+ artifacts/nexoshop/src/pages/cart.tsx                     |  9 ++++++++-
+ artifacts/nexoshop/src/pages/home.tsx                     |  6 +++++-
+ artifacts/nexoshop/src/pages/product-detail.tsx           |  4 ++++
+ artifacts/nexoshop/src/pages/profile.tsx                  | 14 ++++++++++----
+ artifacts/nexoshop/src/pages/wallet.tsx                   |  8 ++++++++
+ 12 files changed, 228 insertions(+), 62 deletions(-)
+Scope: all 9 workspace projects
+Lockfile is up to date, resolution step is skipped
+Already up to date
+. preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+└─ Done in 9ms
+Done in 1s using pnpm v10.33.0
+
+> @workspace/api-spec@0.0.0 codegen /var/www/nexosite/lib/api-spec
+> orval --config ./orval.config.ts && pnpm -w run typecheck:libs
+
+🍻 orval v8.5.3 - A swagger client generator for typescript
+api-client-react Cleaning output folder
+🎉 api-client-react - Your OpenAPI spec has been converted into ready to use orval!
+zod Cleaning output folder
+🎉 zod - Your OpenAPI spec has been converted into ready to use orval!
+
+> workspace@0.0.0 typecheck:libs /var/www/nexosite
+> tsc --build
+
+
+> @workspace/api-server@0.0.0 build /var/www/nexosite/artifacts/api-server
+> node ./build.mjs
+
+
+  dist/index.mjs                       4.5mb ⚠️
+  dist/scripts/admin-cli.mjs         810.3kb
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.0kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   7.3mb
+  dist/scripts/admin-cli.mjs.map       1.6mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.0kb
+  dist/pino-pretty.mjs.map           203.9kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 450ms
+
+> @workspace/nexoshop@0.0.0 build /var/www/nexosite/artifacts/nexoshop
+> vite build --config vite.config.ts
+
+vite v7.3.2 building client environment for production...
+src/components/ui/tooltip.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/select.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/avatar.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/label.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+src/components/ui/progress.tsx (2:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.
+✓ 1870 modules transformed.
+dist/public/index.html                   0.84 kB │ gzip:   0.44 kB
+dist/public/assets/index-ChHHCZFq.css  173.42 kB │ gzip:  24.27 kB
+dist/public/assets/index-DIv_YOWH.js   706.17 kB │ gzip: 207.48 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.79s
+
+> @workspace/db@0.0.0 push-force /var/www/nexosite/lib/db
+> drizzle-kit push --force --config ./drizzle.config.ts
+
+Reading config file '/var/www/nexosite/lib/db/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+(node:85517) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+[✓] Pulling schema from database...
+[i] No changes detected
+[PM2] Applying action restartProcessId on app [nexosite-api](ids: [ 8 ])
+[PM2] [nexosite-api](8) ✓
+┌────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ nexoshop-bot    │ default     │ 0.0.0   │ fork    │ 81597    │ 12h    │ 31   │ online    │ 0%       │ 189.3mb  │ root     │ disabled │
+│ 8  │ nexosite-api    │ default     │ N/A     │ fork    │ 85551    │ 0s     │ 36   │ online    │ 0%       │ 4.3mb    │ root     │ disabled │
+└────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+root@ubuntu:/var/www/nexosite#
