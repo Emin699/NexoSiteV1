@@ -84,6 +84,19 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
   - Flow checkout : `cart.tsx` (panier), `home.tsx` (achat rapide depuis card), `product-detail.tsx` (achat direct) → ThankYouModal → soit `/orders` soit ReviewModal → `/orders` après envoi/skip.
   - `pages/orders.tsx` : `useGetMyReviews` → `Set` des productId déjà reviewés. Pour chaque commande livrée : bouton fuchsia "Laisser un avis" si non reviewé, sinon badge vert "Avis déjà publié". Le bouton "Modifier mes infos" est masqué quand `status='delivered'`.
 
+## NexoShop — Bot Telegram (`artifacts/telegram-bot`)
+
+- **Stack** : `telegraf` v4 + Drizzle (table partagée `bot_subscribers` dans `lib/db/src/schema/bot_subscribers.ts` — clé primaire `telegram_id` bigint).
+- **Build** : esbuild → `dist/index.mjs`. La logo `artifacts/nexoshop/public/nexoshop-icon.png` est copiée dans `dist/logo.png` au build pour le fallback local.
+- **Commandes** :
+  - `/start` : insère/met à jour le subscriber (upsert sur `telegram_id`), envoie photo (logo) + caption HTML « Salut <b>X</b> / 🆔 ID / 👤 Pseudo / texte d'intro » + 3 boutons inline (Boutique / Canal / Preuves).
+  - `/sayall` : admin uniquement (whitelist `TELEGRAM_ADMIN_ID` CSV). Active un mode diffusion (Set en mémoire). Le **prochain message** envoyé par l'admin (n'importe quel type — texte formaté, photo, vidéo, GIF, sticker, audio, document, emoji animé Telegram) est diffusé à tous les `bot_subscribers` non bloqués via `copyMessage` (préserve format + média, pas de header « Forwarded from »). Throttle 50ms entre envois (~20 msg/s, sous la limite Telegram). Codes 403/400 → marque subscriber `blocked=true`.
+  - `/cancel` : sort du mode diffusion.
+- **Variables d'env requises** (`.env` du VPS, jamais stockées sur Replit) :
+  - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_ID` (CSV possible), `TELEGRAM_SHOP_URL`, `TELEGRAM_CHANNEL_URL`, `TELEGRAM_PROOFS_URL`.
+  - Optionnels : `TELEGRAM_WELCOME_TEXT` (HTML), `TELEGRAM_LOGO_URL` (URL ou chemin absolu, défaut = logo bundlé), `TELEGRAM_SHOP_BUTTON_TEXT`, `TELEGRAM_CHANNEL_BUTTON_TEXT`, `TELEGRAM_PROOFS_BUTTON_TEXT`.
+- **Déploiement VPS** : `pnpm --filter @workspace/telegram-bot run build` puis `pm2 start /var/www/nexosite/artifacts/telegram-bot/dist/index.mjs --name nexoshop-bot --update-env` (ou existant `pm2 restart nexoshop-bot --update-env`). Partage la même `DATABASE_URL` que l'API.
+
 ## NexoShop — Refonte DA logo (avril 2026)
 
 - **Palette CSS** (`src/index.css`) : `--primary: 211 100% 56%` (bleu logo `#1E90FF`), `--secondary: 28 100% 55%` (orange logo `#FF8C00`), `--accent` = orange. Cards/bg ajustés `222 35% 13%`.
