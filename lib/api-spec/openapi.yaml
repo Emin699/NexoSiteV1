@@ -922,6 +922,61 @@ paths:
         "503":
           description: PayPal not configured
 
+  /wallet/recharge/stripe/config:
+    get:
+      operationId: getStripeConfig
+      tags: [wallet]
+      summary: Get Stripe configuration (publishableKey + enabled flag)
+      responses:
+        "200":
+          description: Stripe config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeConfig"
+
+  /wallet/recharge/stripe/create-intent:
+    post:
+      operationId: createStripeIntent
+      tags: [wallet]
+      summary: Create a Stripe PaymentIntent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeCreateIntentBody"
+      responses:
+        "200":
+          description: Intent created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeCreateIntentResult"
+        "503":
+          description: Stripe not configured
+
+  /wallet/recharge/stripe/confirm:
+    post:
+      operationId: confirmStripeIntent
+      tags: [wallet]
+      summary: Confirm a Stripe PaymentIntent and credit the wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StripeConfirmBody"
+      responses:
+        "200":
+          description: Confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StripeConfirmResult"
+        "503":
+          description: Stripe not configured
+
   /admin/users:
     get:
       operationId: adminGetUsers
@@ -2208,6 +2263,51 @@ components:
       required: [orderId]
 
     PaypalCaptureResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        newBalance:
+          type: number
+        amountEur:
+          type: number
+      required: [success, newBalance, amountEur]
+
+    StripeConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        publishableKey:
+          type: ["string", "null"]
+      required: [enabled]
+
+    StripeCreateIntentBody:
+      type: object
+      properties:
+        amountEur:
+          type: number
+      required: [amountEur]
+
+    StripeCreateIntentResult:
+      type: object
+      properties:
+        intentId:
+          type: string
+        clientSecret:
+          type: string
+        amountEur:
+          type: number
+      required: [intentId, clientSecret, amountEur]
+
+    StripeConfirmBody:
+      type: object
+      properties:
+        intentId:
+          type: string
+      required: [intentId]
+
+    StripeConfirmResult:
       type: object
       properties:
         success:

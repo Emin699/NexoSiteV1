@@ -543,6 +543,32 @@ export interface PaypalCaptureResult {
   amountEur: number;
 }
 
+export interface StripeConfig {
+  enabled: boolean;
+  /** @nullable */
+  publishableKey?: string | null;
+}
+
+export interface StripeCreateIntentBody {
+  amountEur: number;
+}
+
+export interface StripeCreateIntentResult {
+  intentId: string;
+  clientSecret: string;
+  amountEur: number;
+}
+
+export interface StripeConfirmBody {
+  intentId: string;
+}
+
+export interface StripeConfirmResult {
+  success: boolean;
+  newBalance: number;
+  amountEur: number;
+}
+
 export interface AdminUser {
   id: number;
   /** @nullable */

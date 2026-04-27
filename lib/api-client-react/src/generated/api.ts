@@ -73,6 +73,11 @@ import type {
   ReviewResponse,
   SimpleOk,
   StockItem,
+  StripeConfig,
+  StripeConfirmBody,
+  StripeConfirmResult,
+  StripeCreateIntentBody,
+  StripeCreateIntentResult,
   SubmitCustomerInfoBody,
   TicketDetail,
   TicketMessageBody,
@@ -3961,6 +3966,253 @@ export const useCapturePaypalOrder = <
   TContext
 > => {
   return useMutation(getCapturePaypalOrderMutationOptions(options));
+};
+
+/**
+ * @summary Get Stripe configuration (publishableKey + enabled flag)
+ */
+export const getGetStripeConfigUrl = () => {
+  return `/api/wallet/recharge/stripe/config`;
+};
+
+export const getStripeConfig = async (
+  options?: RequestInit,
+): Promise<StripeConfig> => {
+  return customFetch<StripeConfig>(getGetStripeConfigUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetStripeConfigQueryKey = () => {
+  return [`/api/wallet/recharge/stripe/config`] as const;
+};
+
+export const getGetStripeConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getStripeConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStripeConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetStripeConfigQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getStripeConfig>>> = ({
+    signal,
+  }) => getStripeConfig({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getStripeConfig>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetStripeConfigQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getStripeConfig>>
+>;
+export type GetStripeConfigQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get Stripe configuration (publishableKey + enabled flag)
+ */
+
+export function useGetStripeConfig<
+  TData = Awaited<ReturnType<typeof getStripeConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getStripeConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetStripeConfigQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a Stripe PaymentIntent
+ */
+export const getCreateStripeIntentUrl = () => {
+  return `/api/wallet/recharge/stripe/create-intent`;
+};
+
+export const createStripeIntent = async (
+  stripeCreateIntentBody: StripeCreateIntentBody,
+  options?: RequestInit,
+): Promise<StripeCreateIntentResult> => {
+  return customFetch<StripeCreateIntentResult>(getCreateStripeIntentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(stripeCreateIntentBody),
+  });
+};
+
+export const getCreateStripeIntentMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStripeIntent>>,
+    TError,
+    { data: BodyType<StripeCreateIntentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createStripeIntent>>,
+  TError,
+  { data: BodyType<StripeCreateIntentBody> },
+  TContext
+> => {
+  const mutationKey = ["createStripeIntent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createStripeIntent>>,
+    { data: BodyType<StripeCreateIntentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createStripeIntent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateStripeIntentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createStripeIntent>>
+>;
+export type CreateStripeIntentMutationBody = BodyType<StripeCreateIntentBody>;
+export type CreateStripeIntentMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a Stripe PaymentIntent
+ */
+export const useCreateStripeIntent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createStripeIntent>>,
+    TError,
+    { data: BodyType<StripeCreateIntentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createStripeIntent>>,
+  TError,
+  { data: BodyType<StripeCreateIntentBody> },
+  TContext
+> => {
+  return useMutation(getCreateStripeIntentMutationOptions(options));
+};
+
+/**
+ * @summary Confirm a Stripe PaymentIntent and credit the wallet
+ */
+export const getConfirmStripeIntentUrl = () => {
+  return `/api/wallet/recharge/stripe/confirm`;
+};
+
+export const confirmStripeIntent = async (
+  stripeConfirmBody: StripeConfirmBody,
+  options?: RequestInit,
+): Promise<StripeConfirmResult> => {
+  return customFetch<StripeConfirmResult>(getConfirmStripeIntentUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(stripeConfirmBody),
+  });
+};
+
+export const getConfirmStripeIntentMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmStripeIntent>>,
+    TError,
+    { data: BodyType<StripeConfirmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof confirmStripeIntent>>,
+  TError,
+  { data: BodyType<StripeConfirmBody> },
+  TContext
+> => {
+  const mutationKey = ["confirmStripeIntent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof confirmStripeIntent>>,
+    { data: BodyType<StripeConfirmBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return confirmStripeIntent(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ConfirmStripeIntentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof confirmStripeIntent>>
+>;
+export type ConfirmStripeIntentMutationBody = BodyType<StripeConfirmBody>;
+export type ConfirmStripeIntentMutationError = ErrorType<void>;
+
+/**
+ * @summary Confirm a Stripe PaymentIntent and credit the wallet
+ */
+export const useConfirmStripeIntent = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof confirmStripeIntent>>,
+    TError,
+    { data: BodyType<StripeConfirmBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof confirmStripeIntent>>,
+  TError,
+  { data: BodyType<StripeConfirmBody> },
+  TContext
+> => {
+  return useMutation(getConfirmStripeIntentMutationOptions(options));
 };
 
 /**

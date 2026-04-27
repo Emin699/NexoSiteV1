@@ -17,6 +17,7 @@ import adminCategoriesRouter from "./admin-categories";
 import authRouter from "./auth";
 import reviewsRouter from "./reviews";
 import paypalRouter from "./paypal";
+import stripeRouter from "./stripe";
 import ticketsRouter from "./tickets";
 
 const router: IRouter = Router();
@@ -39,6 +40,7 @@ router.use(adminCategoriesRouter);
 router.use(authRouter);
 router.use(reviewsRouter);
 router.use(paypalRouter);
+router.use(stripeRouter);
 router.use(ticketsRouter);
 
 export default router;

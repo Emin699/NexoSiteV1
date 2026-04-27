@@ -929,6 +929,40 @@ export const CapturePaypalOrderResponse = zod.object({
 });
 
 /**
+ * @summary Get Stripe configuration (publishableKey + enabled flag)
+ */
+export const GetStripeConfigResponse = zod.object({
+  enabled: zod.boolean(),
+  publishableKey: zod.string().nullish(),
+});
+
+/**
+ * @summary Create a Stripe PaymentIntent
+ */
+export const CreateStripeIntentBody = zod.object({
+  amountEur: zod.number(),
+});
+
+export const CreateStripeIntentResponse = zod.object({
+  intentId: zod.string(),
+  clientSecret: zod.string(),
+  amountEur: zod.number(),
+});
+
+/**
+ * @summary Confirm a Stripe PaymentIntent and credit the wallet
+ */
+export const ConfirmStripeIntentBody = zod.object({
+  intentId: zod.string(),
+});
+
+export const ConfirmStripeIntentResponse = zod.object({
+  success: zod.boolean(),
+  newBalance: zod.number(),
+  amountEur: zod.number(),
+});
+
+/**
  * @summary List all users (admin)
  */
 export const AdminGetUsersResponseItem = zod.object({
