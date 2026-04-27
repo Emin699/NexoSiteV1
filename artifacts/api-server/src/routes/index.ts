@@ -20,6 +20,7 @@ import reviewsRouter from "./reviews";
 import paypalRouter from "./paypal";
 import stripeRouter from "./stripe";
 import ticketsRouter from "./tickets";
+import publicStatsRouter from "./public-stats";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(reviewsRouter);
 router.use(paypalRouter);
 router.use(stripeRouter);
 router.use(ticketsRouter);
+router.use(publicStatsRouter);
 
 export default router;
