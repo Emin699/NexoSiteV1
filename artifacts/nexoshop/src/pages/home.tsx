@@ -52,9 +52,10 @@ export default function Home() {
   const [pendingReview, setPendingReview] = useState<{ productId: number; productName: string } | null>(null);
   const [thankYou, setThankYou] = useState<{ productId: number; productName: string } | null>(null);
 
-  const { data: products, isLoading } = useGetProducts({
+  const { data: productsRaw, isLoading } = useGetProducts({
     category: activeCategory === "Tout" ? undefined : activeCategory,
   });
+  const products = Array.isArray(productsRaw) ? productsRaw : [];
   const { data: dynamicCategories } = useGetCategories();
   const addToCart = useAddToCart();
   const buyProduct = useBuyProduct();
