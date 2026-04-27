@@ -72,7 +72,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <img
               src="/nexoshop-logo.png"
               alt="NexoShop"
-              className="h-6 w-auto select-none"
+              className="h-6 sm:h-9 md:h-10 w-auto select-none"
               draggable={false}
             />
           </Link>
