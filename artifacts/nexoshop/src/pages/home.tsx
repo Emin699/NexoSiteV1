@@ -3,6 +3,7 @@ import { useGetProducts, useAddToCart, useBuyProduct, useGetCategories } from "@
 import { ReviewModal } from "@/components/review-modal";
 import { ThankYouModal } from "@/components/thank-you-modal";
 import { ProductCardHolo } from "@/components/product-card-holo";
+import { WelcomeHero } from "@/components/welcome-hero";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -99,18 +100,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col gap-6 p-4 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-card to-secondary/20 border border-primary/20 p-6 shadow-lg">
-        <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-primary/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-secondary/30 rounded-full blur-3xl" />
-        <h2 className="text-2xl font-bold mb-2 relative z-10">
-          Digital Goods<br />
-          <span className="text-primary">Instant Delivery</span>
-        </h2>
-        <p className="text-sm text-muted-foreground relative z-10 max-w-[80%]">
-          Achetez des abonnements, clés et outils IA au meilleur prix.
-        </p>
-      </div>
+      {/* Hero Banner with rotating reviews */}
+      <WelcomeHero />
 
       {/* Category Dropdown */}
       <div className="flex items-center gap-3">
