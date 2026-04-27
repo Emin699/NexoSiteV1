@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Star, Trash2, MessageSquare, ShoppingBag } from "lucide-react";
+import { Star, Trash2, MessageSquare, ShoppingBag, Gem } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -185,6 +185,19 @@ export default function ReviewsPage() {
           })}
         </div>
       )}
+
+      {/* Vouch channel CTA */}
+      <div className="pt-4 pb-2 flex justify-center">
+        <a
+          href="https://t.me/+7goUQusx2_83Mzg0"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-secondary/20 border border-primary/40 hover:border-primary hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-all duration-300"
+        >
+          <Gem className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-semibold">Canal Vouch</span>
+        </a>
+      </div>
 
       {/* Lightbox image */}
       {lightbox && (
