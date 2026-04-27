@@ -18,6 +18,16 @@ import {
 import { eq, desc, sql, gt } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "../middlewares/userAuth.js";
+import { notify, safeNotify } from "../lib/notifier.js";
+
+async function getAdmin(userId: number | undefined): Promise<{ id: number; username: string | null; firstName: string | null }> {
+  if (!userId) return { id: 0, username: null, firstName: "admin" };
+  const [u] = await db
+    .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+  return u ?? { id: userId, username: null, firstName: "admin" };
+}
 
 const router: IRouter = Router();
 
@@ -254,6 +264,13 @@ router.post("/admin/users/:id/ban", async (req, res): Promise<void> => {
 
   const newValue = parsed.data.ban ? 1 : 0;
   await db.update(usersTable).set({ isBanned: newValue }).where(eq(usersTable.id, id));
+  safeNotify(async () => {
+    notify.userBanned({
+      target: { id: target.id, username: target.username, firstName: target.firstName },
+      by: await getAdmin(req.userId),
+      banned: newValue === 1,
+    });
+  });
   res.json({ id, isBanned: newValue === 1 });
 });
 
@@ -299,6 +316,12 @@ router.delete("/admin/users/:id", async (req, res): Promise<void> => {
     await tx.delete(usersTable).where(eq(usersTable.id, id));
   });
 
+  safeNotify(async () => {
+    notify.userDeleted({
+      target: { id: target.id, username: target.username, firstName: target.firstName },
+      by: await getAdmin(req.userId),
+    });
+  });
   res.json({ id, deleted: true });
 });
 
@@ -349,6 +372,14 @@ router.post("/admin/users/:id/adjust", async (req, res): Promise<void> => {
   }
 
   const [updated] = await db.select().from(usersTable).where(eq(usersTable.id, id));
+  safeNotify(async () => {
+    notify.adminAdjusted({
+      target: { id: updated.id, username: updated.username, firstName: updated.firstName },
+      by: await getAdmin(req.userId),
+      field,
+      delta: field === "balance" ? `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}€` : `${delta >= 0 ? "+" : ""}${Math.round(delta)}`,
+    });
+  });
   res.json({
     id: updated.id,
     balance: Number(updated.balance),
@@ -448,6 +479,20 @@ router.post("/admin/orders/:id/deliver", async (req, res): Promise<void> => {
     .where(eq(ordersTable.id, id))
     .returning();
 
+  // Telegram log: delivery by admin
+  safeNotify(async () => {
+    const [client] = await db
+      .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+      .from(usersTable)
+      .where(eq(usersTable.id, updated.userId));
+    notify.orderDelivered({
+      orderId: updated.id,
+      productName: updated.productName,
+      user: client ?? { id: updated.userId, username: null, firstName: null },
+      by: await getAdmin(req.userId),
+    });
+  });
+
   res.json({
     id: updated.id,
     productName: updated.productName,
@@ -536,7 +581,18 @@ router.post("/admin/jackpot/draw", async (req, res): Promise<void> => {
         await tx.update(usersTable).set({ jackpotTickets: 0 });
       }
 
-      return { draw, winner: { id: winner.id, name: winnerName, email: winner.email }, totalTickets };
+      return {
+        draw,
+        winner: { id: winner.id, name: winnerName, email: winner.email, username: winner.username, firstName: winner.firstName },
+        totalTickets,
+      };
+    });
+
+    safeNotify(() => {
+      notify.jackpotDraw({
+        winner: { id: result.winner.id, username: result.winner.username, firstName: result.winner.firstName },
+        prize: prizeAmount,
+      });
     });
 
     res.json({

@@ -92,10 +92,37 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
   - `/start` : insère/met à jour le subscriber (upsert sur `telegram_id`), envoie photo (logo) + caption HTML « Salut <b>X</b> / 🆔 ID / 👤 Pseudo / texte d'intro » + 3 boutons inline (Boutique / Canal / Preuves).
   - `/sayall` : admin uniquement (whitelist `TELEGRAM_ADMIN_ID` CSV). Active un mode diffusion (Set en mémoire). Le **prochain message** envoyé par l'admin (n'importe quel type — texte formaté, photo, vidéo, GIF, sticker, audio, document, emoji animé Telegram) est diffusé à tous les `bot_subscribers` non bloqués via `copyMessage` (préserve format + média, pas de header « Forwarded from »). Throttle 50ms entre envois (~20 msg/s, sous la limite Telegram). Codes 403/400 → marque subscriber `blocked=true`.
   - `/cancel` : sort du mode diffusion.
+  - `/stats` : admin uniquement. Affiche un récap HTML avec users (total/bannis/24h), abonnés bot, produits (total/en stock), commandes (total/livrées/pending/24h), CA (total/24h/recharges totales), tickets ouverts. 14 requêtes COUNT/SUM en parallèle (`Promise.all`).
 - **Variables d'env requises** (`.env` du VPS, jamais stockées sur Replit) :
   - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_ID` (CSV possible), `TELEGRAM_SHOP_URL`, `TELEGRAM_CHANNEL_URL`, `TELEGRAM_PROOFS_URL`.
   - Optionnels : `TELEGRAM_WELCOME_TEXT` (HTML), `TELEGRAM_LOGO_URL` (URL ou chemin absolu, défaut = logo bundlé), `TELEGRAM_SHOP_BUTTON_TEXT`, `TELEGRAM_CHANNEL_BUTTON_TEXT`, `TELEGRAM_PROOFS_BUTTON_TEXT`.
 - **Déploiement VPS** : `pnpm --filter @workspace/telegram-bot run build` puis `pm2 start /var/www/nexosite/artifacts/telegram-bot/dist/index.mjs --name nexoshop-bot --update-env` (ou existant `pm2 restart nexoshop-bot --update-env`). Partage la même `DATABASE_URL` que l'API.
+
+## NexoShop — Telegram logging (avril 2026)
+
+- **Architecture** : `artifacts/api-server/src/lib/notifier.ts` — singleton avec FIFO queue (350ms inter-message, capacity 1000) qui appelle directement `https://api.telegram.org/bot<token>/sendMessage` en HTML. **No-op silencieux** si `TELEGRAM_LOG_CHAT_ID` non défini → aucune dépendance dure pour le dev. Token réutilise `TELEGRAM_BOT_TOKEN` (même bot que `/start`, `/sayall`, `/stats`). Échecs Telegram → log warn, jamais throw.
+- **Helpers exposés** (`notify.*`) : `userRegistered`, `userVerified`, `loginSuccess`, `loginFailed`, `rechargeStarted`, `rechargeCompleted`, `rechargeFailed`, `orderPlaced`, `orderDelivered`, `customerInfoSubmitted`, `couponCreated`, `couponUpdated`, `couponDeleted`, `ticketCreated`, `ticketReply`, `ticketClosed`, `reviewPosted`, `loyaltyConverted`, `wheelSpin` (skips `nothing`), `jackpotDraw`, `adminAdjusted`, `userBanned`, `userDeleted`, `serverError`, `pendingOrdersSummary`, `raw`.
+- **Pending orders watcher** (`pending-orders-watcher.ts`) : toutes les `PENDING_ORDERS_INTERVAL_HOURS` (défaut 2), envoie un récap au chat `TELEGRAM_PENDING_CHAT_ID` (fallback = `TELEGRAM_LOG_CHAT_ID`). Démarrage/arrêt gérés dans `index.ts` avec SIGINT/SIGTERM.
+- **Routes instrumentées** :
+  - `auth.ts` : register / verify / login (succès+échec).
+  - `cart.ts` : checkout complet (items, subtotal, discount, coupon, livré/pending count, newBalance).
+  - `orders.ts` : `customerInfoSubmitted` après soumission infos client.
+  - `wallet.ts` : recharge crypto `started` (création session) + `completed` (verify manuel).
+  - `paypal.ts` / `stripe.ts` : `started` à la création de l'order/intent + `completed`/`failed` à la capture.
+  - `recharge-watcher.ts` : `rechargeCompleted` lorsque la tx LTC est auto-créditée.
+  - `loyalty.ts` : conversion points → euros.
+  - `wheel.ts` : `wheelSpin` uniquement si gain (filtre `type === "nothing"`).
+  - `admin-coupons.ts` : create / update / delete.
+  - `admin.ts` : `orderDelivered`, `userBanned`, `userDeleted`, `adminAdjusted`, `jackpotDraw` (avec `getAdmin()` helper qui lookup `username/firstName` à partir de `req.userId`).
+  - `tickets.ts` : `ticketCreated` (user) / `ticketReply` (user ou admin) / `ticketClosed` (admin).
+  - `reviews.ts` : `reviewPosted` (skip auto-sweep — uniquement appelé sur la route POST authentifiée).
+  - `app.ts` : handler d'erreur 500 → `notify.serverError`.
+- **Variables d'env (toutes optionnelles côté code, mais requises pour activer les logs)** :
+  - `TELEGRAM_LOG_CHAT_ID` : chat ID (négatif pour groupe/channel) où sont envoyés tous les logs. **Sans cette variable, le notifier est désactivé.**
+  - `TELEGRAM_PENDING_CHAT_ID` : chat ID dédié au spam des commandes pending. Défaut = `TELEGRAM_LOG_CHAT_ID`.
+  - `PENDING_ORDERS_INTERVAL_HOURS` : intervalle entre récap pending (défaut `2`).
+  - `TELEGRAM_NOTIFY_DISABLED=1` : kill-switch global (laisse code instrumenté en place mais bloque tous les envois).
+- **Déploiement VPS** : ajouter `TELEGRAM_LOG_CHAT_ID` et `TELEGRAM_PENDING_CHAT_ID` au `.env` de `nexosite-api` puis `pm2 restart nexosite-api nexoshop-bot --update-env`.
 
 ## NexoShop — Système de coupons (avril 2026)
 

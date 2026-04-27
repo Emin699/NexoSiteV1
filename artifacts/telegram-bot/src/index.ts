@@ -8,6 +8,7 @@ import {
   isAwaitingBroadcast,
   broadcastMessage,
 } from "./handlers/sayall.js";
+import { handleStats } from "./handlers/stats.js";
 
 const bot = new Telegraf(config.botToken);
 
@@ -19,6 +20,9 @@ bot.command("sayall", handleSayAll);
 
 // /cancel — admin only, exit broadcast mode
 bot.command("cancel", handleCancel);
+
+// /stats — admin only, show site statistics
+bot.command("stats", handleStats);
 
 // Catch any non-command message: if admin is in broadcast mode, copy it to all subscribers.
 bot.on(message(), async (ctx, next) => {

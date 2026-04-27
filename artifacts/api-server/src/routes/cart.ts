@@ -14,6 +14,7 @@ import {
 } from "@workspace/db";
 import { eq, and, sql, isNull, desc, asc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
+import { notify, safeNotify } from "../lib/notifier";
 import { REFERRAL_REWARD_EUR, REFERRAL_CAP_EUR } from "../lib/referral-config";
 import {
   AddToCartBody,
@@ -643,7 +644,7 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
 
       await tx.delete(cartItemsTable).where(eq(cartItemsTable.userId, req.userId!));
 
-      return { insertedOrders, totalCharged, newBalance };
+      return { insertedOrders, totalCharged, newBalance, items, finalDiscount, couponApplied, coupon };
     });
 
     const parseFields = (raw: string | null): string[] => {
@@ -685,6 +686,29 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       customerInfo: parseInfo(o.customerInfo),
       createdAt: o.createdAt.toISOString(),
     }));
+
+    // Telegram log: full checkout (fire-and-forget, never blocks the response).
+    safeNotify(async () => {
+      const [me] = await db
+        .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+        .from(usersTable)
+        .where(eq(usersTable.id, req.userId!));
+      notify.orderPlaced({
+        user: me ?? { id: req.userId!, username: null, firstName: null },
+        items: result.items.map((i) => ({
+          name: i.variantName ? `${i.productName} (${i.variantName})` : i.productName,
+          qty: i.quantity,
+          price: Number(i.productPrice),
+        })),
+        subtotal: result.totalCharged + (result.couponApplied ? result.finalDiscount : 0),
+        discount: result.couponApplied ? result.finalDiscount : 0,
+        total: result.totalCharged,
+        couponCode: result.couponApplied && result.coupon ? result.coupon.code : null,
+        deliveredCount: result.insertedOrders.filter((o) => o.status === "delivered").length,
+        pendingCount: result.insertedOrders.filter((o) => o.status === "pending").length,
+        newBalance: result.newBalance,
+      });
+    });
 
     res.json(
       CheckoutResponse.parse({

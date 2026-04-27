@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, usersTable, transactionsTable } from "@workspace/db";
 import { eq, sql, and, gte } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
+import { notify, safeNotify } from "../lib/notifier";
 import { ConvertPointsBody, ConvertPointsResponse } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -55,7 +56,17 @@ router.post("/loyalty/convert", requireAuth, async (req, res): Promise<void> => 
       return {
         newBalance: Number(updated[0].balance),
         newPoints: updated[0].loyaltyPoints,
+        username: updated[0].username,
+        firstName: updated[0].firstName,
       };
+    });
+
+    safeNotify(() => {
+      notify.loyaltyConverted({
+        user: { id: req.userId!, username: result.username, firstName: result.firstName },
+        points,
+        eur: eurEarned,
+      });
     });
 
     res.json(

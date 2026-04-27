@@ -5,6 +5,7 @@ import fs from "fs";
 import { db, reviewsTable, usersTable, productsTable, ordersTable } from "@workspace/db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
+import { notify, safeNotify } from "../lib/notifier";
 import { z } from "zod";
 
 const router: IRouter = Router();
@@ -150,6 +151,23 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
     .update(usersTable)
     .set({ freeSpins: sql`${usersTable.freeSpins} + 1` })
     .where(eq(usersTable.id, userId));
+
+  // Telegram log: new review (skip auto-generated ones), fire-and-forget.
+  safeNotify(async () => {
+    const [u] = await db
+      .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    const [p] = await db
+      .select({ name: productsTable.name })
+      .from(productsTable)
+      .where(eq(productsTable.id, productId));
+    notify.reviewPosted({
+      productName: p?.name ?? `produit #${productId}`,
+      rating,
+      user: u ?? { id: userId, username: null, firstName: null },
+    });
+  });
 
   res.status(201).json({
     id: review.id,

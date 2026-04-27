@@ -7,6 +7,7 @@ import path from "path";
 import fs from "fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { notify } from "./lib/notifier";
 import { userAuthMiddleware } from "./middlewares/userAuth";
 
 const app: Express = express();
@@ -127,6 +128,13 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     },
     "Unhandled request error",
   );
+  // Forward to Telegram log channel (if configured).
+  notify.serverError({
+    method: req.method,
+    route: req.url?.split("?")[0],
+    message: err?.message ?? "unknown",
+    userId: (req as Request & { userId?: number }).userId,
+  });
   if (res.headersSent) return;
   // In production we never leak internal error details to the client.
   const isProd = process.env["NODE_ENV"] === "production";

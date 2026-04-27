@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, ordersTable, productsTable, usersTable, transactionsTable } from "@workspace/db";
 import { eq, desc, sql, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
+import { notify, safeNotify } from "../lib/notifier";
 import {
   BuyProductBody,
   GetOrdersResponse,
@@ -108,6 +109,20 @@ router.post("/orders/:id/customer-info", requireAuth, async (req, res): Promise<
     .set({ customerInfo: JSON.stringify(cleaned) })
     .where(eq(ordersTable.id, id))
     .returning();
+
+  safeNotify(async () => {
+    const [u] = await db
+      .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+      .from(usersTable)
+      .where(eq(usersTable.id, req.userId!));
+    if (u) {
+      notify.customerInfoSubmitted({
+        orderId: updated.id,
+        productName: updated.productName,
+        user: u,
+      });
+    }
+  });
 
   res.json(SubmitOrderCustomerInfoResponse.parse({
     id: updated.id,
@@ -219,23 +234,43 @@ router.post("/orders/buy", requireAuth, async (req, res): Promise<void> => {
       }));
 
       const inserted = await tx.insert(ordersTable).values(orderRows).returning();
-      return inserted[0];
+      return { firstOrder: inserted[0], inserted, debited: debited[0] };
     });
 
+    // Telegram log: direct buy (fire-and-forget)
+    safeNotify(() => {
+      notify.orderPlaced({
+        user: {
+          id: req.userId!,
+          username: firstOrder.debited.username,
+          firstName: firstOrder.debited.firstName,
+        },
+        items: [{ name: product.name, qty: quantity, price: unitPrice }],
+        subtotal: total,
+        discount: 0,
+        total,
+        couponCode: null,
+        deliveredCount: firstOrder.inserted.filter((o) => o.status === "delivered").length,
+        pendingCount: firstOrder.inserted.filter((o) => o.status === "pending").length,
+        newBalance: Number(firstOrder.debited.balance),
+      });
+    });
+
+    const firstOrderRow = firstOrder.firstOrder;
     res.json(
       BuyProductResponse.parse({
-        id: firstOrder.id,
-        productId: firstOrder.productId,
-        productName: firstOrder.productName,
-        productEmoji: firstOrder.productEmoji,
-        price: Number(firstOrder.price),
-        status: firstOrder.status,
-        credentials: firstOrder.credentials,
-        deliveryImageUrl: firstOrder.deliveryImageUrl,
-        deliveredAt: firstOrder.deliveredAt?.toISOString() ?? null,
-        customerInfoFields: parseFields(firstOrder.customerInfoFields),
-        customerInfo: parseCustomerInfo(firstOrder.customerInfo),
-        createdAt: firstOrder.createdAt.toISOString(),
+        id: firstOrderRow.id,
+        productId: firstOrderRow.productId,
+        productName: firstOrderRow.productName,
+        productEmoji: firstOrderRow.productEmoji,
+        price: Number(firstOrderRow.price),
+        status: firstOrderRow.status,
+        credentials: firstOrderRow.credentials,
+        deliveryImageUrl: firstOrderRow.deliveryImageUrl,
+        deliveredAt: firstOrderRow.deliveredAt?.toISOString() ?? null,
+        customerInfoFields: parseFields(firstOrderRow.customerInfoFields),
+        customerInfo: parseCustomerInfo(firstOrderRow.customerInfo),
+        createdAt: firstOrderRow.createdAt.toISOString(),
       })
     );
   } catch (err) {

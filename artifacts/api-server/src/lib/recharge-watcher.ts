@@ -2,6 +2,7 @@ import { db, cryptoRechargesTable, usersTable, transactionsTable } from "@worksp
 import { and, eq, sql, gt } from "drizzle-orm";
 import { listIncomingTxs } from "./ltc-verify";
 import { logger } from "./logger";
+import { notify, safeNotify } from "./notifier";
 
 const POLL_INTERVAL_MS = 30_000;
 const MIN_CONFIRMATIONS = 1;
@@ -49,6 +50,27 @@ async function tryCreditMatch(pending: Pending, txHash: string, ltcReceived: num
       });
     });
     logger.info({ userId: pending.userId, eur: credited, txHash }, "auto-credited LTC recharge");
+
+    // Telegram log: auto-credit (fire-and-forget)
+    safeNotify(async () => {
+      const [u] = await db
+        .select({
+          id: usersTable.id,
+          username: usersTable.username,
+          firstName: usersTable.firstName,
+          balance: usersTable.balance,
+        })
+        .from(usersTable)
+        .where(eq(usersTable.id, pending.userId));
+      if (u) {
+        notify.rechargeCompleted({
+          user: { id: u.id, username: u.username, firstName: u.firstName },
+          method: "crypto",
+          amount: credited,
+          newBalance: Number(u.balance),
+        });
+      }
+    });
     return true;
   } catch (err) {
     const e = err as { code?: string; cause?: { code?: string }; silent?: boolean };

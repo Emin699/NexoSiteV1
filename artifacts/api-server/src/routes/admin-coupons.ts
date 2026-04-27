@@ -1,8 +1,18 @@
 import { Router, type IRouter } from "express";
-import { db, couponsTable, couponUsagesTable } from "@workspace/db";
+import { db, couponsTable, couponUsagesTable, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/userAuth";
+import { notify, safeNotify } from "../lib/notifier";
 import { z } from "zod/v4";
+
+async function getAdmin(userId: number | undefined): Promise<{ id: number; username: string | null; firstName: string | null }> {
+  if (!userId) return { id: 0, username: null, firstName: "admin" };
+  const [u] = await db
+    .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+  return u ?? { id: userId, username: null, firstName: "admin" };
+}
 
 const router: IRouter = Router();
 router.use("/admin/coupons", requireAuth, requireAdmin);
@@ -129,6 +139,14 @@ router.post("/admin/coupons", async (req, res): Promise<void> => {
     restrictedToUserId: data.restrictedToUserId ?? null,
     isActive: data.isActive ? 1 : 0,
   });
+  safeNotify(async () => {
+    notify.couponCreated({
+      code: data.code,
+      type: data.type,
+      value: data.value,
+      by: await getAdmin(req.userId),
+    });
+  });
   res.json({ success: true, code: data.code });
 });
 
@@ -157,6 +175,7 @@ router.put("/admin/coupons/:code", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Coupon introuvable" });
     return;
   }
+  safeNotify(async () => { notify.couponUpdated({ code, by: await getAdmin(req.userId) }); });
   res.json({ success: true });
 });
 
@@ -183,6 +202,7 @@ router.delete("/admin/coupons/:code", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Coupon introuvable" });
     return;
   }
+  safeNotify(async () => { notify.couponDeleted({ code, by: await getAdmin(req.userId) }); });
   res.json({ success: true });
 });
 

@@ -3,6 +3,7 @@ import { db, usersTable, transactionsTable, cryptoRechargesTable } from "@worksp
 import { eq, desc, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
 import { verifyLitecoinTx } from "../lib/ltc-verify";
+import { notify, safeNotify } from "../lib/notifier";
 import {
   InitiateCryptoRechargeBody,
   VerifyCryptoRechargeBody,
@@ -133,6 +134,16 @@ router.post("/wallet/recharge/crypto", requireAuth, async (req, res): Promise<vo
     });
     return;
   }
+
+  safeNotify(async () => {
+    const [me] = await db
+      .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+      .from(usersTable)
+      .where(eq(usersTable.id, req.userId!));
+    if (me) {
+      notify.rechargeStarted({ user: me, method: "crypto", amount: amountEur });
+    }
+  });
 
   res.json(
     InitiateCryptoRechargeResponse.parse({
@@ -369,9 +380,23 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
         success: true,
         message: `Recharge de ${credited.toFixed(2)}€ effectuée avec succès`,
         newBalance: Number(user.balance),
+        username: user.username,
+        firstName: user.firstName,
       };
     });
-    res.json(VerifyCryptoRechargeResponse.parse(result));
+    safeNotify(() => {
+      notify.rechargeCompleted({
+        user: { id: req.userId!, username: result.username, firstName: result.firstName },
+        method: "crypto",
+        amount: credited,
+        newBalance: result.newBalance,
+      });
+    });
+    res.json(VerifyCryptoRechargeResponse.parse({
+      success: result.success,
+      message: result.message,
+      newBalance: result.newBalance,
+    }));
   } catch (err) {
     req.log.error({ err, txHash }, "crypto verify failed");
     // Detect unique-constraint violation (Postgres code 23505) on tx_hash —

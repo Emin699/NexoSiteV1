@@ -9,6 +9,7 @@ import {
   createPaymentIntent,
   retrieveIntent,
 } from "../lib/stripe-client.js";
+import { notify, safeNotify } from "../lib/notifier.js";
 
 const router: IRouter = Router();
 
@@ -41,6 +42,10 @@ router.post("/wallet/recharge/stripe/create-intent", requireAuth, async (req, re
       intentId: intent.id,
       amountEur: parsed.data.amountEur.toFixed(2),
       status: "created",
+    });
+    safeNotify(async () => {
+      const [me] = await db.select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName }).from(usersTable).where(eq(usersTable.id, req.userId!));
+      if (me) notify.rechargeStarted({ user: me, method: "stripe", amount: parsed.data.amountEur });
     });
     res.json({
       intentId: intent.id,
@@ -152,13 +157,32 @@ router.post("/wallet/recharge/stripe/confirm", requireAuth, async (req, res): Pr
         description: `Recharge Stripe${methodLabel} (${amountEur.toFixed(2)}€) — stripe:${intentId}`,
       });
 
-      return { newBalance: Number(updated.balance), amountEur };
+      return {
+        newBalance: Number(updated.balance),
+        amountEur,
+        username: updated.username,
+        firstName: updated.firstName,
+      };
     });
 
-    res.json({ success: true, ...result });
+    safeNotify(() => {
+      notify.rechargeCompleted({
+        user: { id: req.userId!, username: result.username, firstName: result.firstName },
+        method: "stripe",
+        amount: result.amountEur,
+        newBalance: result.newBalance,
+      });
+    });
+    res.json({ success: true, newBalance: result.newBalance, amountEur: result.amountEur });
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err, intentId }, "Stripe confirm failed");
+    if (e.status !== 409) {
+      safeNotify(async () => {
+        const [me] = await db.select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName }).from(usersTable).where(eq(usersTable.id, req.userId!));
+        if (me) notify.rechargeFailed({ user: me, method: "stripe", reason: e.message ?? "confirm failed" });
+      });
+    }
     if (e.status === 409) {
       res.status(409).json({ error: "Paiement déjà capturé" });
     } else {

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { sendVerificationEmail } from "../lib/resend-client.js";
 import { isDisposableEmail } from "../lib/disposable-emails.js";
 import { signToken } from "../lib/session-token.js";
+import { notify } from "../lib/notifier.js";
 
 const router: IRouter = Router();
 
@@ -177,6 +178,12 @@ router.post("/auth/register", async (req, res): Promise<void> => {
     return;
   }
 
+  notify.userRegistered({
+    id: userId,
+    email: normalizedEmail,
+    firstName: returnedFirstName,
+  });
+
   res.json({
     userId,
     firstName: returnedFirstName,
@@ -222,6 +229,13 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
     .update(usersTable)
     .set({ emailVerified: 1, verificationCode: null, verificationCodeExpiresAt: null })
     .where(eq(usersTable.id, user.id));
+
+  notify.userVerified({
+    id: user.id,
+    email: user.email ?? "",
+    firstName: user.firstName,
+    username: user.username,
+  });
 
   res.json({
     userId: user.id,
@@ -280,12 +294,14 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     .where(eq(usersTable.email, normalizedEmail));
 
   if (!user || !user.passwordHash) {
+    notify.loginFailure(normalizedEmail, "compte introuvable");
     res.status(401).json({ error: "Email ou mot de passe incorrect." });
     return;
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
+    notify.loginFailure(normalizedEmail, "mot de passe incorrect");
     res.status(401).json({ error: "Email ou mot de passe incorrect." });
     return;
   }
@@ -300,6 +316,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     });
     return;
   }
+
+  notify.loginSuccess({
+    id: user.id,
+    email: user.email ?? "",
+    firstName: user.firstName,
+    username: user.username,
+  });
 
   res.json({
     userId: user.id,

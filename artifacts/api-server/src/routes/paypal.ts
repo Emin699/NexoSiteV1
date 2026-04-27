@@ -4,6 +4,7 @@ import { db, usersTable, transactionsTable, paypalRechargesTable } from "@worksp
 import { eq, sql, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
 import { isPayPalConfigured, getClientId, createOrder, captureOrder } from "../lib/paypal-client.js";
+import { notify, safeNotify } from "../lib/notifier.js";
 
 const router: IRouter = Router();
 
@@ -38,6 +39,10 @@ router.post("/wallet/recharge/paypal/create", requireAuth, async (req, res): Pro
       orderId: order.id,
       amountEur: parsed.data.amountEur.toFixed(2),
       status: "created",
+    });
+    safeNotify(async () => {
+      const [me] = await db.select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName }).from(usersTable).where(eq(usersTable.id, req.userId!));
+      if (me) notify.rechargeStarted({ user: me, method: "paypal", amount: parsed.data.amountEur });
     });
     res.json({ orderId: order.id, amountEur: parsed.data.amountEur });
   } catch (err) {
@@ -133,13 +138,32 @@ router.post("/wallet/recharge/paypal/capture", requireAuth, async (req, res): Pr
         description: `Recharge PayPal (${amountEur.toFixed(2)}€) — paypal:${orderId}`,
       });
 
-      return { newBalance: Number(updated.balance), amountEur };
+      return {
+        newBalance: Number(updated.balance),
+        amountEur,
+        username: updated.username,
+        firstName: updated.firstName,
+      };
     });
 
-    res.json({ success: true, ...result });
+    safeNotify(() => {
+      notify.rechargeCompleted({
+        user: { id: req.userId!, username: result.username, firstName: result.firstName },
+        method: "paypal",
+        amount: result.amountEur,
+        newBalance: result.newBalance,
+      });
+    });
+    res.json({ success: true, newBalance: result.newBalance, amountEur: result.amountEur });
   } catch (err) {
     const e = err as { status?: number; message?: string };
     req.log.error({ err, orderId }, "PayPal capture failed");
+    if (e.status !== 409) {
+      safeNotify(async () => {
+        const [me] = await db.select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName }).from(usersTable).where(eq(usersTable.id, req.userId!));
+        if (me) notify.rechargeFailed({ user: me, method: "paypal", reason: e.message ?? "capture failed" });
+      });
+    }
     if (e.status === 409) {
       res.status(409).json({ error: "Ordre déjà capturé" });
     } else {

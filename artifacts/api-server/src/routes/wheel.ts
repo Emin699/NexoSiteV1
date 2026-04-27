@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, usersTable, transactionsTable, wheelSpinsTable } from "@workspace/db";
 import { eq, sql, and, or, gt, lt, isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
+import { notify, safeNotify } from "../lib/notifier";
 import { SpinWheelResponse, GetWheelStatusResponse } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -155,8 +156,19 @@ router.post("/wheel/spin", requireAuth, async (req, res): Promise<void> => {
         rewardValue: reward.value?.toString() ?? null,
       });
 
-      return { newBalance, newPoints };
+      return { newBalance, newPoints, username: userRow.username, firstName: userRow.firstName };
     });
+
+    // Only notify wins (not "nothing"), to keep the channel clean.
+    if (reward.type !== "nothing") {
+      safeNotify(() => {
+        notify.wheelSpin({
+          user: { id: req.userId!, username: result.username, firstName: result.firstName },
+          prize: reward.label,
+          value: reward.type === "balance" ? (reward.value ?? undefined) : undefined,
+        });
+      });
+    }
 
     res.json(
       SpinWheelResponse.parse({

@@ -7,6 +7,7 @@ import {
 } from "@workspace/db";
 import { eq, desc, and, ne } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/userAuth";
+import { notify, safeNotify } from "../lib/notifier";
 import {
   CreateTicketBody,
   PostTicketMessageBody,
@@ -173,6 +174,18 @@ router.post("/tickets", requireAuth, async (req, res): Promise<void> => {
     res.status(500).json({ error: "Erreur création ticket" });
     return;
   }
+  safeNotify(() => {
+    notify.ticketCreated({
+      ticketId: created.id,
+      category,
+      subject: subjectClean,
+      user: {
+        id: req.userId!,
+        username: detail.owner?.username ?? null,
+        firstName: detail.owner?.firstName ?? null,
+      },
+    });
+  });
   res.status(201).json(
     TicketDetailZ.parse({
       id: detail.ticket.id,
@@ -261,6 +274,17 @@ router.post("/tickets/:id/messages", requireAuth, async (req, res): Promise<void
     res.status(404).json({ error: "Ticket introuvable" });
     return;
   }
+  safeNotify(() => {
+    notify.ticketReply({
+      ticketId: id,
+      by: "user",
+      user: {
+        id: req.userId!,
+        username: detail.owner?.username ?? null,
+        firstName: detail.owner?.firstName ?? null,
+      },
+    });
+  });
   res.status(201).json(
     TicketDetailZ.parse({
       id: detail.ticket.id,
@@ -437,6 +461,17 @@ router.post(
       res.status(404).json({ error: "Ticket introuvable" });
       return;
     }
+    safeNotify(() => {
+      notify.ticketReply({
+        ticketId: id,
+        by: "admin",
+        user: {
+          id: detail.ticket.userId,
+          username: detail.owner?.username ?? null,
+          firstName: detail.owner?.firstName ?? null,
+        },
+      });
+    });
     res.status(201).json(
       AdminTicketDetailZ.parse({
         id: detail.ticket.id,
@@ -490,6 +525,18 @@ router.patch(
     if (!detail) {
       res.status(404).json({ error: "Ticket introuvable" });
       return;
+    }
+    if (status === "closed") {
+      safeNotify(async () => {
+        const [admin] = await db
+          .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+          .from(usersTable)
+          .where(eq(usersTable.id, req.userId!));
+        notify.ticketClosed({
+          ticketId: id,
+          by: admin ?? { id: req.userId!, username: null, firstName: "admin" },
+        });
+      });
     }
     res.json(
       AdminTicketDetailZ.parse({
