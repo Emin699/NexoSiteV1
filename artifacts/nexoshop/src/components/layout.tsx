@@ -67,14 +67,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           <Link
             href="/"
-            className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2"
+            className="flex items-center absolute left-1/2 -translate-x-1/2"
           >
-            <img
-              src="/nexoshop-icon.png"
-              alt=""
-              aria-hidden="true"
-              className="w-7 h-7 rounded-md shadow-md shadow-primary/20"
-            />
             <img
               src="/nexoshop-logo.png"
               alt="NexoShop"
