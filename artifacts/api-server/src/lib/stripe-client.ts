@@ -36,7 +36,7 @@ export async function createPaymentIntent(amountEur: number, userId: number): Pr
   const intent = await stripe.paymentIntents.create({
     amount: Math.round(amountEur * 100),
     currency: "eur",
-    automatic_payment_methods: { enabled: true },
+    payment_method_types: ["card", "link"],
     description: `Recharge NexoShop`,
     metadata: { userId: String(userId), source: "nexoshop_wallet" },
   });

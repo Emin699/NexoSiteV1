@@ -473,25 +473,24 @@ export default function Wallet() {
             </CardContent>
           </Card>
 
-          {/* Stripe / Link / Apple Pay / Google Pay card */}
+          {/* Stripe (Carte bancaire + Link) */}
           <Card className={`bg-card/50 border-border/50 relative ${!stripeConfig?.enabled ? "opacity-70" : ""}`}>
             {/* Payment method badges, top-right */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
               <PaymentBadge type="visa" />
               <PaymentBadge type="mastercard" />
-              <PaymentBadge type="applepay" />
-              <PaymentBadge type="googlepay" />
+              <PaymentBadge type="link" />
             </div>
-            <CardHeader className="pb-3 pr-32 sm:pr-40">
+            <CardHeader className="pb-3 pr-28 sm:pr-32">
               <CardTitle className="text-lg flex items-center gap-2">
                 <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#635BFF] to-[#3a32d6] text-white flex items-center justify-center font-bold text-sm">
                   S
                 </div>
-                Carte, Link & Apple Pay
+                Stripe
               </CardTitle>
               <CardDescription>
                 {stripeConfig?.enabled
-                  ? "Carte bancaire, Link, Apple Pay et Google Pay — paiement instantané et sécurisé."
+                  ? "Carte bancaire ou Link — paiement instantané et sécurisé."
                   : "Bientôt disponible — configuration serveur requise."}
               </CardDescription>
             </CardHeader>
@@ -562,7 +561,7 @@ export default function Wallet() {
                     <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2.5 flex gap-2">
                       <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
                       <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        <span className="font-semibold text-foreground">NexoShop n'enregistre pas tes cartes.</span> Le paiement est traité par Stripe (PCI-DSS niveau 1). Si tu préfères, tu peux utiliser une carte virtuelle ou éphémère (Revolut, N26, Lydia, PCS…).
+                        <span className="font-semibold text-foreground">NexoShop n'enregistre pas tes coordonnées bancaires.</span> Le paiement est traité directement par Stripe (PCI-DSS niveau 1). Si tu préfères, tu peux utiliser une carte virtuelle ou éphémère (Revolut, N26, Lydia, PCS…).
                       </p>
                     </div>
                   </>
@@ -758,7 +757,7 @@ function StripePaymentForm({
   );
 }
 
-function PaymentBadge({ type }: { type: "visa" | "mastercard" | "applepay" | "googlepay" }) {
+function PaymentBadge({ type }: { type: "visa" | "mastercard" | "link" }) {
   const base = "h-5 w-9 rounded-[3px] bg-white flex items-center justify-center shadow-sm border border-black/5";
   if (type === "visa") {
     return (
@@ -773,41 +772,15 @@ function PaymentBadge({ type }: { type: "visa" | "mastercard" | "applepay" | "go
         <svg viewBox="0 0 24 16" className="h-3.5" aria-hidden="true">
           <circle cx="9" cy="8" r="6" fill="#EB001B" />
           <circle cx="15" cy="8" r="6" fill="#F79E1B" />
-          <path
-            d="M12 3.5a6 6 0 0 1 0 9 6 6 0 0 1 0-9z"
-            fill="#FF5F00"
-          />
+          <path d="M12 3.5a6 6 0 0 1 0 9 6 6 0 0 1 0-9z" fill="#FF5F00" />
         </svg>
       </div>
     );
   }
-  if (type === "applepay") {
-    return (
-      <div className={base} title="Apple Pay">
-        <svg viewBox="0 0 40 16" className="h-3" aria-hidden="true">
-          <path
-            fill="#000"
-            d="M7.3 2.1c.4-.5.7-1.2.6-1.9-.6 0-1.3.4-1.7.9-.4.4-.7 1.1-.6 1.8.7 0 1.3-.3 1.7-.8zm.6.9c-1 0-1.8.6-2.3.6-.5 0-1.2-.5-2-.5-1 0-2 .6-2.6 1.6-1.1 1.9-.3 4.7.8 6.2.5.7 1.2 1.5 2 1.5.8 0 1.1-.5 2.1-.5s1.2.5 2.1.5c.9 0 1.4-.7 1.9-1.5.6-.8.9-1.7.9-1.7s-1.7-.7-1.7-2.6c0-1.7 1.4-2.5 1.5-2.5-.8-1.2-2.1-1.3-2.6-1.3z"
-          />
-          <text x="13" y="11.5" fontFamily="-apple-system, system-ui, sans-serif" fontSize="9" fontWeight="600" fill="#000">Pay</text>
-        </svg>
-      </div>
-    );
-  }
-  // googlepay
+  // link (Stripe)
   return (
-    <div className={base} title="Google Pay">
-      <svg viewBox="0 0 40 16" className="h-3" aria-hidden="true">
-        <text x="2" y="11.5" fontFamily="Arial, sans-serif" fontSize="9" fontWeight="700">
-          <tspan fill="#4285F4">G</tspan>
-          <tspan fill="#EA4335">o</tspan>
-          <tspan fill="#FBBC04">o</tspan>
-          <tspan fill="#4285F4">g</tspan>
-          <tspan fill="#34A853">l</tspan>
-          <tspan fill="#EA4335">e</tspan>
-        </text>
-        <text x="24" y="11.5" fontFamily="Arial, sans-serif" fontSize="9" fontWeight="600" fill="#5F6368">Pay</text>
-      </svg>
+    <div className="h-5 w-9 rounded-[3px] bg-[#00D924] flex items-center justify-center shadow-sm" title="Link by Stripe">
+      <span className="text-black font-bold text-[9px] tracking-tight lowercase">link</span>
     </div>
   );
 }
