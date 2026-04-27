@@ -152,12 +152,18 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
     .set({ freeSpins: sql`${usersTable.freeSpins} + 1` })
     .where(eq(usersTable.id, userId));
 
-  // Telegram log: new review (skip auto-generated ones), fire-and-forget.
+  // Telegram log: new review (skip auto-generated ones AND admin test reviews), fire-and-forget.
   safeNotify(async () => {
     const [u] = await db
-      .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
+      .select({
+        id: usersTable.id,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+        isAdmin: usersTable.isAdmin,
+      })
       .from(usersTable)
       .where(eq(usersTable.id, userId));
+    if (u?.isAdmin === 1) return; // skip admin test reviews
     const [p] = await db
       .select({ name: productsTable.name })
       .from(productsTable)
