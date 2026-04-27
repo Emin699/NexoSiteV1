@@ -1,9 +1,13 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Wallet, User, Store, ShieldCheck, LogIn } from "lucide-react";
+import { ShoppingCart, Wallet, User, Store, ShieldCheck, LogIn, Send, Radio, ArrowUpRight } from "lucide-react";
 import { useGetMe, useGetCart } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { hasAuthToken, useRequireAuth } from "@/hooks/use-auth";
+
+const TELEGRAM_HANDLE = "nexoshop6912";
+const TELEGRAM_URL = `https://t.me/${TELEGRAM_HANDLE}`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -90,8 +94,66 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-screen-md mx-auto overflow-x-hidden">
-        {children}
+      <main className="flex-1 w-full max-w-screen-md mx-auto overflow-x-hidden flex flex-col">
+        <div className="flex-1">{children}</div>
+
+        {/* Footer */}
+        <footer className="mt-10 border-t border-border/40 bg-card/30 px-4 py-5">
+          <div className="max-w-screen-md mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
+            <p className="text-center sm:text-left">
+              © {new Date().getFullYear()} <span className="font-semibold text-foreground">NexoShop</span> — Tous droits réservés.
+            </p>
+
+            <div className="flex items-center gap-4">
+              <a
+                href={TELEGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Contact</span>
+              </a>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+                  >
+                    <Radio className="w-3.5 h-3.5" />
+                    <span>Canal</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  align="end"
+                  className="w-56 p-2"
+                  sideOffset={8}
+                >
+                  <div className="px-2 py-1.5">
+                    <p className="text-xs font-semibold text-foreground">Canal Telegram NexoShop</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Annonces, drops & promos.
+                    </p>
+                  </div>
+                  <a
+                    href={TELEGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 flex items-center justify-between gap-2 w-full px-3 py-2 rounded-md bg-[#229ED9] hover:bg-[#1c84b5] text-white text-xs font-semibold transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Send className="w-3.5 h-3.5" />
+                      Rejoindre
+                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </footer>
       </main>
 
       {/* Bottom Nav */}
