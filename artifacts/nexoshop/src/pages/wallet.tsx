@@ -35,6 +35,8 @@ import {
   ShieldAlert,
   Clock,
   XCircle,
+  Send,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -391,115 +393,77 @@ export default function Wallet() {
             </CardContent>
           </Card>
 
-          {/* PayPal card */}
-          <Card className={`bg-card/50 border-border/50 ${!paypalConfig?.enabled ? "opacity-70" : ""}`}>
+          {/* PayPal card — en maintenance */}
+          <Card className="bg-card/50 border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">
                   P
                 </div>
                 PayPal
-                {paypalConfig?.env === "sandbox" && (
-                  <span className="text-[10px] uppercase tracking-wide bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded">
-                    sandbox
-                  </span>
-                )}
+                <span className="text-[10px] uppercase tracking-wide bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                  <Wrench className="w-3 h-3" />
+                  maintenance
+                </span>
               </CardTitle>
               <CardDescription>
-                {paypalConfig?.enabled
-                  ? "Paiement instantané par carte ou compte PayPal."
-                  : "Bientôt disponible — configuration serveur requise."}
+                Service PayPal temporairement indisponible.
               </CardDescription>
             </CardHeader>
-            {paypalConfig?.enabled && paypalOptions && (
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {RECHARGE_AMOUNTS.map((amt) => (
-                    <Button
-                      key={amt}
-                      variant={paypalMode === amt ? "default" : "outline"}
-                      className={`h-12 ${
-                        paypalMode === amt
-                          ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                          : "bg-background hover:bg-muted"
-                      }`}
-                      onClick={() => setPaypalMode(amt)}
-                    >
-                      {amt}€
-                    </Button>
-                  ))}
-                  <Button
-                    variant={paypalMode === "custom" ? "default" : "outline"}
-                    className={`h-12 ${
-                      paypalMode === "custom"
-                        ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                        : "bg-background hover:bg-muted"
-                    }`}
-                    onClick={() => setPaypalMode("custom")}
-                  >
-                    Autre
-                  </Button>
-                </div>
-                {paypalMode === "custom" && (
-                  <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        min={5}
-                        max={5000}
-                        step="0.01"
-                        placeholder="Montant en €"
-                        value={paypalCustomAmount}
-                        onChange={(e) => setPaypalCustomAmount(e.target.value)}
-                        className="h-12 pr-10 text-base font-medium"
-                        autoFocus
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground px-1">
-                      Minimum 5€ — Maximum 5000€
-                    </p>
-                  </div>
-                )}
-                {!isPaypalAmountValid ? (
-                  <div className="h-[45px] rounded-md bg-muted/50 border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">
-                    Entrez un montant entre 5€ et 5000€
-                  </div>
-                ) : (
-                <PayPalScriptProvider options={paypalOptions} key={`${paypalOptions.clientId}-${paypalAmount}`}>
-                  <PayPalButtons
-                    style={{ layout: "horizontal", tagline: false, shape: "rect", height: 45 }}
-                    createOrder={async () => {
-                      const res = await createPaypal.mutateAsync({
-                        data: { amountEur: paypalAmount },
-                      });
-                      return res.orderId;
-                    }}
-                    onApprove={async (data) => {
-                      try {
-                        const res = await capturePaypal.mutateAsync({
-                          data: { orderId: data.orderID },
-                        });
-                        if (res.success) {
-                          toast.success(`+${res.amountEur.toFixed(2)}€ crédités`, { icon: "💰" });
-                          invalidateWallet();
-                        }
-                      } catch (e) {
-                        const msg = e instanceof Error ? e.message : "Capture PayPal échouée";
-                        toast.error(msg);
-                      }
-                    }}
-                    onError={(err) => {
-                      console.error("PayPal error", err);
-                      toast.error("Erreur PayPal");
-                    }}
-                  />
-                </PayPalScriptProvider>
-                )}
-              </CardContent>
-            )}
+            <CardContent className="space-y-3">
+              <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-amber-200">
+                Pour effectuer une recharge PayPal, contacte&nbsp;
+                <a
+                  href="https://t.me/nexoshop6912"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline underline-offset-2 hover:text-amber-100"
+                >
+                  @nexoshop6912
+                </a>
+                &nbsp;sur Telegram.
+              </div>
+              <a
+                href="https://t.me/nexoshop6912"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <Button className="w-full h-12 bg-[#229ED9] hover:bg-[#1b8ec5] text-white shadow-md shadow-[#229ED9]/20">
+                  <Send className="w-4 h-4 mr-2" />
+                  Contacter @nexoshop6912 sur Telegram
+                </Button>
+              </a>
+            </CardContent>
           </Card>
+
+          {/* LinkedIn / contact card */}
+          <a
+            href="https://www.linkedin.com/in/nexoshop"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
+            <Card className="bg-card/50 border-border/50 hover:border-[#0A66C2]/60 transition-colors cursor-pointer">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm">
+                    in
+                  </div>
+                  LinkedIn
+                </CardTitle>
+                <CardDescription>
+                  Suivez NexoShop sur LinkedIn pour les actualités et nouveautés.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full h-12 bg-[#0A66C2] hover:bg-[#084d96] text-white shadow-md shadow-[#0A66C2]/20">
+                  <ArrowUpRight className="w-4 h-4 mr-2" />
+                  Voir le profil LinkedIn
+                </Button>
+              </CardContent>
+            </Card>
+          </a>
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">
