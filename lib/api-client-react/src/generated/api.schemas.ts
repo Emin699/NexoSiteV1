@@ -813,6 +813,113 @@ export interface UpdateTicketStatusBody {
   status: UpdateTicketStatusBodyStatus;
 }
 
+export interface SuccessResponse {
+  success: boolean;
+}
+
+export type AdminCouponType =
+  (typeof AdminCouponType)[keyof typeof AdminCouponType];
+
+export const AdminCouponType = {
+  percent: "percent",
+  amount: "amount",
+} as const;
+
+export interface AdminCoupon {
+  code: string;
+  /** @nullable */
+  description?: string | null;
+  type: AdminCouponType;
+  value: number;
+  maxUses: number;
+  currentUses: number;
+  maxUsesPerUser: number;
+  minOrderAmount: number;
+  /** @nullable */
+  startsAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  restrictedToUserId?: number | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export type AdminCouponBodyType =
+  (typeof AdminCouponBodyType)[keyof typeof AdminCouponBodyType];
+
+export const AdminCouponBodyType = {
+  percent: "percent",
+  amount: "amount",
+} as const;
+
+export interface AdminCouponBody {
+  /**
+   * @minLength 2
+   * @maxLength 50
+   */
+  code: string;
+  /**
+   * @maxLength 200
+   * @nullable
+   */
+  description?: string | null;
+  type: AdminCouponBodyType;
+  /** @exclusiveMinimum 0 */
+  value: number;
+  /** @minimum 1 */
+  maxUses?: number;
+  /** @minimum 0 */
+  maxUsesPerUser?: number;
+  /** @minimum 0 */
+  minOrderAmount?: number;
+  /** @nullable */
+  startsAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  restrictedToUserId?: number | null;
+  isActive?: boolean;
+}
+
+export type AdminCouponUpdateBodyType =
+  (typeof AdminCouponUpdateBodyType)[keyof typeof AdminCouponUpdateBodyType];
+
+export const AdminCouponUpdateBodyType = {
+  percent: "percent",
+  amount: "amount",
+} as const;
+
+export interface AdminCouponUpdateBody {
+  /** @nullable */
+  description?: string | null;
+  type?: AdminCouponUpdateBodyType;
+  value?: number;
+  maxUses?: number;
+  maxUsesPerUser?: number;
+  minOrderAmount?: number;
+  /** @nullable */
+  startsAt?: string | null;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  restrictedToUserId?: number | null;
+  isActive?: boolean;
+}
+
+export interface AdminCouponCreateResult {
+  success: boolean;
+  code: string;
+}
+
+export interface CouponUsage {
+  id: number;
+  couponCode: string;
+  userId: number;
+  discountApplied: number;
+  usedAt: string;
+}
+
 export type GetProductsParams = {
   category?: string;
 };

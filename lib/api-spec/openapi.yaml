@@ -1057,6 +1057,126 @@ paths:
         "404":
           description: Order not found
 
+  /admin/coupons:
+    get:
+      operationId: adminListCoupons
+      tags: [admin]
+      summary: List all coupons
+      responses:
+        "200":
+          description: Coupons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminCoupon"
+    post:
+      operationId: adminCreateCoupon
+      tags: [admin]
+      summary: Create a coupon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCouponBody"
+      responses:
+        "200":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCouponCreateResult"
+        "409":
+          description: Duplicate code
+
+  /admin/coupons/{code}:
+    put:
+      operationId: adminUpdateCoupon
+      tags: [admin]
+      summary: Update a coupon
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCouponUpdateBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+    delete:
+      operationId: adminDeleteCoupon
+      tags: [admin]
+      summary: Delete a coupon
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+
+  /admin/coupons/{code}/reset-uses:
+    post:
+      operationId: adminResetCouponUses
+      tags: [admin]
+      summary: Reset usage counter and per-user history of a coupon
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/coupons/{code}/usages:
+    get:
+      operationId: adminGetCouponUsages
+      tags: [admin]
+      summary: List usage history of a coupon
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Usages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CouponUsage"
+
   /orders/{id}/customer-info:
     post:
       operationId: submitOrderCustomerInfo
@@ -2658,3 +2778,126 @@ components:
           type: string
           enum: [open, closed]
       required: [status]
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required: [success]
+
+    AdminCoupon:
+      type: object
+      properties:
+        code:
+          type: string
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [percent, amount]
+        value:
+          type: number
+        maxUses:
+          type: integer
+        currentUses:
+          type: integer
+        maxUsesPerUser:
+          type: integer
+        minOrderAmount:
+          type: number
+        startsAt:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        restrictedToUserId:
+          type: ["integer", "null"]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required: [code, type, value, maxUses, currentUses, maxUsesPerUser, minOrderAmount, isActive, createdAt]
+
+    AdminCouponBody:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 2
+          maxLength: 50
+        description:
+          type: ["string", "null"]
+          maxLength: 200
+        type:
+          type: string
+          enum: [percent, amount]
+        value:
+          type: number
+          exclusiveMinimum: 0
+        maxUses:
+          type: integer
+          minimum: 1
+        maxUsesPerUser:
+          type: integer
+          minimum: 0
+        minOrderAmount:
+          type: number
+          minimum: 0
+        startsAt:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        restrictedToUserId:
+          type: ["integer", "null"]
+        isActive:
+          type: boolean
+      required: [code, type, value]
+
+    AdminCouponUpdateBody:
+      type: object
+      properties:
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [percent, amount]
+        value:
+          type: number
+        maxUses:
+          type: integer
+        maxUsesPerUser:
+          type: integer
+        minOrderAmount:
+          type: number
+        startsAt:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+        restrictedToUserId:
+          type: ["integer", "null"]
+        isActive:
+          type: boolean
+
+    AdminCouponCreateResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        code:
+          type: string
+      required: [success, code]
+
+    CouponUsage:
+      type: object
+      properties:
+        id:
+          type: integer
+        couponCode:
+          type: string
+        userId:
+          type: integer
+        discountApplied:
+          type: number
+        usedAt:
+          type: string
+      required: [id, couponCode, userId, discountApplied, usedAt]

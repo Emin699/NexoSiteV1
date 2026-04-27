@@ -1055,6 +1055,132 @@ export const AdminDeliverOrderResponse = zod.object({
 });
 
 /**
+ * @summary List all coupons
+ */
+export const AdminListCouponsResponseItem = zod.object({
+  code: zod.string(),
+  description: zod.string().nullish(),
+  type: zod.enum(["percent", "amount"]),
+  value: zod.number(),
+  maxUses: zod.number(),
+  currentUses: zod.number(),
+  maxUsesPerUser: zod.number(),
+  minOrderAmount: zod.number(),
+  startsAt: zod.string().nullish(),
+  expiresAt: zod.string().nullish(),
+  restrictedToUserId: zod.number().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.string(),
+});
+export const AdminListCouponsResponse = zod.array(AdminListCouponsResponseItem);
+
+/**
+ * @summary Create a coupon
+ */
+export const adminCreateCouponBodyCodeMin = 2;
+export const adminCreateCouponBodyCodeMax = 50;
+
+export const adminCreateCouponBodyDescriptionMax = 200;
+
+export const adminCreateCouponBodyValueExclusiveMin = 0;
+
+export const adminCreateCouponBodyMaxUsesPerUserMin = 0;
+
+export const adminCreateCouponBodyMinOrderAmountMin = 0;
+
+export const AdminCreateCouponBody = zod.object({
+  code: zod
+    .string()
+    .min(adminCreateCouponBodyCodeMin)
+    .max(adminCreateCouponBodyCodeMax),
+  description: zod.string().max(adminCreateCouponBodyDescriptionMax).nullish(),
+  type: zod.enum(["percent", "amount"]),
+  value: zod.number().gt(adminCreateCouponBodyValueExclusiveMin),
+  maxUses: zod.number().min(1).optional(),
+  maxUsesPerUser: zod
+    .number()
+    .min(adminCreateCouponBodyMaxUsesPerUserMin)
+    .optional(),
+  minOrderAmount: zod
+    .number()
+    .min(adminCreateCouponBodyMinOrderAmountMin)
+    .optional(),
+  startsAt: zod.string().nullish(),
+  expiresAt: zod.string().nullish(),
+  restrictedToUserId: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminCreateCouponResponse = zod.object({
+  success: zod.boolean(),
+  code: zod.string(),
+});
+
+/**
+ * @summary Update a coupon
+ */
+export const AdminUpdateCouponParams = zod.object({
+  code: zod.coerce.string(),
+});
+
+export const AdminUpdateCouponBody = zod.object({
+  description: zod.string().nullish(),
+  type: zod.enum(["percent", "amount"]).optional(),
+  value: zod.number().optional(),
+  maxUses: zod.number().optional(),
+  maxUsesPerUser: zod.number().optional(),
+  minOrderAmount: zod.number().optional(),
+  startsAt: zod.string().nullish(),
+  expiresAt: zod.string().nullish(),
+  restrictedToUserId: zod.number().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const AdminUpdateCouponResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Delete a coupon
+ */
+export const AdminDeleteCouponParams = zod.object({
+  code: zod.coerce.string(),
+});
+
+export const AdminDeleteCouponResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Reset usage counter and per-user history of a coupon
+ */
+export const AdminResetCouponUsesParams = zod.object({
+  code: zod.coerce.string(),
+});
+
+export const AdminResetCouponUsesResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary List usage history of a coupon
+ */
+export const AdminGetCouponUsagesParams = zod.object({
+  code: zod.coerce.string(),
+});
+
+export const AdminGetCouponUsagesResponseItem = zod.object({
+  id: zod.number(),
+  couponCode: zod.string(),
+  userId: zod.number(),
+  discountApplied: zod.number(),
+  usedAt: zod.string(),
+});
+export const AdminGetCouponUsagesResponse = zod.array(
+  AdminGetCouponUsagesResponseItem,
+);
+
+/**
  * @summary Submit customer info for an order that requires it
  */
 export const SubmitOrderCustomerInfoParams = zod.object({

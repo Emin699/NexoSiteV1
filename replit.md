@@ -97,6 +97,16 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
   - Optionnels : `TELEGRAM_WELCOME_TEXT` (HTML), `TELEGRAM_LOGO_URL` (URL ou chemin absolu, défaut = logo bundlé), `TELEGRAM_SHOP_BUTTON_TEXT`, `TELEGRAM_CHANNEL_BUTTON_TEXT`, `TELEGRAM_PROOFS_BUTTON_TEXT`.
 - **Déploiement VPS** : `pnpm --filter @workspace/telegram-bot run build` puis `pm2 start /var/www/nexosite/artifacts/telegram-bot/dist/index.mjs --name nexoshop-bot --update-env` (ou existant `pm2 restart nexoshop-bot --update-env`). Partage la même `DATABASE_URL` que l'API.
 
+## NexoShop — Système de coupons (avril 2026)
+
+- **Schéma** (`lib/db/src/schema/coupons.ts`) : `coupons` (code PK, description, type=percent|amount, value numeric, maxUses, currentUses, maxUsesPerUser, minOrderAmount, startsAt, expiresAt, restrictedToUserId nullable, isActive int 0/1, createdAt) + `coupon_usages` (id, couponCode FK, userId FK, discountApplied, usedAt) pour le tracking par utilisateur.
+- **Cumul avec auto-discount** : `cart.ts` `computeDiscount()` prend `max(autoDiscount=5%≥50€, couponDiscount)` — jamais cumulés. Le coupon n'est appliqué que s'il bat la remise auto.
+- **Atomicité concurrente (CRITIQUE)** : la validation du coupon au checkout est faite **dans la transaction** avec `SELECT ... FOR UPDATE` sur la ligne `coupons`, ce qui sérialise tous les checkouts simultanés du même code. L'incrément `currentUses` utilise un `UPDATE ... WHERE current_uses < max_uses RETURNING` (conditionnel atomique) — si 0 ligne retournée, la transaction est rollback (`Code promo épuisé`). `loadCouponFor()` accepte un `executor` (db ou tx) et un flag `lockForUpdate`.
+- **Validation serveur** (`admin-coupons.ts`) : `code` trimmé+upper avant min(2), `value≤100` si `type=percent`, `startsAt≤expiresAt`. `couponBodySchema` + `couponUpdateSchema` séparés (l'update n'inclut pas `code`, on utilise `.optional()` partout sans `.partial().omit()` pour préserver les `.refine()`).
+- **Routes admin** (`/admin/coupons`) : `GET /` (list), `POST /` (create, 409 si dup), `PUT /:code` (update partiel), `DELETE /:code` (cascade `coupon_usages`), `POST /:code/reset-uses` (set à 0 + delete history), `GET /:code/usages` (100 derniers). Toutes derrière `requireAuth + requireAdmin`.
+- **Frontend** (`components/admin-coupons.tsx`) : onglet "Coupons" dans `/admin` (grid-cols-7). Liste cards avec barre d'utilisation, badges (% / € / Inactif / Expiré / Épuisé / User #ID), Switch active inline, dialog create/edit complet (code, description, type, value, maxUses, maxUsesPerUser, minOrderAmount, startsAt, expiresAt, restrictedToUserId, isActive), reset, delete avec confirm.
+- **Déploiement** : nécessite `pnpm --filter @workspace/db run push` (nouvelle table `coupon_usages` + nouveaux champs `coupons`) + `pnpm --filter @workspace/api-spec run codegen` avant build.
+
 ## NexoShop — Refonte DA logo (avril 2026)
 
 - **Palette CSS** (`src/index.css`) : `--primary: 211 100% 56%` (bleu logo `#1E90FF`), `--secondary: 28 100% 55%` (orange logo `#FF8C00`), `--accent` = orange. Cards/bg ajustés `222 35% 13%`.

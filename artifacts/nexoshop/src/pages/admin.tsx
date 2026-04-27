@@ -13,6 +13,7 @@ import { AdminOrders } from "@/components/admin-orders";
 import { AdminTickets } from "@/components/admin-tickets";
 import { AdminProductModal } from "@/components/admin-product-modal";
 import { AdminCategoriesManager } from "@/components/admin-categories-manager";
+import { AdminCoupons } from "@/components/admin-coupons";
 import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -114,10 +115,11 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="grid grid-cols-6 w-full bg-card border border-border/50">
+        <TabsList className="grid grid-cols-7 w-full bg-card border border-border/50">
           <TabsTrigger value="products" className="text-[10px] px-1">Produits</TabsTrigger>
-          <TabsTrigger value="categories" className="text-[10px] px-1">Catégories</TabsTrigger>
-          <TabsTrigger value="orders" className="text-[10px] px-1">Commandes</TabsTrigger>
+          <TabsTrigger value="categories" className="text-[10px] px-1">Catég.</TabsTrigger>
+          <TabsTrigger value="coupons" className="text-[10px] px-1">Coupons</TabsTrigger>
+          <TabsTrigger value="orders" className="text-[10px] px-1">Cmd.</TabsTrigger>
           <TabsTrigger value="tickets" className="text-[10px] px-1">Tickets</TabsTrigger>
           <TabsTrigger value="logs" className="text-[10px] px-1">Logs</TabsTrigger>
           <TabsTrigger value="users" className="text-[10px] px-1">Users</TabsTrigger>
@@ -125,6 +127,10 @@ export default function Admin() {
 
         <TabsContent value="categories" className="mt-4">
           <AdminCategoriesManager />
+        </TabsContent>
+
+        <TabsContent value="coupons" className="mt-4">
+          <AdminCoupons />
         </TabsContent>
 
         <TabsContent value="orders" className="mt-4">

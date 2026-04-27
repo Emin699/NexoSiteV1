@@ -6,6 +6,7 @@ import {
   productVariantsTable,
   stockItemsTable,
   couponsTable,
+  couponUsagesTable,
   usersTable,
   ordersTable,
   transactionsTable,
@@ -85,13 +86,69 @@ type CouponData = {
   value: number;
 };
 
-async function loadCouponFor(userId: number, code: string): Promise<{ coupon: CouponData | null; reason?: string }> {
-  const [c] = await db.select().from(couponsTable).where(eq(couponsTable.code, code.toUpperCase()));
+// DB executor type compatible with both `db` and a `tx` from db.transaction(...).
+// Drizzle's transaction type differs from the root db type, so we extract it
+// from the transaction callback signature.
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type DbExecutor = typeof db | DbTransaction;
+
+/**
+ * Validate and load a coupon for a given user/subtotal.
+ *
+ * In preview mode (default), this runs against the global `db` and is meant
+ * for cart display / validate-coupon endpoints — race-free guarantees are NOT
+ * required here.
+ *
+ * In checkout mode (`opts.lockForUpdate=true` + `opts.executor=tx`), the
+ * coupon row is locked with `SELECT ... FOR UPDATE`, which serializes all
+ * concurrent checkouts using the same code. Combined with the atomic
+ * conditional increment performed by the caller, this prevents over-redemption
+ * past `maxUses` and per-user limits.
+ */
+async function loadCouponFor(
+  userId: number,
+  code: string,
+  subtotal: number,
+  opts: { executor?: DbExecutor; lockForUpdate?: boolean } = {},
+): Promise<{ coupon: CouponData | null; reason?: string }> {
+  const exec = opts.executor ?? db;
+  const upper = code.toUpperCase();
+
+  let c: typeof couponsTable.$inferSelect | undefined;
+  if (opts.lockForUpdate) {
+    const locked = await exec.execute(
+      sql`SELECT * FROM coupons WHERE code = ${upper} FOR UPDATE`,
+    );
+    const rows = (locked as unknown as { rows?: Array<typeof couponsTable.$inferSelect> }).rows
+      ?? (locked as unknown as Array<typeof couponsTable.$inferSelect>);
+    c = Array.isArray(rows) ? rows[0] : undefined;
+  } else {
+    [c] = await exec.select().from(couponsTable).where(eq(couponsTable.code, upper));
+  }
+
   if (!c) return { coupon: null, reason: "Code promo invalide" };
+  if (c.isActive !== 1) return { coupon: null, reason: "Code promo désactivé" };
+  const now = new Date();
+  const startsAt = c.startsAt ? new Date(c.startsAt) : null;
+  const expiresAt = c.expiresAt ? new Date(c.expiresAt) : null;
+  if (startsAt && startsAt > now) return { coupon: null, reason: "Code promo pas encore actif" };
+  if (expiresAt && expiresAt < now) return { coupon: null, reason: "Code promo expiré" };
   if (c.currentUses >= c.maxUses) return { coupon: null, reason: "Code promo épuisé" };
-  if (c.expiresAt && c.expiresAt < new Date()) return { coupon: null, reason: "Code promo expiré" };
   if (c.restrictedToUserId && c.restrictedToUserId !== userId) {
-    return { coupon: null, reason: "Ce code n'est pas valide pour votre compte" };
+    return { coupon: null, reason: "Ce code n'est pas valide pour ton compte" };
+  }
+  const minOrder = Number(c.minOrderAmount);
+  if (minOrder > 0 && subtotal < minOrder) {
+    return { coupon: null, reason: `Commande minimale de ${minOrder.toFixed(2)}€ requise` };
+  }
+  if (c.maxUsesPerUser > 0) {
+    const [{ used }] = await exec
+      .select({ used: sql<number>`count(*)::int` })
+      .from(couponUsagesTable)
+      .where(and(eq(couponUsagesTable.couponCode, c.code), eq(couponUsagesTable.userId, userId)));
+    if (Number(used) >= c.maxUsesPerUser) {
+      return { coupon: null, reason: "Tu as déjà utilisé ce code le nombre de fois autorisé" };
+    }
   }
   return { coupon: { code: c.code, type: c.type as "percent" | "amount", value: Number(c.value) } };
 }
@@ -129,7 +186,7 @@ async function buildCartSummary(userId: number, requestedCoupon?: string | null)
   let coupon: CouponData | null = null;
   let couponMessage: string | null = null;
   if (requestedCoupon && requestedCoupon.trim()) {
-    const loaded = await loadCouponFor(userId, requestedCoupon.trim());
+    const loaded = await loadCouponFor(userId, requestedCoupon.trim(), subtotal);
     coupon = loaded.coupon;
     if (!coupon) couponMessage = loaded.reason ?? "Code invalide";
   }
@@ -377,9 +434,15 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       const unitPrice = (it: typeof items[0]) => it.variantPrice != null ? Number(it.variantPrice) : Number(it.productPrice);
       const subtotal = items.reduce((sum, i) => sum + unitPrice(i) * i.quantity, 0);
 
+      // Validate coupon INSIDE the transaction with FOR UPDATE on the coupon row,
+      // so concurrent checkouts using the same code are serialized and cannot
+      // bypass `maxUses` or `maxUsesPerUser`.
       let coupon: CouponData | null = null;
       if (couponCode && couponCode.trim()) {
-        const loaded = await loadCouponFor(req.userId!, couponCode.trim());
+        const loaded = await loadCouponFor(req.userId!, couponCode.trim(), subtotal, {
+          executor: tx,
+          lockForUpdate: true,
+        });
         coupon = loaded.coupon;
       }
 
@@ -478,10 +541,26 @@ router.post("/cart/checkout", requireAuth, async (req, res): Promise<void> => {
       });
 
       if (couponApplied && coupon) {
-        await tx
+        // Atomic conditional increment: belt-and-suspenders against maxUses
+        // overflow (the FOR UPDATE lock taken in loadCouponFor already
+        // serializes concurrent checkouts of this coupon, but we double-check
+        // here so an unexpected drift cannot oversubscribe).
+        const incremented = await tx
           .update(couponsTable)
           .set({ currentUses: sql`${couponsTable.currentUses} + 1` })
-          .where(eq(couponsTable.code, coupon.code));
+          .where(and(
+            eq(couponsTable.code, coupon.code),
+            sql`${couponsTable.currentUses} < ${couponsTable.maxUses}`,
+          ))
+          .returning({ code: couponsTable.code });
+        if (incremented.length === 0) {
+          throw Object.assign(new Error("Code promo épuisé"), { status: 409 });
+        }
+        await tx.insert(couponUsagesTable).values({
+          couponCode: coupon.code,
+          userId: req.userId!,
+          discountApplied: finalDiscount.toFixed(2),
+        });
       }
 
       // Build orders. For variants with stock pool, each unit consumes exactly 1 stock_item.
