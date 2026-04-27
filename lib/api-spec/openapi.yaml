@@ -2047,7 +2047,7 @@ components:
           type: integer
         type:
           type: string
-          enum: [credit, debit]
+          enum: [credit, debit, admin_credit, admin_debit]
         amount:
           type: number
         description:

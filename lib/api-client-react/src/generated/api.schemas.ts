@@ -399,6 +399,8 @@ export type TransactionType =
 export const TransactionType = {
   credit: "credit",
   debit: "debit",
+  admin_credit: "admin_credit",
+  admin_debit: "admin_debit",
 } as const;
 
 export interface Transaction {

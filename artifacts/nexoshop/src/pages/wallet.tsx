@@ -609,7 +609,9 @@ export default function Wallet() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border/50">
-                    {transactions.map((tx) => (
+                    {transactions.map((tx) => {
+                      const isCredit = tx.type === "credit" || tx.type === "admin_credit";
+                      return (
                       <div
                         key={tx.id}
                         className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors"
@@ -617,12 +619,12 @@ export default function Wallet() {
                         <div className="flex items-center gap-3">
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              tx.type === "credit"
+                              isCredit
                                 ? "bg-green-500/10 text-green-500"
                                 : "bg-red-500/10 text-red-500"
                             }`}
                           >
-                            {tx.type === "credit" ? (
+                            {isCredit ? (
                               <ArrowDownToLine className="w-4 h-4" />
                             ) : (
                               <ArrowUpRight className="w-4 h-4" />
@@ -642,14 +644,15 @@ export default function Wallet() {
                         </div>
                         <div
                           className={`font-mono font-bold ${
-                            tx.type === "credit" ? "text-green-500" : "text-foreground"
+                            isCredit ? "text-green-500" : "text-foreground"
                           }`}
                         >
-                          {tx.type === "credit" ? "+" : "-"}
+                          {isCredit ? "+" : "-"}
                           {tx.amount.toFixed(2)}€
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </ScrollArea>
