@@ -10,6 +10,9 @@ import {
   useGetPaypalConfig,
   useCreatePaypalOrder,
   useCapturePaypalOrder,
+  useGetStripeConfig,
+  useCreateStripeIntent,
+  useConfirmStripeIntent,
   getGetWalletQueryKey,
   getGetMeQueryKey,
   getGetTransactionsQueryKey,
@@ -17,6 +20,8 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
+import { loadStripe, type Stripe as StripeJS } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,16 +65,25 @@ export default function Wallet() {
   const { data: transactions, isLoading: isLoadingTx } = useGetTransactions(refetchOpts);
   const { data: pending } = useGetPendingCryptoRecharges(refetchOpts);
   const { data: paypalConfig } = useGetPaypalConfig();
+  const { data: stripeConfig } = useGetStripeConfig();
 
   const initiateCrypto = useInitiateCryptoRecharge();
   const cancelPending = useCancelPendingCryptoRecharge();
   const createPaypal = useCreatePaypalOrder();
   const capturePaypal = useCapturePaypalOrder();
+  const createStripe = useCreateStripeIntent();
 
   const [selectedMode, setSelectedMode] = useState<number | "custom">(10);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [paypalMode, setPaypalMode] = useState<number | "custom">(10);
   const [paypalCustomAmount, setPaypalCustomAmount] = useState<string>("");
+  const [stripeMode, setStripeMode] = useState<number | "custom">(10);
+  const [stripeCustomAmount, setStripeCustomAmount] = useState<string>("");
+  const [stripeIntent, setStripeIntent] = useState<{
+    clientSecret: string;
+    intentId: string;
+    amountEur: number;
+  } | null>(null);
 
   const parseCustom = (v: string): number => {
     const n = Number(v.replace(",", "."));
@@ -77,8 +91,29 @@ export default function Wallet() {
   };
   const selectedAmount = selectedMode === "custom" ? parseCustom(customAmount) : selectedMode;
   const paypalAmount = paypalMode === "custom" ? parseCustom(paypalCustomAmount) : paypalMode;
+  const stripeAmount = stripeMode === "custom" ? parseCustom(stripeCustomAmount) : stripeMode;
   const isCryptoAmountValid = selectedAmount >= 5 && selectedAmount <= 5000;
   const isPaypalAmountValid = paypalAmount >= 5 && paypalAmount <= 5000;
+  const isStripeAmountValid = stripeAmount >= 5 && stripeAmount <= 5000;
+
+  const stripePromise = useMemo<Promise<StripeJS | null> | null>(() => {
+    if (!stripeConfig?.enabled || !stripeConfig.publishableKey) return null;
+    return loadStripe(stripeConfig.publishableKey);
+  }, [stripeConfig?.enabled, stripeConfig?.publishableKey]);
+
+  const handleStartStripe = async () => {
+    try {
+      const res = await createStripe.mutateAsync({ data: { amountEur: stripeAmount } });
+      setStripeIntent({
+        clientSecret: res.clientSecret,
+        intentId: res.intentId,
+        amountEur: res.amountEur,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Impossible de démarrer le paiement";
+      toast.error(msg);
+    }
+  };
   const [rechargeSession, setRechargeSession] = useState<{
     id: number;
     address: string;
@@ -437,33 +472,119 @@ export default function Wallet() {
             </CardContent>
           </Card>
 
-          {/* LinkedIn / contact card */}
-          <a
-            href="https://www.linkedin.com/in/nexoshop"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
-          >
-            <Card className="bg-card/50 border-border/50 hover:border-[#0A66C2]/60 transition-colors cursor-pointer">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-md bg-[#0A66C2] text-white flex items-center justify-center font-bold text-sm">
-                    in
-                  </div>
-                  LinkedIn
-                </CardTitle>
-                <CardDescription>
-                  Suivez NexoShop sur LinkedIn pour les actualités et nouveautés.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full h-12 bg-[#0A66C2] hover:bg-[#084d96] text-white shadow-md shadow-[#0A66C2]/20">
-                  <ArrowUpRight className="w-4 h-4 mr-2" />
-                  Voir le profil LinkedIn
-                </Button>
+          {/* Stripe / Link / Apple Pay / Google Pay card */}
+          <Card className={`bg-card/50 border-border/50 ${!stripeConfig?.enabled ? "opacity-70" : ""}`}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#635BFF] to-[#3a32d6] text-white flex items-center justify-center font-bold text-sm">
+                  S
+                </div>
+                Carte, Link & Apple Pay
+              </CardTitle>
+              <CardDescription>
+                {stripeConfig?.enabled
+                  ? "Carte bancaire, Link, Apple Pay et Google Pay — paiement instantané et sécurisé."
+                  : "Bientôt disponible — configuration serveur requise."}
+              </CardDescription>
+            </CardHeader>
+            {stripeConfig?.enabled && (
+              <CardContent className="space-y-4">
+                {!stripeIntent ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-2">
+                      {RECHARGE_AMOUNTS.map((amt) => (
+                        <Button
+                          key={amt}
+                          variant={stripeMode === amt ? "default" : "outline"}
+                          className={`h-12 ${
+                            stripeMode === amt
+                              ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                              : "bg-background hover:bg-muted"
+                          }`}
+                          onClick={() => setStripeMode(amt)}
+                        >
+                          {amt}€
+                        </Button>
+                      ))}
+                      <Button
+                        variant={stripeMode === "custom" ? "default" : "outline"}
+                        className={`h-12 ${
+                          stripeMode === "custom"
+                            ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                            : "bg-background hover:bg-muted"
+                        }`}
+                        onClick={() => setStripeMode("custom")}
+                      >
+                        Autre
+                      </Button>
+                    </div>
+                    {stripeMode === "custom" && (
+                      <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min={5}
+                            max={5000}
+                            step="0.01"
+                            placeholder="Montant en €"
+                            value={stripeCustomAmount}
+                            onChange={(e) => setStripeCustomAmount(e.target.value)}
+                            className="h-12 pr-10 text-base font-medium"
+                            autoFocus
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground px-1">
+                          Minimum 5€ — Maximum 5000€
+                        </p>
+                      </div>
+                    )}
+                    <Button
+                      className="w-full h-12 bg-gradient-to-r from-[#635BFF] to-[#3a32d6] hover:from-[#5249f5] hover:to-[#2f28b8] text-white shadow-md shadow-[#635BFF]/30"
+                      disabled={!isStripeAmountValid || createStripe.isPending}
+                      onClick={handleStartStripe}
+                    >
+                      {createStripe.isPending
+                        ? "Préparation..."
+                        : isStripeAmountValid
+                        ? `Continuer vers le paiement — ${stripeAmount.toFixed(2)}€`
+                        : "Entrez un montant entre 5€ et 5000€"}
+                    </Button>
+                    <p className="text-[11px] text-center text-muted-foreground">
+                      💳 Carte • 🔗 Link • 🍎 Apple Pay • 🅖 Google Pay
+                    </p>
+                  </>
+                ) : stripePromise ? (
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret: stripeIntent.clientSecret,
+                      appearance: {
+                        theme: "night",
+                        variables: {
+                          colorPrimary: "#635BFF",
+                          colorBackground: "#0a0a0a",
+                          colorText: "#fafafa",
+                          borderRadius: "8px",
+                        },
+                      },
+                    }}
+                  >
+                    <StripePaymentForm
+                      intentId={stripeIntent.intentId}
+                      amountEur={stripeIntent.amountEur}
+                      onSuccess={() => {
+                        invalidateWallet();
+                        setStripeIntent(null);
+                      }}
+                      onCancel={() => setStripeIntent(null)}
+                    />
+                  </Elements>
+                ) : null}
               </CardContent>
-            </Card>
-          </a>
+            )}
+          </Card>
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">
@@ -537,5 +658,88 @@ export default function Wallet() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function StripePaymentForm({
+  intentId,
+  amountEur,
+  onSuccess,
+  onCancel,
+}: {
+  intentId: string;
+  amountEur: number;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const confirmStripe = useConfirmStripeIntent();
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setSubmitting(true);
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: { return_url: window.location.href },
+        redirect: "if_required",
+      });
+      if (error) {
+        toast.error(error.message || "Paiement échoué");
+        setSubmitting(false);
+        return;
+      }
+      // Poll up to 6× over 30s in case Stripe returns "processing"
+      let attempts = 0;
+      while (attempts < 6) {
+        const res = await confirmStripe.mutateAsync({ data: { intentId } });
+        if (res.success) {
+          toast.success(`+${res.amountEur.toFixed(2)}€ crédités`, { icon: "💰" });
+          onSuccess();
+          return;
+        }
+        if (!res.pending) break;
+        attempts++;
+        if (attempts === 1) {
+          toast.loading("Paiement en cours de traitement par la banque...", { id: "stripe-pending" });
+        }
+        await new Promise((r) => setTimeout(r, 5000));
+      }
+      toast.dismiss("stripe-pending");
+      toast("Paiement en attente — ton portefeuille sera crédité dès la confirmation bancaire.", {
+        icon: "⏳",
+        duration: 6000,
+      });
+      onSuccess();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Paiement échoué";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <PaymentElement options={{ layout: "tabs" }} />
+      <Button
+        type="submit"
+        disabled={!stripe || submitting}
+        className="w-full h-12 bg-gradient-to-r from-[#635BFF] to-[#3a32d6] hover:from-[#5249f5] hover:to-[#2f28b8] text-white shadow-md shadow-[#635BFF]/30"
+      >
+        {submitting ? "Traitement..." : `Payer ${amountEur.toFixed(2)}€`}
+      </Button>
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={submitting}
+        className="w-full text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+      >
+        Changer de montant
+      </button>
+    </form>
   );
 }

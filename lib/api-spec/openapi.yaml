@@ -2312,11 +2312,17 @@ components:
       properties:
         success:
           type: boolean
+        pending:
+          type: boolean
+        status:
+          type: string
         newBalance:
-          type: number
+          type: ["number", "null"]
         amountEur:
           type: number
-      required: [success, newBalance, amountEur]
+        alreadyCaptured:
+          type: boolean
+      required: [success, amountEur]
 
     AdminUser:
       type: object

@@ -958,8 +958,11 @@ export const ConfirmStripeIntentBody = zod.object({
 
 export const ConfirmStripeIntentResponse = zod.object({
   success: zod.boolean(),
-  newBalance: zod.number(),
+  pending: zod.boolean().optional(),
+  status: zod.string().optional(),
+  newBalance: zod.number().nullish(),
   amountEur: zod.number(),
+  alreadyCaptured: zod.boolean().optional(),
 });
 
 /**

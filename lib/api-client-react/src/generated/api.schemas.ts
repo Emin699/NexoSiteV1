@@ -565,8 +565,12 @@ export interface StripeConfirmBody {
 
 export interface StripeConfirmResult {
   success: boolean;
-  newBalance: number;
+  pending?: boolean;
+  status?: string;
+  /** @nullable */
+  newBalance?: number | null;
   amountEur: number;
+  alreadyCaptured?: boolean;
 }
 
 export interface AdminUser {

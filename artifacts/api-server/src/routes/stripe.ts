@@ -93,6 +93,16 @@ router.post("/wallet/recharge/stripe/confirm", requireAuth, async (req, res): Pr
 
   try {
     const { status, amountEur, paymentMethodType } = await retrieveIntent(intentId);
+    // Transient statuses — client should poll, not show an error
+    if (status === "processing" || status === "requires_action" || status === "requires_confirmation") {
+      res.json({
+        success: false,
+        pending: true,
+        status,
+        amountEur: Number(record.amountEur),
+      });
+      return;
+    }
     if (status !== "succeeded") {
       res.status(400).json({ error: `Paiement non finalisé (statut: ${status})` });
       return;
