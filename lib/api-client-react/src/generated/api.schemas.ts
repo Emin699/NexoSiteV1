@@ -393,19 +393,13 @@ export interface Wallet {
   purchaseCount: number;
 }
 
-export type TransactionType =
-  (typeof TransactionType)[keyof typeof TransactionType];
-
-export const TransactionType = {
-  credit: "credit",
-  debit: "debit",
-  admin_credit: "admin_credit",
-  admin_debit: "admin_debit",
-} as const;
-
 export interface Transaction {
   id: number;
-  type: TransactionType;
+  /** Type de transaction. Inclut les valeurs standards (credit, debit,
+admin_credit, admin_debit) et les ajustements admin dynamiques
+(admin_loyaltyPoints, admin_freeSpins, admin_jackpotTickets, …).
+ */
+  type: string;
   amount: number;
   description: string;
   createdAt: string;

@@ -2167,7 +2167,10 @@ components:
           type: integer
         type:
           type: string
-          enum: [credit, debit, admin_credit, admin_debit]
+          description: |
+            Type de transaction. Inclut les valeurs standards (credit, debit,
+            admin_credit, admin_debit) et les ajustements admin dynamiques
+            (admin_loyaltyPoints, admin_freeSpins, admin_jackpotTickets, …).
         amount:
           type: number
         description:

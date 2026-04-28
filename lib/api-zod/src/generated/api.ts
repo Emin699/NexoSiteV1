@@ -829,7 +829,11 @@ export const GetWalletResponse = zod.object({
  */
 export const GetTransactionsResponseItem = zod.object({
   id: zod.number(),
-  type: zod.enum(["credit", "debit", "admin_credit", "admin_debit"]),
+  type: zod
+    .string()
+    .describe(
+      "Type de transaction. Inclut les valeurs standards (credit, debit,\nadmin_credit, admin_debit) et les ajustements admin dynamiques\n(admin_loyaltyPoints, admin_freeSpins, admin_jackpotTickets, …).\n",
+    ),
   amount: zod.number(),
   description: zod.string(),
   createdAt: zod.string(),
