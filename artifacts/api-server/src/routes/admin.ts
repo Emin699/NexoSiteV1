@@ -15,7 +15,7 @@ import {
   paypalRechargesTable,
   cryptoRechargesTable,
 } from "@workspace/db";
-import { eq, desc, sql, gt } from "drizzle-orm";
+import { eq, desc, sql, gt, and } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, requireAdmin } from "../middlewares/userAuth.js";
 import { notify, safeNotify } from "../lib/notifier.js";
@@ -290,6 +290,18 @@ router.delete("/admin/reviews/:id", async (req, res): Promise<void> => {
       try { fs.unlinkSync(filePath); } catch { /* ignore */ }
     }
   }
+
+  // Block ALL orders matching this review's (userId, productId) so the auto-review
+  // sweep does not regenerate the deleted review on the next /reviews fetch.
+  await db
+    .update(ordersTable)
+    .set({ autoReviewBlocked: true })
+    .where(
+      and(
+        eq(ordersTable.userId, review.userId),
+        eq(ordersTable.productId, review.productId),
+      ),
+    );
 
   await db.delete(reviewsTable).where(eq(reviewsTable.id, id));
   res.json({ id, deleted: true });

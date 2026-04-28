@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, numeric, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, numeric, text, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -18,6 +18,7 @@ export const ordersTable = pgTable("orders", {
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   customerInfoFields: text("customer_info_fields"),
   customerInfo: text("customer_info"),
+  autoReviewBlocked: boolean("auto_review_blocked").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

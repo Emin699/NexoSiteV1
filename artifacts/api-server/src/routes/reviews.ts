@@ -74,6 +74,7 @@ async function maybeRunAutoReviewSweep(): Promise<void> {
       WHERE o.status = 'delivered'
         AND o.delivered_at IS NOT NULL
         AND o.delivered_at <= ${cutoff.toISOString()}
+        AND o.auto_review_blocked = false
         AND r.id IS NULL
       GROUP BY o.user_id, o.product_id
       LIMIT 50
