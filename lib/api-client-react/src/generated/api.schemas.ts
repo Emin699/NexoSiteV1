@@ -251,14 +251,6 @@ export interface UserStats {
   nextTierAt?: number | null;
 }
 
-export interface RegisterUserBody {
-  firstName: string;
-  /** @nullable */
-  username?: string | null;
-  /** @nullable */
-  referredBy?: number | null;
-}
-
 export interface CartItem {
   id: number;
   productId: number;

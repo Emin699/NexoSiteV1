@@ -68,6 +68,10 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+  if (req.isBanned) {
+    res.status(403).json({ error: "Account banned" });
+    return;
+  }
   if (!req.isAdmin) {
     res.status(403).json({ error: "Forbidden" });
     return;

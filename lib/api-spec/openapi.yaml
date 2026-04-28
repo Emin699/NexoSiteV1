@@ -610,25 +610,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserStats"
 
-  /users/register:
-    post:
-      operationId: registerUser
-      tags: [users]
-      summary: Register or login user
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RegisterUserBody"
-      responses:
-        "200":
-          description: User registered or logged in
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-
   /cart:
     get:
       operationId: getCart
@@ -1932,17 +1913,6 @@ components:
         nextTierAt:
           type: ["number", "null"]
       required: [purchaseCount, loyaltyPoints, totalSpent, transactionCount, totalRecharged, currentTier]
-
-    RegisterUserBody:
-      type: object
-      properties:
-        firstName:
-          type: string
-        username:
-          type: ["string", "null"]
-        referredBy:
-          type: ["integer", "null"]
-      required: [firstName]
 
     CartItem:
       type: object

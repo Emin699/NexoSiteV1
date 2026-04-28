@@ -71,7 +71,6 @@ import type {
   ProductVariant,
   ProductVariantInput,
   ReferralInfo,
-  RegisterUserBody,
   ResendCodeBody,
   ReviewBody,
   ReviewItem,
@@ -2526,92 +2525,6 @@ export function useGetMeStats<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
-
-/**
- * @summary Register or login user
- */
-export const getRegisterUserUrl = () => {
-  return `/api/users/register`;
-};
-
-export const registerUser = async (
-  registerUserBody: RegisterUserBody,
-  options?: RequestInit,
-): Promise<User> => {
-  return customFetch<User>(getRegisterUserUrl(), {
-    ...options,
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(registerUserBody),
-  });
-};
-
-export const getRegisterUserMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof registerUser>>,
-    TError,
-    { data: BodyType<RegisterUserBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof registerUser>>,
-  TError,
-  { data: BodyType<RegisterUserBody> },
-  TContext
-> => {
-  const mutationKey = ["registerUser"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof registerUser>>,
-    { data: BodyType<RegisterUserBody> }
-  > = (props) => {
-    const { data } = props ?? {};
-
-    return registerUser(data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type RegisterUserMutationResult = NonNullable<
-  Awaited<ReturnType<typeof registerUser>>
->;
-export type RegisterUserMutationBody = BodyType<RegisterUserBody>;
-export type RegisterUserMutationError = ErrorType<unknown>;
-
-/**
- * @summary Register or login user
- */
-export const useRegisterUser = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof registerUser>>,
-    TError,
-    { data: BodyType<RegisterUserBody> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof registerUser>>,
-  TError,
-  { data: BodyType<RegisterUserBody> },
-  TContext
-> => {
-  return useMutation(getRegisterUserMutationOptions(options));
-};
 
 /**
  * @summary Get cart items

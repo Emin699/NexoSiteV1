@@ -12,8 +12,10 @@ import { userAuthMiddleware } from "./middlewares/userAuth";
 
 const app: Express = express();
 
-// Trust proxy (Caddy reverse proxy in production sets X-Forwarded-For).
-app.set("trust proxy", 1);
+// Trust proxy: only trust loopback (127.0.0.1 / ::1) where Caddy/Replit proxy lives.
+// Trusting "1" or true would let any client forge X-Forwarded-For and bypass rate limits
+// if the API port were ever reachable directly.
+app.set("trust proxy", "loopback");
 
 app.use(
   pinoHttp({

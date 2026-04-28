@@ -10,6 +10,39 @@ import { notify } from "../lib/notifier.js";
 
 const router: IRouter = Router();
 
+// Pre-computed bcrypt hash of a long random string. Used to keep login latency constant
+// when the email doesn't exist (mitigates timing-based account enumeration).
+// Hash of: "nexoshop_dummy_pwd_for_constant_time_compare_v1" (cost 10)
+const DUMMY_BCRYPT_HASH =
+  "$2b$10$abcdefghijklmnopqrstuuYf3w0SoXJZH7nFsFq3O6NCuQbZS9H/2";
+
+// Per-user verification attempt tracker (in-memory). Caps brute-force on the 6-digit code
+// even from rotating IPs. After MAX_VERIFY_ATTEMPTS the code is invalidated server-side.
+const MAX_VERIFY_ATTEMPTS = 5;
+const VERIFY_LOCKOUT_MS = 15 * 60 * 1000;
+const verifyAttempts = new Map<number, { count: number; firstAt: number }>();
+function bumpVerifyAttempts(userId: number): number {
+  const now = Date.now();
+  const entry = verifyAttempts.get(userId);
+  if (!entry || now - entry.firstAt > VERIFY_LOCKOUT_MS) {
+    verifyAttempts.set(userId, { count: 1, firstAt: now });
+    return 1;
+  }
+  entry.count += 1;
+  return entry.count;
+}
+function resetVerifyAttempts(userId: number): void {
+  verifyAttempts.delete(userId);
+}
+// Periodic GC: prevents unbounded growth from one-shot attempts that never succeed
+// (the entry would otherwise live forever).
+setInterval(() => {
+  const cutoff = Date.now() - VERIFY_LOCKOUT_MS;
+  for (const [uid, entry] of verifyAttempts) {
+    if (entry.firstAt < cutoff) verifyAttempts.delete(uid);
+  }
+}, 5 * 60 * 1000).unref();
+
 const RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -207,6 +240,7 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
     return;
   }
   if (user.emailVerified === 1) {
+    resetVerifyAttempts(user.id);
     res.json({
       userId: user.id,
       firstName: user.firstName,
@@ -217,6 +251,18 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
     return;
   }
   if (!user.verificationCode || user.verificationCode !== code) {
+    const attempts = bumpVerifyAttempts(user.id);
+    if (attempts >= MAX_VERIFY_ATTEMPTS) {
+      // Invalidate the code server-side so brute-force becomes impossible.
+      await db
+        .update(usersTable)
+        .set({ verificationCode: null, verificationCodeExpiresAt: null })
+        .where(eq(usersTable.id, user.id));
+      res.status(429).json({
+        error: "Trop d'essais. Demande un nouveau code par email.",
+      });
+      return;
+    }
     res.status(400).json({ error: "Code incorrect." });
     return;
   }
@@ -225,6 +271,7 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
     return;
   }
 
+  resetVerifyAttempts(user.id);
   await db
     .update(usersTable)
     .set({ emailVerified: 1, verificationCode: null, verificationCodeExpiresAt: null })
@@ -268,6 +315,10 @@ router.post("/auth/resend-code", async (req, res): Promise<void> => {
     .set({ verificationCode: code, verificationCodeExpiresAt: expiresAt })
     .where(eq(usersTable.id, user.id));
 
+  // Fresh code → fresh attempts budget. Without this reset, an existing lockout would
+  // immediately invalidate the new code on the first wrong guess.
+  resetVerifyAttempts(user.id);
+
   try {
     await sendVerificationEmail(user.email, user.firstName, code);
   } catch (err) {
@@ -293,26 +344,27 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     .from(usersTable)
     .where(eq(usersTable.email, normalizedEmail));
 
-  if (!user || !user.passwordHash) {
-    notify.loginFailure(normalizedEmail, "compte introuvable");
-    res.status(401).json({ error: "Email ou mot de passe incorrect." });
-    return;
-  }
+  // Timing-attack mitigation: always run bcrypt.compare, even if the user
+  // doesn't exist, so login latency is constant and can't reveal account existence.
+  const hashToCheck = user?.passwordHash ?? DUMMY_BCRYPT_HASH;
+  const valid = await bcrypt.compare(password, hashToCheck);
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
-    notify.loginFailure(normalizedEmail, "mot de passe incorrect");
+  if (!user || !user.passwordHash || !valid) {
+    notify.loginFailure(
+      normalizedEmail,
+      !user || !user.passwordHash ? "compte introuvable" : "mot de passe incorrect",
+    );
     res.status(401).json({ error: "Email ou mot de passe incorrect." });
     return;
   }
 
   if (user.emailVerified !== 1) {
+    // Don't leak firstName/email — the client already knows the email it just submitted.
+    // Only return the userId required by the verification screen.
     res.status(403).json({
       error: "Email non vérifié. Saisis le code reçu par email.",
       userId: user.id,
       needsVerification: true,
-      firstName: user.firstName,
-      email: user.email ?? "",
     });
     return;
   }

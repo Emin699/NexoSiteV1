@@ -1,68 +1,18 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, transactionsTable } from "@workspace/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/userAuth";
 import {
-  RegisterUserBody,
   GetMeResponse,
   GetMeStatsResponse,
-  RegisterUserResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-router.post("/users/register", async (req, res): Promise<void> => {
-  const parsed = RegisterUserBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
-
-  const { firstName, username, referredBy } = parsed.data;
-
-  const existing = req.userId
-    ? await db.select().from(usersTable).where(eq(usersTable.id, req.userId))
-    : [];
-
-  if (existing.length > 0) {
-    const user = existing[0];
-    res.json(
-      RegisterUserResponse.parse({
-        ...user,
-        telegramId: user.telegramId,
-        username: user.username,
-        firstName: user.firstName,
-        balance: Number(user.balance),
-        totalRecharged: Number(user.totalRecharged),
-        isAdmin: user.isAdmin === 1,
-        createdAt: user.createdAt.toISOString(),
-      })
-    );
-    return;
-  }
-
-  const [newUser] = await db
-    .insert(usersTable)
-    .values({
-      firstName: firstName || "User",
-      username: username ?? null,
-      referredBy: referredBy ?? null,
-    })
-    .returning();
-
-  res.json(
-    RegisterUserResponse.parse({
-      ...newUser,
-      telegramId: newUser.telegramId,
-      username: newUser.username,
-      firstName: newUser.firstName,
-      balance: Number(newUser.balance),
-      totalRecharged: Number(newUser.totalRecharged),
-      isAdmin: newUser.isAdmin === 1,
-      createdAt: newUser.createdAt.toISOString(),
-    })
-  );
-});
+// NOTE: legacy POST /users/register removed (2026-04). It allowed creating
+// unauthenticated ghost accounts with just a firstName, exposing the table to
+// abusive bulk-creation. The real signup flow lives in /auth/register and goes
+// through email verification.
 
 router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
   const [user] = await db

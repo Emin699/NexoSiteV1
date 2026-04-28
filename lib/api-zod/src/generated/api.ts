@@ -584,30 +584,6 @@ export const GetMeStatsResponse = zod.object({
 });
 
 /**
- * @summary Register or login user
- */
-export const RegisterUserBody = zod.object({
-  firstName: zod.string(),
-  username: zod.string().nullish(),
-  referredBy: zod.number().nullish(),
-});
-
-export const RegisterUserResponse = zod.object({
-  id: zod.number(),
-  telegramId: zod.string().nullish(),
-  username: zod.string().nullish(),
-  firstName: zod.string(),
-  balance: zod.number(),
-  loyaltyPoints: zod.number(),
-  purchaseCount: zod.number(),
-  totalRecharged: zod.number(),
-  freeSpins: zod.number(),
-  jackpotTickets: zod.number(),
-  isAdmin: zod.boolean(),
-  createdAt: zod.string(),
-});
-
-/**
  * @summary Get cart items
  */
 export const GetCartResponse = zod.object({

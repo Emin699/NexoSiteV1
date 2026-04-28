@@ -99,7 +99,9 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         const res = await authLogin.mutateAsync({ data: { email, password } });
         if (res.needsVerification) {
           toast.message("Vérifie ton email pour continuer");
-          goToVerify(res.userId, res.firstName, res.email);
+          // For unverified login the server no longer returns firstName/email
+          // (anti-enumeration). We already know the email — the user just typed it.
+          goToVerify(res.userId, "", email);
         } else {
           onAuth(res.token, res.firstName, res.email);
           toast.success(`Bon retour ${res.firstName} !`);
@@ -107,11 +109,11 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         }
       }
     } catch (e: unknown) {
-      const errData = (e as { data?: { error?: string; needsVerification?: boolean; userId?: number; firstName?: string; email?: string } })?.data;
-      // Login of unverified user → 403 with verification info
+      const errData = (e as { data?: { error?: string; needsVerification?: boolean; userId?: number } })?.data;
+      // Login of unverified user → 403 with { needsVerification, userId } only.
       if (errData?.needsVerification && errData.userId) {
         toast.message("Vérifie ton email pour continuer");
-        goToVerify(errData.userId, errData.firstName ?? "", errData.email ?? email);
+        goToVerify(errData.userId, "", email);
         return;
       }
       const msg = errData?.error || (mode === "login" ? "Email ou mot de passe incorrect" : "Erreur lors de l'inscription");

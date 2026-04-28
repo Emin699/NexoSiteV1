@@ -115,43 +115,85 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
   const userId = req.userId!;
 
   // Éligibilité : l'utilisateur doit avoir au moins une commande LIVRÉE pour ce produit.
-  const eligible = await db
-    .select({ id: ordersTable.id })
-    .from(ordersTable)
-    .where(
-      and(
-        eq(ordersTable.userId, userId),
-        eq(ordersTable.productId, productId),
-        eq(ordersTable.status, "delivered"),
-      ),
-    )
-    .limit(1);
-
-  if (eligible.length === 0) {
-    res.status(403).json({
-      error: "Vous ne pouvez laisser un avis que pour un produit que vous avez reçu.",
-    });
-    return;
+  // Si un orderId est fourni, on l'utilise comme ancre pour empêcher le farming de
+  // bonus spins (1 bonus par commande livrée). Sinon on prend la plus ancienne commande
+  // livrée de ce produit pour ce user comme ancre.
+  let anchorOrderId: number | null = orderId ?? null;
+  if (anchorOrderId != null) {
+    const [own] = await db
+      .select({ id: ordersTable.id })
+      .from(ordersTable)
+      .where(
+        and(
+          eq(ordersTable.id, anchorOrderId),
+          eq(ordersTable.userId, userId),
+          eq(ordersTable.productId, productId),
+          eq(ordersTable.status, "delivered"),
+        ),
+      )
+      .limit(1);
+    if (!own) {
+      res.status(403).json({
+        error: "Vous ne pouvez laisser un avis que pour une commande livrée.",
+      });
+      return;
+    }
+  } else {
+    const [first] = await db
+      .select({ id: ordersTable.id })
+      .from(ordersTable)
+      .where(
+        and(
+          eq(ordersTable.userId, userId),
+          eq(ordersTable.productId, productId),
+          eq(ordersTable.status, "delivered"),
+        ),
+      )
+      .limit(1);
+    if (!first) {
+      res.status(403).json({
+        error: "Vous ne pouvez laisser un avis que pour un produit que vous avez reçu.",
+      });
+      return;
+    }
+    anchorOrderId = first.id;
   }
 
-  // Plusieurs avis sont autorisés pour le même produit.
-  const [review] = await db
-    .insert(reviewsTable)
-    .values({
-      userId,
-      productId,
-      orderId: orderId ?? null,
-      rating,
-      comment,
-      imageUrl: imageUrl ?? null,
-      isAuto: false,
-    })
-    .returning();
+  // Bonus = max 1 freeSpin par commande livrée. Pour empêcher la race condition
+  // (deux POST simultanés crédités), on sérialise via SELECT FOR UPDATE sur la ligne user
+  // dans une transaction. Le check d'existence + insert + crédit deviennent atomiques.
+  const { review, grantBonus } = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT 1 FROM users WHERE id = ${userId} FOR UPDATE`);
 
-  await db
-    .update(usersTable)
-    .set({ freeSpins: sql`${usersTable.freeSpins} + 1` })
-    .where(eq(usersTable.id, userId));
+    const [existingForOrder] = await tx
+      .select({ id: reviewsTable.id })
+      .from(reviewsTable)
+      .where(and(eq(reviewsTable.userId, userId), eq(reviewsTable.orderId, anchorOrderId)))
+      .limit(1);
+    const grant = !existingForOrder;
+
+    const [inserted] = await tx
+      .insert(reviewsTable)
+      .values({
+        userId,
+        productId,
+        orderId: anchorOrderId,
+        rating,
+        comment,
+        imageUrl: imageUrl ?? null,
+        isAuto: false,
+      })
+      .returning();
+
+    if (grant) {
+      await tx
+        .update(usersTable)
+        .set({ freeSpins: sql`${usersTable.freeSpins} + 1` })
+        .where(eq(usersTable.id, userId));
+    }
+
+    return { review: inserted, grantBonus: grant };
+  });
 
   // Telegram log: new review (skip auto-generated ones AND admin test reviews), fire-and-forget.
   safeNotify(async () => {
@@ -178,8 +220,10 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
 
   res.status(201).json({
     id: review.id,
-    message: "Avis enregistré ! Vous avez reçu un tour de roue bonus.",
-    bonusSpin: true,
+    message: grantBonus
+      ? "Avis enregistré ! Vous avez reçu un tour de roue bonus."
+      : "Avis enregistré ! (Bonus déjà reçu pour cette commande.)",
+    bonusSpin: grantBonus,
   });
 });
 
