@@ -5,6 +5,7 @@ import { useGetMe, useGetCart } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { hasAuthToken, useRequireAuth } from "@/hooks/use-auth";
+import { SignupPrompt } from "@/components/signup-prompt";
 
 const TELEGRAM_CHANNEL_URL = "https://t.me/+DE3YyhusyQA0YTk0";
 
@@ -56,13 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </span>
             </Link>
           ) : (
-            <Link
-              href="/auth"
-              className="flex items-center gap-1.5 px-3 py-1.5 -ml-1 rounded-full bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 transition-colors"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span className="text-xs font-bold">Connexion</span>
-            </Link>
+            <span aria-hidden="true" className="w-2" />
           )}
 
           <Link
@@ -77,22 +72,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
             />
           </Link>
 
-          <Link
-            href="/cart"
-            onClick={(e) => guard(e, "Connecte-toi pour accéder à ton panier")}
-            className="relative p-2 -mr-2 rounded-full hover:bg-muted/50 transition-colors"
-          >
-            <ShoppingCart className="w-5 h-5 text-foreground" />
-            {cart?.itemCount ? (
-              <Badge 
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-primary text-primary-foreground border-none rounded-full animate-in zoom-in"
+          <div className="flex items-center gap-2 -mr-2">
+            {!isAuthed && (
+              <Link
+                href="/auth"
+                data-signup-anchor
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-colors shadow-sm shadow-primary/30 ring-2 ring-primary/30 ring-offset-1 ring-offset-background"
               >
-                {cart.itemCount}
-              </Badge>
-            ) : null}
-          </Link>
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Se connecter</span>
+              </Link>
+            )}
+            <Link
+              href="/cart"
+              onClick={(e) => guard(e, "Connecte-toi pour accéder à ton panier")}
+              className="relative p-2 rounded-full hover:bg-muted/50 transition-colors"
+            >
+              <ShoppingCart className="w-5 h-5 text-foreground" />
+              {cart?.itemCount ? (
+                <Badge
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-primary text-primary-foreground border-none rounded-full animate-in zoom-in"
+                >
+                  {cart.itemCount}
+                </Badge>
+              ) : null}
+            </Link>
+          </div>
         </div>
       </header>
+
+      {!isAuthed && <SignupPrompt />}
 
       {/* Main Content */}
       <main className="flex-1 w-full max-w-screen-md mx-auto overflow-x-hidden flex flex-col">
