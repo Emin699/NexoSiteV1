@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Mail, Lock, User, Eye, EyeOff, ShieldCheck, ArrowLeft, RefreshCw, Info } from "lucide-react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 
 interface AuthPageProps {
   onAuth: (token: string | null | undefined, firstName: string, email: string) => void;
@@ -160,30 +160,34 @@ export default function AuthPage({ onAuth }: AuthPageProps) {
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-secondary/10 rounded-full blur-[80px]" />
       </div>
 
+      {/* Top-left "Back to shop" button */}
+      <div className="absolute top-4 left-4 z-20">
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/80 hover:bg-card border border-border/60 text-xs font-medium text-foreground/90 backdrop-blur-md transition-colors shadow-sm"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Retour à la boutique</span>
+        </Link>
+      </div>
+
       <div className="w-full max-w-sm relative z-10">
-        {/* Logo */}
+        {/* Logo (icon only, clickable to go back home) */}
         <div className="flex flex-col items-center mb-8 gap-3">
           {mode === "verify" ? (
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/30">
               <ShieldCheck className="w-8 h-8 text-white" />
             </div>
           ) : (
-            <img
-              src="/nexoshop-icon.png"
-              alt="NexoShop"
-              className="w-16 h-16 rounded-2xl shadow-lg shadow-primary/30 select-none"
-              draggable={false}
-            />
+            <Link href="/" aria-label="Retour à la boutique">
+              <img
+                src="/nexoshop-icon.png"
+                alt="NexoShop"
+                className="w-16 h-16 rounded-2xl shadow-lg shadow-primary/30 select-none hover:scale-105 transition-transform"
+                draggable={false}
+              />
+            </Link>
           )}
-          <div className="text-center">
-            <img
-              src="/nexoshop-logo.png"
-              alt="NexoShop"
-              className="h-7 w-auto mx-auto select-none"
-              draggable={false}
-            />
-            <p className="text-xs text-muted-foreground mt-1">Digital Goods · Instant Delivery</p>
-          </div>
         </div>
 
         <div className="bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-xl">
