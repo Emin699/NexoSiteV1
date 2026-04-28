@@ -601,6 +601,28 @@ export interface AdjustUserResult {
   jackpotTickets: number;
 }
 
+export interface UploadFileBody {
+  file: Blob;
+}
+
+export interface UploadResult {
+  url: string;
+}
+
+export interface BanUserBody {
+  ban: boolean;
+}
+
+export interface BanUserResult {
+  id: number;
+  isBanned: boolean;
+}
+
+export interface AdminDeleteResult {
+  id: number;
+  deleted: boolean;
+}
+
 export interface JackpotDrawBody {
   prizeAmount: number;
   resetTickets?: boolean;

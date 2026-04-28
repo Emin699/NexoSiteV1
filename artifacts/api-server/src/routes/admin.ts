@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -54,6 +54,21 @@ const upload = multer({
     else cb(new Error("Only image files are allowed"));
   },
 });
+
+// Wrapper qui transforme les erreurs multer (taille dépassée, mauvais MIME)
+// en 400 propre au lieu de bubble vers le handler global qui répond 500.
+function uploadSingleOrError(field: string) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    upload.single(field)(req, res, (err: unknown) => {
+      if (err) {
+        const msg = err instanceof Error ? err.message : "Upload failed";
+        res.status(400).json({ error: msg });
+        return;
+      }
+      next();
+    });
+  };
+}
 
 const AdminProductSchema = z.object({
   name: z.string().min(1),
@@ -159,7 +174,7 @@ router.delete("/admin/products/:id", async (req, res): Promise<void> => {
   res.status(204).send();
 });
 
-router.post("/admin/upload", upload.single("file"), (req, res): void => {
+router.post("/admin/upload", uploadSingleOrError("file"), (req, res): void => {
   if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
   const url = `/api/uploads/${req.file.filename}`;
   res.json({ url });

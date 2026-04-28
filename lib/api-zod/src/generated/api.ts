@@ -148,6 +148,13 @@ export const GetProductReviewsResponse = zod.array(
 );
 
 /**
+ * @summary Upload an image to attach to a review (multipart/form-data, field name "file", max 5MB, images only)
+ */
+export const UploadReviewImageBody = zod.object({
+  file: zod.instanceof(File),
+});
+
+/**
  * @summary Get all products
  */
 export const GetProductsQueryParams = zod.object({
@@ -422,6 +429,57 @@ export const AdminUpdateProductResponse = zod.object({
  */
 export const AdminDeleteProductParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Upload a file (admin, multipart/form-data, field name "file")
+ */
+export const AdminUploadFileBody = zod.object({
+  file: zod.instanceof(File),
+});
+
+export const AdminUploadFileResponse = zod.object({
+  url: zod.string(),
+});
+
+/**
+ * @summary Ban or unban a user
+ */
+export const AdminBanUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminBanUserBody = zod.object({
+  ban: zod.boolean(),
+});
+
+export const AdminBanUserResponse = zod.object({
+  id: zod.number(),
+  isBanned: zod.boolean(),
+});
+
+/**
+ * @summary Delete a user and all related data (cart, reviews, spins, transactions, recharges, orders)
+ */
+export const AdminDeleteUserParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteUserResponse = zod.object({
+  id: zod.number(),
+  deleted: zod.boolean(),
+});
+
+/**
+ * @summary Delete a review (and block auto-regeneration for matching orders)
+ */
+export const AdminDeleteReviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AdminDeleteReviewResponse = zod.object({
+  id: zod.number(),
+  deleted: zod.boolean(),
 });
 
 /**

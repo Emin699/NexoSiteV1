@@ -208,6 +208,29 @@ paths:
                 items:
                   $ref: "#/components/schemas/ReviewItem"
 
+  /reviews/upload:
+    post:
+      operationId: uploadReviewImage
+      tags: [reviews]
+      summary: Upload an image to attach to a review (multipart/form-data, field name "file", max 5MB, images only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadFileBody"
+      responses:
+        "201":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+        "400":
+          description: No file uploaded or invalid file type
+
   /products:
     get:
       operationId: getProducts
@@ -406,6 +429,102 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /admin/upload:
+    post:
+      operationId: adminUploadFile
+      tags: [admin]
+      summary: Upload a file (admin, multipart/form-data, field name "file")
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadFileBody"
+      responses:
+        "200":
+          description: Uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResult"
+        "400":
+          description: No file uploaded
+
+  /admin/users/{id}/ban:
+    post:
+      operationId: adminBanUser
+      tags: [admin]
+      summary: Ban or unban a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BanUserBody"
+      responses:
+        "200":
+          description: Updated ban status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BanUserResult"
+        "400":
+          description: Invalid request (self-ban, target is admin, ...)
+        "404":
+          description: User not found
+
+  /admin/users/{id}:
+    delete:
+      operationId: adminDeleteUser
+      tags: [admin]
+      summary: Delete a user and all related data (cart, reviews, spins, transactions, recharges, orders)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeleteResult"
+        "400":
+          description: Invalid request (self-delete, target is admin, ...)
+        "404":
+          description: User not found
+
+  /admin/reviews/{id}:
+    delete:
+      operationId: adminDeleteReview
+      tags: [admin]
+      summary: Delete a review (and block auto-regeneration for matching orders)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeleteResult"
+        "400":
+          description: Invalid review ID
+        "404":
+          description: Review not found
 
   /admin/products/{id}/variants:
     get:
@@ -2470,6 +2589,46 @@ components:
         jackpotTickets:
           type: integer
       required: [id, balance, loyaltyPoints, freeSpins, jackpotTickets]
+
+    UploadFileBody:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required: [file]
+
+    UploadResult:
+      type: object
+      properties:
+        url:
+          type: string
+      required: [url]
+
+    BanUserBody:
+      type: object
+      properties:
+        ban:
+          type: boolean
+      required: [ban]
+
+    BanUserResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        isBanned:
+          type: boolean
+      required: [id, isBanned]
+
+    AdminDeleteResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        deleted:
+          type: boolean
+      required: [id, deleted]
 
     JackpotDrawBody:
       type: object

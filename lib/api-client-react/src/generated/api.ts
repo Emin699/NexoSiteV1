@@ -24,6 +24,7 @@ import type {
   AdminCouponBody,
   AdminCouponCreateResult,
   AdminCouponUpdateBody,
+  AdminDeleteResult,
   AdminDeliverOrderBody,
   AdminGetLogsParams,
   AdminGetTicketsParams,
@@ -37,6 +38,8 @@ import type {
   AuthLoginBody,
   AuthRegisterBody,
   AuthResponse,
+  BanUserBody,
+  BanUserResult,
   BulkStockInput,
   BulkStockResult,
   BuyProductBody,
@@ -90,6 +93,8 @@ import type {
   TierProgress,
   Transaction,
   UpdateTicketStatusBody,
+  UploadFileBody,
+  UploadResult,
   User,
   UserStats,
   ValidateCouponBody,
@@ -853,6 +858,94 @@ export function useGetProductReviews<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Upload an image to attach to a review (multipart/form-data, field name "file", max 5MB, images only)
+ */
+export const getUploadReviewImageUrl = () => {
+  return `/api/reviews/upload`;
+};
+
+export const uploadReviewImage = async (
+  uploadFileBody: UploadFileBody,
+  options?: RequestInit,
+): Promise<UploadResult> => {
+  const formData = new FormData();
+  formData.append(`file`, uploadFileBody.file);
+
+  return customFetch<UploadResult>(getUploadReviewImageUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadReviewImageMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadReviewImage>>,
+    TError,
+    { data: BodyType<UploadFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadReviewImage>>,
+  TError,
+  { data: BodyType<UploadFileBody> },
+  TContext
+> => {
+  const mutationKey = ["uploadReviewImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadReviewImage>>,
+    { data: BodyType<UploadFileBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return uploadReviewImage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadReviewImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadReviewImage>>
+>;
+export type UploadReviewImageMutationBody = BodyType<UploadFileBody>;
+export type UploadReviewImageMutationError = ErrorType<void>;
+
+/**
+ * @summary Upload an image to attach to a review (multipart/form-data, field name "file", max 5MB, images only)
+ */
+export const useUploadReviewImage = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadReviewImage>>,
+    TError,
+    { data: BodyType<UploadFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadReviewImage>>,
+  TError,
+  { data: BodyType<UploadFileBody> },
+  TContext
+> => {
+  return useMutation(getUploadReviewImageMutationOptions(options));
+};
 
 /**
  * @summary Get all products
@@ -1772,6 +1865,349 @@ export const useAdminDeleteProduct = <
   TContext
 > => {
   return useMutation(getAdminDeleteProductMutationOptions(options));
+};
+
+/**
+ * @summary Upload a file (admin, multipart/form-data, field name "file")
+ */
+export const getAdminUploadFileUrl = () => {
+  return `/api/admin/upload`;
+};
+
+export const adminUploadFile = async (
+  uploadFileBody: UploadFileBody,
+  options?: RequestInit,
+): Promise<UploadResult> => {
+  const formData = new FormData();
+  formData.append(`file`, uploadFileBody.file);
+
+  return customFetch<UploadResult>(getAdminUploadFileUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getAdminUploadFileMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUploadFile>>,
+    TError,
+    { data: BodyType<UploadFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminUploadFile>>,
+  TError,
+  { data: BodyType<UploadFileBody> },
+  TContext
+> => {
+  const mutationKey = ["adminUploadFile"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminUploadFile>>,
+    { data: BodyType<UploadFileBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminUploadFile(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminUploadFileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminUploadFile>>
+>;
+export type AdminUploadFileMutationBody = BodyType<UploadFileBody>;
+export type AdminUploadFileMutationError = ErrorType<void>;
+
+/**
+ * @summary Upload a file (admin, multipart/form-data, field name "file")
+ */
+export const useAdminUploadFile = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminUploadFile>>,
+    TError,
+    { data: BodyType<UploadFileBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminUploadFile>>,
+  TError,
+  { data: BodyType<UploadFileBody> },
+  TContext
+> => {
+  return useMutation(getAdminUploadFileMutationOptions(options));
+};
+
+/**
+ * @summary Ban or unban a user
+ */
+export const getAdminBanUserUrl = (id: number) => {
+  return `/api/admin/users/${id}/ban`;
+};
+
+export const adminBanUser = async (
+  id: number,
+  banUserBody: BanUserBody,
+  options?: RequestInit,
+): Promise<BanUserResult> => {
+  return customFetch<BanUserResult>(getAdminBanUserUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(banUserBody),
+  });
+};
+
+export const getAdminBanUserMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminBanUser>>,
+    TError,
+    { id: number; data: BodyType<BanUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminBanUser>>,
+  TError,
+  { id: number; data: BodyType<BanUserBody> },
+  TContext
+> => {
+  const mutationKey = ["adminBanUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminBanUser>>,
+    { id: number; data: BodyType<BanUserBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return adminBanUser(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminBanUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminBanUser>>
+>;
+export type AdminBanUserMutationBody = BodyType<BanUserBody>;
+export type AdminBanUserMutationError = ErrorType<void>;
+
+/**
+ * @summary Ban or unban a user
+ */
+export const useAdminBanUser = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminBanUser>>,
+    TError,
+    { id: number; data: BodyType<BanUserBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminBanUser>>,
+  TError,
+  { id: number; data: BodyType<BanUserBody> },
+  TContext
+> => {
+  return useMutation(getAdminBanUserMutationOptions(options));
+};
+
+/**
+ * @summary Delete a user and all related data (cart, reviews, spins, transactions, recharges, orders)
+ */
+export const getAdminDeleteUserUrl = (id: number) => {
+  return `/api/admin/users/${id}`;
+};
+
+export const adminDeleteUser = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminDeleteResult> => {
+  return customFetch<AdminDeleteResult>(getAdminDeleteUserUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteUserMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteUser>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteUser>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteUser"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteUser>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteUser(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteUserMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteUser>>
+>;
+
+export type AdminDeleteUserMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a user and all related data (cart, reviews, spins, transactions, recharges, orders)
+ */
+export const useAdminDeleteUser = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteUser>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteUser>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteUserMutationOptions(options));
+};
+
+/**
+ * @summary Delete a review (and block auto-regeneration for matching orders)
+ */
+export const getAdminDeleteReviewUrl = (id: number) => {
+  return `/api/admin/reviews/${id}`;
+};
+
+export const adminDeleteReview = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AdminDeleteResult> => {
+  return customFetch<AdminDeleteResult>(getAdminDeleteReviewUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getAdminDeleteReviewMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteReview>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminDeleteReview>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["adminDeleteReview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminDeleteReview>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return adminDeleteReview(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminDeleteReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof adminDeleteReview>>
+>;
+
+export type AdminDeleteReviewMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a review (and block auto-regeneration for matching orders)
+ */
+export const useAdminDeleteReview = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminDeleteReview>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof adminDeleteReview>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getAdminDeleteReviewMutationOptions(options));
 };
 
 /**
