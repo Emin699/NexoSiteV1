@@ -55,7 +55,7 @@ export async function createSumupCheckout(amountEur: number, userId: number, use
 
   const checkoutReference = `recharge_${userId}_${Date.now()}`;
   
-  const response = await fetch(`${SUMUP_API_BASE}/v1/checkouts`, {
+  const response = await fetch(`${SUMUP_API_BASE}/v0.1/checkouts`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token}`,
@@ -86,7 +86,7 @@ export async function retrieveSumupCheckout(checkoutId: string): Promise<{
 }> {
   const token = await getAccessToken();
 
-  const response = await fetch(`${SUMUP_API_BASE}/v1/checkouts/${checkoutId}`, {
+  const response = await fetch(`${SUMUP_API_BASE}/v0.1/checkouts/${checkoutId}`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${token}`,
