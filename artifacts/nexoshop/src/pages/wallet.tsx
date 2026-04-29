@@ -535,7 +535,7 @@ export default function Wallet() {
                     : "Bientôt disponible — configuration serveur requise."}
                 </CardDescription>
               </CardHeader>
-              {sumupConfig?.enabled && (
+              {(sumupConfig?.enabled ?? true) && (
                 <CardContent className="space-y-4">
                   {!sumupCheckout ? (
                     <>
