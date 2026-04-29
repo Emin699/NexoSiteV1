@@ -19,6 +19,7 @@ import authRouter from "./auth";
 import reviewsRouter from "./reviews";
 import paypalRouter from "./paypal";
 import stripeRouter from "./stripe";
+import sumupRouter from "./sumup";
 import ticketsRouter from "./tickets";
 import publicStatsRouter from "./public-stats";
 
@@ -44,6 +45,7 @@ router.use(authRouter);
 router.use(reviewsRouter);
 router.use(paypalRouter);
 router.use(stripeRouter);
+router.use(sumupRouter);
 router.use(ticketsRouter);
 router.use(publicStatsRouter);
 

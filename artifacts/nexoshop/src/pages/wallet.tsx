@@ -13,6 +13,9 @@ import {
   useGetStripeConfig,
   useCreateStripeIntent,
   useConfirmStripeIntent,
+  useGetSumupConfig,
+  useInitiateSumupCheckout,
+  useConfirmSumupCheckout,
   getGetWalletQueryKey,
   getGetMeQueryKey,
   getGetTransactionsQueryKey,
@@ -47,6 +50,7 @@ import {
 import { toast } from "sonner";
 
 const RECHARGE_AMOUNTS = [5, 10, 20, 30, 50];
+const SHOW_STRIPE = false; // Basculer à true pour réactiver Stripe
 
 export default function Wallet() {
   const [, setLocation] = useLocation();
@@ -74,6 +78,10 @@ export default function Wallet() {
   const capturePaypal = useCapturePaypalOrder();
   const createStripe = useCreateStripeIntent();
 
+  const { data: sumupConfig } = useGetSumupConfig();
+  const initiateSumup = useInitiateSumupCheckout();
+  const confirmSumup = useConfirmSumupCheckout();
+
   const [selectedMode, setSelectedMode] = useState<number | "custom">(10);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [paypalMode, setPaypalMode] = useState<number | "custom">(10);
@@ -83,6 +91,11 @@ export default function Wallet() {
   const [stripeIntent, setStripeIntent] = useState<{
     clientSecret: string;
     intentId: string;
+    amountEur: number;
+  } | null>(null);
+
+  const [sumupCheckout, setSumupCheckout] = useState<{
+    id: string;
     amountEur: number;
   } | null>(null);
 
@@ -98,9 +111,22 @@ export default function Wallet() {
   const isStripeAmountValid = stripeAmount >= 5 && stripeAmount <= 5000;
 
   const stripePromise = useMemo<Promise<StripeJS | null> | null>(() => {
-    if (!stripeConfig?.enabled || !stripeConfig.publishableKey) return null;
+    if (!stripeConfig?.enabled || !stripeConfig.publishableKey || !SHOW_STRIPE) return null;
     return loadStripe(stripeConfig.publishableKey);
   }, [stripeConfig?.enabled, stripeConfig?.publishableKey]);
+
+  useEffect(() => {
+    if (!sumupConfig?.enabled) return;
+    if (window.hasOwnProperty("SumUpCard")) return; // Déjà chargé
+    const script = document.createElement("script");
+    script.src = "https://gateway.sumup.com/gateway/ecom/card/v2/sdk.js";
+    script.async = true;
+    script.id = "sumup-sdk";
+    document.body.appendChild(script);
+    return () => {
+      // On ne retire pas le script pour éviter de le recharger si l'user change de page
+    };
+  }, [sumupConfig?.enabled]);
 
   const handleStartStripe = async () => {
     try {
@@ -112,6 +138,19 @@ export default function Wallet() {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Impossible de démarrer le paiement";
+      toast.error(msg);
+    }
+  };
+
+  const handleStartSumup = async () => {
+    try {
+      const res = await initiateSumup.mutateAsync({ amountEur: stripeAmount });
+      setSumupCheckout({
+        id: res.checkoutId,
+        amountEur: res.amountEur,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Impossible de démarrer le paiement SumUp";
       toast.error(msg);
     }
   };
@@ -473,8 +512,108 @@ export default function Wallet() {
             </CardContent>
           </Card>
 
-          {/* Stripe (Carte bancaire + Link) */}
-          <Card className={`bg-card/50 border-border/50 relative ${!stripeConfig?.enabled ? "opacity-70" : ""}`}>
+            )}
+          </Card>
+
+          {/* SumUp (Carte bancaire) - Remplace Stripe visuellement */}
+          {!SHOW_STRIPE && (
+            <Card className={`bg-card/50 border-border/50 relative ${!sumupConfig?.enabled ? "opacity-70" : ""}`}>
+              <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                <PaymentBadge type="visa" />
+                <PaymentBadge type="mastercard" />
+              </div>
+              <CardHeader className="pb-3 pr-28 sm:pr-32">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-md bg-[#3063E9] text-white flex items-center justify-center font-bold text-sm">
+                    Σ
+                  </div>
+                  Carte Bancaire (SumUp)
+                </CardTitle>
+                <CardDescription>
+                  {sumupConfig?.enabled
+                    ? "Paiement sécurisé par carte via SumUp."
+                    : "Bientôt disponible — configuration serveur requise."}
+                </CardDescription>
+              </CardHeader>
+              {sumupConfig?.enabled && (
+                <CardContent className="space-y-4">
+                  {!sumupCheckout ? (
+                    <>
+                      <div className="grid grid-cols-3 gap-2">
+                        {RECHARGE_AMOUNTS.map((amt) => (
+                          <Button
+                            key={amt}
+                            variant={stripeMode === amt ? "default" : "outline"}
+                            className={`h-12 ${
+                              stripeMode === amt
+                                ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                                : "bg-background hover:bg-muted"
+                            }`}
+                            onClick={() => setStripeMode(amt)}
+                          >
+                            {amt}€
+                          </Button>
+                        ))}
+                        <Button
+                          variant={stripeMode === "custom" ? "default" : "outline"}
+                          className={`h-12 ${
+                            stripeMode === "custom"
+                              ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                              : "bg-background hover:bg-muted"
+                          }`}
+                          onClick={() => setStripeMode("custom")}
+                        >
+                          Autre
+                        </Button>
+                      </div>
+                      {stripeMode === "custom" && (
+                        <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              inputMode="decimal"
+                              min={5}
+                              max={5000}
+                              step="0.01"
+                              placeholder="Montant en €"
+                              value={stripeCustomAmount}
+                              onChange={(e) => setStripeCustomAmount(e.target.value)}
+                              className="h-12 pr-10 text-base font-medium"
+                              autoFocus
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
+                          </div>
+                        </div>
+                      )}
+                      <Button
+                        className="w-full h-12 bg-[#3063E9] hover:bg-[#254eba] text-white shadow-md shadow-[#3063E9]/30"
+                        disabled={!isStripeAmountValid || initiateSumup.isPending}
+                        onClick={handleStartSumup}
+                      >
+                        {initiateSumup.isPending
+                          ? "Préparation..."
+                          : `Continuer — ${stripeAmount.toFixed(2)}€`}
+                      </Button>
+                    </>
+                  ) : (
+                    <SumupPaymentForm
+                      checkoutId={sumupCheckout.id}
+                      amountEur={sumupCheckout.amountEur}
+                      onSuccess={() => {
+                        invalidateWallet();
+                        setSumupCheckout(null);
+                      }}
+                      onCancel={() => setSumupCheckout(null)}
+                    />
+                  )}
+                </CardContent>
+              )}
+            </Card>
+          )}
+
+          {/* Stripe Original (Masqué mais conservé) */}
+          {SHOW_STRIPE && (
+            <Card className={`bg-card/50 border-border/50 relative ${!stripeConfig?.enabled ? "opacity-70" : ""}`}>
             {/* Payment method badges, top-right */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5">
               <PaymentBadge type="visa" />
@@ -670,6 +809,77 @@ export default function Wallet() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SumupPaymentForm({
+  checkoutId,
+  amountEur,
+  onSuccess,
+  onCancel,
+}: {
+  checkoutId: string;
+  amountEur: number;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
+  const confirmSumup = useConfirmSumupCheckout();
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let attempts = 0;
+    const mountWidget = () => {
+      // @ts-ignore
+      if (window.SumUpCard) {
+        // @ts-ignore
+        window.SumUpCard.mount({
+          id: "sumup-card-container",
+          checkoutId: checkoutId,
+          onResponse: async (res: any) => {
+            if (res.status === "PAID" || res.status === "AUTHORIZED") {
+              setSubmitting(true);
+              try {
+                const confirm = await confirmSumup.mutateAsync({ checkoutId });
+                if (confirm.success) {
+                  toast.success(`+${confirm.amountEur.toFixed(2)}€ crédités`);
+                  onSuccess();
+                }
+              } catch (e) {
+                toast.error("Erreur lors de la confirmation");
+              } finally {
+                setSubmitting(false);
+              }
+            } else if (res.status === "FAILED") {
+              toast.error("Paiement échoué");
+            }
+          },
+        });
+      } else if (attempts < 10) {
+        attempts++;
+        setTimeout(mountWidget, 300);
+      }
+    };
+
+    mountWidget();
+  }, [checkoutId]);
+
+  return (
+    <div className="space-y-4">
+      <div id="sumup-card-container" className="min-h-[200px] bg-white rounded-lg p-2"></div>
+      {submitting && (
+        <div className="flex items-center justify-center gap-2 text-primary font-medium animate-pulse">
+          Vérification du paiement...
+        </div>
+      )}
+      <Button
+        variant="ghost"
+        className="w-full text-xs text-muted-foreground"
+        onClick={onCancel}
+        disabled={submitting}
+      >
+        Annuler et changer le montant
+      </Button>
     </div>
   );
 }
