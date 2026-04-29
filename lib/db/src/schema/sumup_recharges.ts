@@ -1,19 +1,18 @@
-import { sqliteTable, integer, text, real } from "drizzle-orm/sqlite-core";
+import { pgTable, serial, integer, text, numeric, timestamp } from "drizzle-orm/pg-core";
 import { usersTable } from "./users";
-import { sql } from "drizzle-orm";
 
-export const sumupRechargesTable = sqliteTable("sumup_recharges", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const sumupRechargesTable = pgTable("sumup_recharges", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
     .references(() => usersTable.id),
   checkoutId: text("checkout_id").notNull(),
   checkoutReference: text("checkout_reference").notNull(),
-  amountEur: real("amount_eur").notNull(),
+  amountEur: numeric("amount_eur", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("PENDING"), // PENDING, PAID, FAILED
-  createdAt: text("created_at")
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
+    .defaultNow(),
 });
 
 export type SumupRecharge = typeof sumupRechargesTable.$inferSelect;
