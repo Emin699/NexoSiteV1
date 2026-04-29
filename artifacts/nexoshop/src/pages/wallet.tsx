@@ -511,10 +511,6 @@ export default function Wallet() {
               </a>
             </CardContent>
           </Card>
-
-            )}
-          </Card>
-
           {/* SumUp (Carte bancaire) - Remplace Stripe visuellement */}
           {!SHOW_STRIPE && (
             <Card className={`bg-card/50 border-border/50 relative ${!sumupConfig?.enabled ? "opacity-70" : ""}`}>
@@ -734,6 +730,7 @@ export default function Wallet() {
               </CardContent>
             )}
           </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="history" className="mt-4">
