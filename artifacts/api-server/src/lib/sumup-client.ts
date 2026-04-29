@@ -65,7 +65,7 @@ export async function createSumupCheckout(amountEur: number, userId: number, use
       checkout_reference: checkoutReference,
       amount: amountEur,
       currency: "EUR",
-      pay_to_email: userEmail || payToEmail,
+      pay_to_email: payToEmail,
       description: `Recharge NexoShop - Utilisateur #${userId}`,
       hosted_checkout: { enabled: true }
     }),
