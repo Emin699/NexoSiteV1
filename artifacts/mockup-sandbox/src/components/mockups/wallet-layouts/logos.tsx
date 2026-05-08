@@ -2,16 +2,17 @@ export function LitecoinLogo({ size = 44 }: { size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: size * 0.22,
-      background: "#345D9D",
+      background: "#ffffff",
       overflow: "hidden", flexShrink: 0,
       display: "flex", alignItems: "center", justifyContent: "center",
-      boxShadow: "0 2px 8px rgba(52,93,157,0.4)",
+      padding: size * 0.06,
+      boxShadow: "0 2px 8px rgba(52,93,157,0.35)",
     }}>
       <img
         src="/__mockup/logos/litecoin.png"
-        width={size}
-        height={size}
-        style={{ objectFit: "cover", display: "block" }}
+        width={size * 0.88}
+        height={size * 0.88}
+        style={{ objectFit: "contain", display: "block", borderRadius: "50%" }}
         alt="Litecoin"
       />
     </div>
