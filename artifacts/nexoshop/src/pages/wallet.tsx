@@ -224,39 +224,52 @@ export default function Wallet() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-4 pb-24 animate-in fade-in">
-      <h1 className="text-2xl font-bold px-1">Mon Portefeuille</h1>
+    <div className="flex flex-col gap-4 p-4 pb-24 animate-in fade-in">
+      {/* Header */}
+      <div className="flex items-center justify-between px-1">
+        <h1 className="text-xl font-bold tracking-tight">Mon Portefeuille</h1>
+        <div className="flex items-center gap-1.5" style={{ color: "#a855f7" }}>
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span className="text-[11px] font-semibold">Sécurisé</span>
+        </div>
+      </div>
 
-      {/* Balance Card */}
-      <Card className="bg-gradient-to-br from-primary/20 via-card to-secondary/20 border-primary/30 overflow-hidden relative shadow-lg shadow-primary/10">
-        <div className="absolute top-0 right-0 -mr-12 -mt-12 w-40 h-40 bg-primary/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-40 h-40 bg-secondary/20 rounded-full blur-3xl"></div>
+      {/* Premium balance card */}
+      <div
+        className="rounded-2xl overflow-hidden relative"
+        style={{ background: "linear-gradient(135deg, #1a0533 0%, #0d1a3a 60%, #001a20 100%)" }}
+      >
+        {/* Neon glows */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style={{ background: "rgba(168,85,247,0.25)", filter: "blur(50px)" }} />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full pointer-events-none" style={{ background: "rgba(6,182,212,0.2)", filter: "blur(40px)" }} />
+        {/* Shiny top border */}
+        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(168,85,247,0.6), rgba(6,182,212,0.6), transparent)" }} />
 
-        <CardContent className="p-6 relative z-10">
-          <div className="flex items-center gap-2 text-muted-foreground mb-2">
-            <WalletIcon className="w-4 h-4" />
-            <span className="text-sm font-medium">Solde Actuel</span>
+        <div className="relative z-10 p-6">
+          <div className="flex items-center gap-1.5 mb-1 text-white/45 text-xs">
+            <Zap className="w-3 h-3" style={{ color: "#a855f7" }} />
+            Solde disponible
           </div>
-          <div className="text-4xl font-mono font-bold text-foreground mb-6">
-            {wallet?.balance.toFixed(2)}€
+          <div className="font-mono font-black text-white mb-5" style={{ fontSize: 42, letterSpacing: "-0.03em", lineHeight: 1 }}>
+            {wallet?.balance.toFixed(2)}<span className="text-2xl align-super" style={{ color: "#a855f7" }}>€</span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-background/50 rounded-lg p-3 backdrop-blur-sm border border-white/5">
-              <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                <Coins className="w-3 h-3" /> Points
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}>
+              <div className="flex items-center gap-1 text-[10px] text-white/40 mb-1">
+                <Coins className="w-3 h-3" /> Points fidélité
               </div>
-              <div className="font-mono font-bold text-secondary">{wallet?.loyaltyPoints}</div>
+              <div className="font-mono font-bold text-lg" style={{ color: "#06b6d4" }}>{wallet?.loyaltyPoints}</div>
             </div>
-            <div className="bg-background/50 rounded-lg p-3 backdrop-blur-sm border border-white/5">
-              <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                <ArrowDownToLine className="w-3 h-3" /> Total Rechargé
+            <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(168,85,247,0.15)" }}>
+              <div className="flex items-center gap-1 text-[10px] text-white/40 mb-1">
+                <ArrowDownToLine className="w-3 h-3" /> Total rechargé
               </div>
-              <div className="font-mono font-bold text-primary">{wallet?.totalRecharged.toFixed(2)}€</div>
+              <div className="font-mono font-bold text-lg" style={{ color: "#a855f7" }}>{wallet?.totalRecharged.toFixed(2)}€</div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Pending crypto rechargecards */}
       {pending && pending.length > 0 && (
@@ -326,8 +339,8 @@ export default function Wallet() {
           <Card className="bg-card/50 border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#345D9D]/20 text-[#345D9D] flex items-center justify-center font-bold">
-                  Ł
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(52,93,157,0.35)" }}>
+                  <img src="/logos-ltc.png" alt="Litecoin" className="w-9 h-9 object-contain rounded-full" />
                 </div>
                 Crypto (Litecoin)
               </CardTitle>
@@ -431,8 +444,8 @@ export default function Wallet() {
           <Card className="bg-card/50 border-border/50 opacity-70">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">
-                  P
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 p-1" style={{ boxShadow: "0 2px 8px rgba(0,48,135,0.3)" }}>
+                  <img src="/logos-paypal.png" alt="PayPal" className="w-full h-full object-contain" />
                 </div>
                 PayPal
                 <span className="text-[10px] uppercase tracking-wide bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded inline-flex items-center gap-1">
@@ -459,8 +472,8 @@ export default function Wallet() {
               </div>
               <CardHeader className="pb-3 pr-28 sm:pr-32">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-md bg-[#3063E9] text-white flex items-center justify-center font-bold text-sm">
-                    Σ
+                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-black flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+                    <img src="/logos-sumup.png" alt="SumUp" className="w-8 h-8 object-contain" />
                   </div>
                   Carte Bancaire (SumUp)
                 </CardTitle>
