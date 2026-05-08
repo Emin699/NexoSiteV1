@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { ShoppingCart, Wallet, User, Store, ShieldCheck, LogIn, LifeBuoy, Radio, ArrowUpRight } from "lucide-react";
+import { ShoppingCart, Wallet, User, Store, ShieldCheck, LogIn, LifeBuoy, Radio, ArrowUpRight, PackageSearch, Star } from "lucide-react";
 import { useGetMe, useGetCart } from "@workspace/api-client-react";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,7 +21,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const requireAuth = useRequireAuth();
   const isAuthed = hasAuthToken();
-  // Skip /me + /cart calls entirely for anonymous visitors so we don't fire 401s.
   const { data: user } = useGetMe({ query: { enabled: isAuthed } });
   const { data: cart } = useGetCart({ query: { enabled: isAuthed } });
 
@@ -35,24 +34,43 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isCart = location === "/cart";
   const isWallet = location === "/wallet";
   const isAdmin = location === "/admin";
-  const isProfile = !isAdmin && (location.startsWith("/profile") || 
-                    location === "/wheel" || 
-                    location === "/loyalty" || 
-                    location === "/jackpot" || 
-                    location === "/tiers" || 
+  const isOrders = location === "/orders";
+  const isReviews = location === "/reviews";
+  const isProfile = !isAdmin && (location.startsWith("/profile") ||
+                    location === "/wheel" ||
+                    location === "/loyalty" ||
+                    location === "/jackpot" ||
+                    location === "/tiers" ||
                     location === "/referral");
+
+  const navItem = (active: boolean) =>
+    `flex flex-col items-center justify-center w-full h-full space-y-1 transition-all duration-200 ${
+      active
+        ? "text-primary drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]"
+        : "text-muted-foreground hover:text-foreground"
+    }`;
 
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background text-foreground pb-16">
       {/* Sticky Header */}
-      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/40">
+      <header className="sticky top-0 z-50 w-full backdrop-blur-md border-b"
+        style={{
+          background: "rgba(6,4,15,0.92)",
+          borderBottomColor: "rgba(168,85,247,0.25)",
+          boxShadow: "0 1px 30px rgba(168,85,247,0.08)"
+        }}
+      >
         <div className="flex items-center justify-between px-4 h-14 max-w-screen-md mx-auto">
           {isAuthed ? (
-            <Link href="/wallet" className="flex items-center gap-2 p-1 -ml-1 rounded-full hover:bg-muted/50 transition-colors">
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                <Wallet className="w-4 h-4" />
+            <Link href="/wallet" className="flex items-center gap-2 p-1 -ml-1 rounded-full hover:bg-primary/10 transition-colors">
+              <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" }}
+              >
+                <Wallet className="w-4 h-4 text-primary" />
               </div>
-              <span className="font-mono font-bold text-sm">
+              <span className="font-mono font-bold text-sm"
+                style={{ color: "#a855f7", textShadow: "0 0 12px rgba(168,85,247,0.5)" }}
+              >
                 {user?.balance.toFixed(2) || "0.00"}€
               </span>
             </Link>
@@ -68,6 +86,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               src="/nexoshop-logo.png"
               alt="NexoShop"
               className="h-6 sm:h-9 md:h-10 w-auto select-none"
+              style={{ filter: "drop-shadow(0 0 10px rgba(168,85,247,0.4))" }}
               draggable={false}
             />
           </Link>
@@ -77,7 +96,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 href="/auth"
                 data-signup-anchor
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold transition-colors shadow-sm shadow-primary/30 ring-2 ring-primary/30 ring-offset-1 ring-offset-background"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                style={{
+                  background: "linear-gradient(135deg, #a855f7, #7c3aed)",
+                  color: "#fff",
+                  boxShadow: "0 0 16px rgba(168,85,247,0.45)",
+                }}
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Se connecter</span>
@@ -86,12 +110,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Link
               href="/cart"
               onClick={(e) => guard(e, "Connecte-toi pour accéder à ton panier")}
-              className="relative p-2 rounded-full hover:bg-muted/50 transition-colors"
+              className="relative p-2 rounded-full hover:bg-primary/10 transition-colors"
             >
               <ShoppingCart className="w-5 h-5 text-foreground" />
               {cart?.itemCount ? (
                 <Badge
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] bg-primary text-primary-foreground border-none rounded-full animate-in zoom-in"
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] border-none rounded-full animate-in zoom-in"
+                  style={{ background: "#a855f7", color: "#fff" }}
                 >
                   {cart.itemCount}
                 </Badge>
@@ -108,10 +133,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex-1">{children}</div>
 
         {/* Footer */}
-        <footer className="mt-10 border-t border-border/40 bg-card/30 px-4 py-5">
+        <footer className="mt-10 border-t px-4 py-5"
+          style={{ borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.03)" }}
+        >
           <div className="max-w-screen-md mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
             <p className="text-center sm:text-left">
-              © {new Date().getFullYear()} <span className="font-semibold text-foreground">NexoShop</span> — Tous droits réservés.
+              © {new Date().getFullYear()} <span className="font-semibold" style={{ color: "#a855f7" }}>NexoShop</span> — Tous droits réservés.
             </p>
 
             <div className="flex items-center gap-4">
@@ -169,39 +196,53 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 w-full bg-card/90 backdrop-blur-md border-t border-border z-50 pb-safe">
+      <nav className="fixed bottom-0 w-full backdrop-blur-md border-t z-50 pb-safe"
+        style={{
+          background: "rgba(6,4,15,0.94)",
+          borderTopColor: "rgba(168,85,247,0.2)",
+          boxShadow: "0 -1px 30px rgba(168,85,247,0.08)"
+        }}
+      >
         <div className="flex items-center justify-around h-16 max-w-screen-md mx-auto px-2">
-          <Link 
-            href="/" 
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isHome ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
-          >
+          <Link href="/" className={navItem(isHome)}>
             <Store className="w-5 h-5" />
             <span className="text-[10px] font-medium">Shop</span>
           </Link>
-          
-          <Link 
+
+          <Link
+            href="/orders"
+            onClick={(e) => guard(e, "Connecte-toi pour voir tes commandes")}
+            className={navItem(isOrders)}
+          >
+            <PackageSearch className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Commandes</span>
+          </Link>
+
+          <Link href="/reviews" className={navItem(isReviews)}>
+            <Star className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Avis</span>
+          </Link>
+
+          <Link
             href="/wallet"
             onClick={(e) => guard(e, "Connecte-toi pour accéder à ton portefeuille")}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isWallet ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
+            className={navItem(isWallet)}
           >
             <Wallet className="w-5 h-5" />
             <span className="text-[10px] font-medium">Wallet</span>
           </Link>
 
-          <Link 
+          <Link
             href="/profile"
             onClick={(e) => guard(e, "Connecte-toi pour accéder à ton profil")}
-            className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isProfile ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
+            className={navItem(isProfile)}
           >
             <User className="w-5 h-5" />
             <span className="text-[10px] font-medium">Profil</span>
           </Link>
 
           {user?.isAdmin ? (
-            <Link 
-              href="/admin" 
-              className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isAdmin ? "text-primary" : "text-muted-foreground hover:text-foreground transition-colors"}`}
-            >
+            <Link href="/admin" className={navItem(isAdmin)}>
               <ShieldCheck className="w-5 h-5" />
               <span className="text-[10px] font-medium">Admin</span>
             </Link>
