@@ -1,3 +1,5 @@
+import { Shield, Zap, Headphones, ShoppingBag, Users, Star } from "lucide-react";
+
 const reviews = [
   { name: "Mehdi", rating: 5, product: "Netflix Premium", comment: "Produit reçu sans problème, merci !" },
   { name: "Da", rating: 5, product: "DarkGPT", comment: "Bonne expérience, livraison sans souci." },
@@ -11,6 +13,18 @@ function Stars({ n }: { n: number }) {
   return <span style={{ color: "#fbbf24", fontSize: 11 }}>{"★".repeat(n)}{"☆".repeat(5 - n)}</span>;
 }
 
+const stats = [
+  { icon: ShoppingBag, val: "250+", label: "Commandes", color: "#a855f7" },
+  { icon: Users,       val: "120+", label: "Clients",   color: "#06b6d4" },
+  { icon: Star,        val: "4.9/5", label: "Satisfaction", color: "#fbbf24" },
+];
+
+const badges = [
+  { icon: Shield,      label: "Paiement sécurisé" },
+  { icon: Zap,         label: "Livraison automatique" },
+  { icon: Headphones,  label: "Support rapide" },
+];
+
 export function Glassmorphism() {
   return (
     <div style={{ background: "linear-gradient(135deg, #0a0015 0%, #06060f 50%, #000a14 100%)", minHeight: "100vh", fontFamily: "'Inter', sans-serif", padding: 24, position: "relative", overflow: "hidden" }}>
@@ -20,9 +34,15 @@ export function Glassmorphism() {
 
       {/* Main glass card */}
       <div style={{ position: "relative", borderRadius: 24, padding: "28px 28px 20px", background: "rgba(168,85,247,0.06)", backdropFilter: "blur(20px)", border: "1px solid rgba(168,85,247,0.22)", boxShadow: "0 8px 32px rgba(168,85,247,0.12), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
-        {/* Badge */}
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 100, padding: "4px 14px", marginBottom: 14, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#c084fc", textTransform: "uppercase" }}>
-          ⚡ Livraison instantanée · 24h/24
+
+        {/* Badge row */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+          {badges.map(({ icon: Icon, label }) => (
+            <div key={label} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 100, padding: "5px 12px", fontSize: 11, fontWeight: 600, color: "#c084fc" }}>
+              <Icon size={12} strokeWidth={2.5} />
+              {label}
+            </div>
+          ))}
         </div>
 
         {/* Title */}
@@ -30,15 +50,19 @@ export function Glassmorphism() {
           Bienvenue sur{" "}
           <span style={{ background: "linear-gradient(90deg, #a855f7, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>NexoShop</span>
         </h2>
-        <p style={{ color: "#8b7ea8", fontSize: 14, marginBottom: 20 }}>Abonnements, clés & outils IA livrés en quelques secondes.</p>
+        <p style={{ color: "#8b7ea8", fontSize: 14, marginBottom: 20, lineHeight: 1.6 }}>
+          Une plateforme rapide, sécurisée et automatisée pour accéder à tes services préférés.
+        </p>
 
-        {/* Stats — glass pills */}
+        {/* Stats — glass pills with lucide icons */}
         <div style={{ display: "flex", gap: 10, marginBottom: 22 }}>
-          {[["🛒", "23", "Commandes"], ["👥", "60", "Utilisateurs"], ["⭐", "5.0/5", "15 Avis"]].map(([icon, val, lab]) => (
-            <div key={lab} style={{ flex: 1, background: "rgba(255,255,255,0.04)", backdropFilter: "blur(12px)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 14, padding: "12px 8px", textAlign: "center" }}>
-              <div style={{ fontSize: 20, marginBottom: 2 }}>{icon}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#e2d9f3" }}>{val}</div>
-              <div style={{ fontSize: 10, color: "#7a6d9a", textTransform: "uppercase", letterSpacing: "0.1em" }}>{lab}</div>
+          {stats.map(({ icon: Icon, val, label, color }) => (
+            <div key={label} style={{ flex: 1, background: "rgba(255,255,255,0.04)", backdropFilter: "blur(12px)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 14, padding: "14px 8px", textAlign: "center" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+                <Icon size={20} color={color} strokeWidth={2} />
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#e2d9f3", lineHeight: 1 }}>{val}</div>
+              <div style={{ fontSize: 10, color: "#7a6d9a", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: 4 }}>{label}</div>
             </div>
           ))}
         </div>
