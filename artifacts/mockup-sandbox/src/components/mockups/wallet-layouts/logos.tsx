@@ -1,36 +1,61 @@
-export function LitecoinLogo({ size = 36 }: { size?: number }) {
+export function LitecoinLogo({ size = 44 }: { size?: number }) {
   return (
-    <img
-      src="/__mockup/logos/litecoin.png"
-      width={size}
-      height={size}
-      style={{ borderRadius: "50%", objectFit: "cover" }}
-      alt="Litecoin"
-    />
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.22,
+      background: "#345D9D",
+      overflow: "hidden", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 2px 8px rgba(52,93,157,0.4)",
+    }}>
+      <img
+        src="/__mockup/logos/litecoin.png"
+        width={size}
+        height={size}
+        style={{ objectFit: "cover", display: "block" }}
+        alt="Litecoin"
+      />
+    </div>
   );
 }
 
-export function PaypalLogo({ size = 36 }: { size?: number }) {
+export function PaypalLogo({ size = 44 }: { size?: number }) {
   return (
-    <img
-      src="/__mockup/logos/paypal.png"
-      width={size}
-      height={size}
-      style={{ objectFit: "contain" }}
-      alt="PayPal"
-    />
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.22,
+      background: "#ffffff",
+      overflow: "hidden", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: size * 0.1,
+      boxShadow: "0 2px 8px rgba(0,48,135,0.3)",
+    }}>
+      <img
+        src="/__mockup/logos/paypal.png"
+        width={size * 0.8}
+        height={size * 0.8}
+        style={{ objectFit: "contain", display: "block" }}
+        alt="PayPal"
+      />
+    </div>
   );
 }
 
-export function SumUpLogo({ size = 36 }: { size?: number }) {
+export function SumUpLogo({ size = 44 }: { size?: number }) {
   return (
-    <img
-      src="/__mockup/logos/sumup.png"
-      width={size}
-      height={size}
-      style={{ borderRadius: 8, objectFit: "cover" }}
-      alt="SumUp"
-    />
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.22,
+      background: "#000000",
+      overflow: "hidden", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+    }}>
+      <img
+        src="/__mockup/logos/sumup.png"
+        width={size * 0.72}
+        height={size * 0.72}
+        style={{ objectFit: "contain", display: "block" }}
+        alt="SumUp"
+      />
+    </div>
   );
 }
 
