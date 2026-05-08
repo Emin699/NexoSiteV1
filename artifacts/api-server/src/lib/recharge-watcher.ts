@@ -10,21 +10,31 @@ const MIN_CONFIRMATIONS = 1;
 type Pending = typeof cryptoRechargesTable.$inferSelect;
 
 async function tryCreditMatch(pending: Pending, txHash: string, ltcReceived: number): Promise<boolean> {
-  // STRICT match in satoshis. The per-session amount is unique-jittered at
-  // creation time, so the on-chain amount must equal the expected amount
-  // exactly (±1 satoshi for explorer rounding) to attribute the tx.
-  const expectedSat = Math.round(Number(pending.amountLtc) * 1e8);
-  const receivedSat = Math.round(ltcReceived * 1e8);
-  if (Math.abs(receivedSat - expectedSat) > 1) return false;
+  // Nouveau système : on crédite TOUT ce qui arrive sur l'adresse.
+  // On récupère le taux LTC/EUR au moment du crédit + on applique le bonus.
+  let exchangeRate = 80;
+  try {
+    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=eur");
+    const d = await r.json() as { litecoin?: { eur?: number } };
+    exchangeRate = d?.litecoin?.eur ?? 80;
+  } catch { /* fallback */ }
 
-  const credited = Number(pending.amountEur);
+  const amountEurBase = ltcReceived * exchangeRate;
+  const bonusPct = amountEurBase > 100 ? 10 : 5;
+  const credited = Math.round(amountEurBase * (1 + bonusPct / 100) * 100) / 100;
 
   try {
     await db.transaction(async (tx) => {
       // Atomic claim: only flip pending → verified if still pending.
       const claimed = await tx
         .update(cryptoRechargesTable)
-        .set({ status: "verified", txHash, verifiedAt: new Date() })
+        .set({
+          status: "verified",
+          txHash,
+          verifiedAt: new Date(),
+          amountLtc: ltcReceived.toFixed(8),
+          amountEur: credited.toFixed(2),
+        })
         .where(and(
           eq(cryptoRechargesTable.id, pending.id),
           eq(cryptoRechargesTable.status, "pending"),
@@ -46,10 +56,10 @@ async function tryCreditMatch(pending: Pending, txHash: string, ltcReceived: num
         userId: pending.userId,
         type: "credit",
         amount: credited.toFixed(2),
-        description: `Recharge Litecoin (${credited.toFixed(2)}€) — auto tx ${txHash.slice(0, 12)}…`,
+        description: `Recharge Litecoin +${bonusPct}% bonus (${credited.toFixed(2)}€) — auto tx ${txHash.slice(0, 12)}…`,
       });
     });
-    logger.info({ userId: pending.userId, eur: credited, txHash }, "auto-credited LTC recharge");
+    logger.info({ userId: pending.userId, eur: credited, ltc: ltcReceived, bonus: bonusPct, txHash }, "auto-credited LTC recharge");
 
     // Telegram log: auto-credit (fire-and-forget)
     safeNotify(async () => {

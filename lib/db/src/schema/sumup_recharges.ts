@@ -10,6 +10,7 @@ export const sumupRechargesTable = pgTable("sumup_recharges", {
   checkoutReference: text("checkout_reference").notNull(),
   amountEur: numeric("amount_eur", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull().default("PENDING"), // PENDING, PAID, FAILED
+  capturedAt: timestamp("captured_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

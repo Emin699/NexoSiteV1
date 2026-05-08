@@ -44,7 +44,6 @@ import {
   ShieldCheck,
   Clock,
   XCircle,
-  Send,
   Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -82,8 +81,6 @@ export default function Wallet() {
   const initiateSumup = useInitiateSumupCheckout();
   const confirmSumup = useConfirmSumupCheckout();
 
-  const [selectedMode, setSelectedMode] = useState<number | "custom">(10);
-  const [customAmount, setCustomAmount] = useState<string>("");
   const [paypalMode, setPaypalMode] = useState<number | "custom">(10);
   const [paypalCustomAmount, setPaypalCustomAmount] = useState<string>("");
   const [stripeMode, setStripeMode] = useState<number | "custom">(10);
@@ -103,10 +100,8 @@ export default function Wallet() {
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   };
-  const selectedAmount = selectedMode === "custom" ? parseCustom(customAmount) : selectedMode;
   const paypalAmount = paypalMode === "custom" ? parseCustom(paypalCustomAmount) : paypalMode;
   const stripeAmount = stripeMode === "custom" ? parseCustom(stripeCustomAmount) : stripeMode;
-  const isCryptoAmountValid = selectedAmount >= 5 && selectedAmount <= 5000;
   const isPaypalAmountValid = paypalAmount >= 5 && paypalAmount <= 5000;
   const isStripeAmountValid = stripeAmount >= 5 && stripeAmount <= 5000;
 
@@ -179,7 +174,7 @@ export default function Wallet() {
 
   const handleInitiateRecharge = async () => {
     try {
-      const res = await initiateCrypto.mutateAsync({ data: { amountEur: selectedAmount } });
+      const res = await initiateCrypto.mutateAsync({ data: { amountEur: 0 } });
       setRechargeSession({
         id: res.sessionId,
         address: res.address,
@@ -282,9 +277,7 @@ export default function Wallet() {
                   className="flex items-center justify-between bg-background/40 rounded-lg p-3 border border-amber-500/10"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium">
-                      {p.amountEur.toFixed(2)}€ — {p.amountLtc} LTC
-                    </div>
+                    <div className="text-sm font-medium">Recharge LTC en attente</div>
                     <div className="text-xs text-muted-foreground truncate font-mono">
                       {p.address}
                     </div>
@@ -343,75 +336,34 @@ export default function Wallet() {
             <CardContent className="space-y-4">
               {!rechargeSession ? (
                 <>
-                  <div className="grid grid-cols-3 gap-2">
-                    {RECHARGE_AMOUNTS.map((amt) => (
-                      <Button
-                        key={amt}
-                        variant={selectedMode === amt ? "default" : "outline"}
-                        className={`h-12 ${
-                          selectedMode === amt
-                            ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                            : "bg-background hover:bg-muted"
-                        }`}
-                        onClick={() => setSelectedMode(amt)}
-                      >
-                        {amt}€
-                      </Button>
-                    ))}
-                    <Button
-                      variant={selectedMode === "custom" ? "default" : "outline"}
-                      className={`h-12 ${
-                        selectedMode === "custom"
-                          ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                          : "bg-background hover:bg-muted"
-                      }`}
-                      onClick={() => setSelectedMode("custom")}
-                    >
-                      Autre
-                    </Button>
+                  <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2.5 flex gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <span className="font-semibold text-green-400">+5% de bonus</span> sur toutes les recharges LTC •{" "}
+                      <span className="font-semibold text-green-400">+10% de bonus</span> si ta recharge dépasse 100€ •{" "}
+                      Aucun montant minimum requis.
+                    </p>
                   </div>
-                  {selectedMode === "custom" && (
-                    <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          inputMode="decimal"
-                          min={5}
-                          max={5000}
-                          step="0.01"
-                          placeholder="Montant en €"
-                          value={customAmount}
-                          onChange={(e) => setCustomAmount(e.target.value)}
-                          className="h-12 pr-10 text-base font-medium"
-                          autoFocus
-                        />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground px-1">
-                        Minimum 5€ — Maximum 5000€
-                      </p>
-                    </div>
-                  )}
                   <Button
-                    className="w-full mt-4 bg-gradient-to-r from-primary to-secondary text-white border-none rounded-xl h-12 font-medium disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-primary to-secondary text-white border-none rounded-xl h-12 font-medium disabled:opacity-50"
                     onClick={handleInitiateRecharge}
-                    disabled={initiateCrypto.isPending || !isCryptoAmountValid}
+                    disabled={initiateCrypto.isPending}
                   >
-                    {initiateCrypto.isPending ? "Génération…" : "Générer l'adresse de dépôt"}
+                    {initiateCrypto.isPending ? "Génération…" : "Générer un lien de paiement LTC"}
                   </Button>
                 </>
               ) : (
                 <div className="space-y-4 animate-in slide-in-from-bottom-2 fade-in">
                   <div className="bg-background rounded-xl p-4 border border-border">
-                    <div className="text-sm text-muted-foreground mb-1 text-center">Envoyez exactement</div>
-                    <div className="text-2xl font-mono font-bold text-center text-primary mb-4">
-                      {rechargeSession.amountLtc} LTC
+                    <div className="text-sm font-medium text-center mb-1">Envoyez le montant de votre choix</div>
+                    <div className="text-xs text-muted-foreground text-center mb-4">
+                      Votre solde sera crédité + bonus automatiquement après confirmation
                     </div>
 
                     <div className="flex justify-center mb-4">
                       <div className="bg-white p-3 rounded-lg shadow-md">
                         <QRCodeSVG
-                          value={`litecoin:${rechargeSession.address}?amount=${rechargeSession.amountLtc}`}
+                          value={`litecoin:${rechargeSession.address}`}
                           size={180}
                           level="M"
                           includeMargin={false}
@@ -442,11 +394,18 @@ export default function Wallet() {
                     </div>
                   </div>
 
+                  <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 flex gap-2">
+                    <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-muted-foreground">
+                      <span className="font-semibold text-green-400">+5% bonus</span> inclus • <span className="font-semibold text-green-400">+10%</span> si votre envoi dépasse 100€
+                    </p>
+                  </div>
+
                   <div className="space-y-2 pt-2 border-t border-border">
                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                       <p className="text-sm font-medium text-primary">
-                        En attente du paiement…
+                        En attente du paiement… (expire dans 1h)
                       </p>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -469,7 +428,7 @@ export default function Wallet() {
           </Card>
 
           {/* PayPal card — en maintenance */}
-          <Card className="bg-card/50 border-border/50">
+          <Card className="bg-card/50 border-border/50 opacity-70">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center font-bold">
@@ -485,30 +444,10 @@ export default function Wallet() {
                 Service PayPal temporairement indisponible.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent>
               <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-amber-200">
-                Pour effectuer une recharge PayPal, contacte&nbsp;
-                <a
-                  href="https://t.me/nexoshop6912"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold underline underline-offset-2 hover:text-amber-100"
-                >
-                  @nexoshop6912
-                </a>
-                &nbsp;sur Telegram.
+                Le paiement via PayPal est momentanément en maintenance. Merci de réessayer ultérieurement ou d'utiliser une autre méthode de paiement.
               </div>
-              <a
-                href="https://t.me/nexoshop6912"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <Button className="w-full h-12 bg-[#229ED9] hover:bg-[#1b8ec5] text-white shadow-md shadow-[#229ED9]/20">
-                  <Send className="w-4 h-4 mr-2" />
-                  Contacter @nexoshop6912 sur Telegram
-                </Button>
-              </a>
             </CardContent>
           </Card>
           {/* SumUp (Carte bancaire) - Remplace Stripe visuellement */}

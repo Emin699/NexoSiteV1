@@ -61,77 +61,36 @@ router.get("/wallet/transactions", requireAuth, async (req, res): Promise<void> 
 });
 
 router.post("/wallet/recharge/crypto", requireAuth, async (req, res): Promise<void> => {
-  const parsed = InitiateCryptoRechargeBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+  // Nouveau système : aucun montant requis. L'utilisateur envoie ce qu'il veut ;
+  // le watcher détecte la TX et crédite le montant reçu + bonus automatiquement.
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1h
 
-  const { amountEur } = parsed.data;
-
-  if (amountEur < 5) {
-    res.status(400).json({ error: "Montant minimum : 5€" });
-    return;
-  }
-  if (amountEur > 5000) {
-    res.status(400).json({ error: "Montant maximum : 5000€" });
-    return;
-  }
-
-  let exchangeRate = 0;
-  try {
-    const response = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=eur"
-    );
-    const data = (await response.json()) as { litecoin?: { eur?: number } };
-    exchangeRate = data?.litecoin?.eur ?? 80;
-  } catch {
-    exchangeRate = 80;
-  }
-
-  const amountWithFees = amountEur * 1.02;
-  const baseLtcSat = Math.round((amountWithFees / exchangeRate) * 1e8);
-
-  // Make the per-session amount UNIQUE among active pendings on the shared
-  // deposit address so the watcher can attribute on-chain txs unambiguously.
-  // Jitter adds 0..9999 satoshis (≈ 0.0001 LTC, ~ < 0.01€), invisible to users.
-  let amountLtcSat = baseLtcSat;
-  let amountLtc = amountLtcSat / 1e8;
   let recharge: typeof cryptoRechargesTable.$inferSelect | undefined;
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-
-  // Race-free: rely on the partial UNIQUE INDEX
-  // (address, amount_ltc) WHERE status='pending' to reject duplicates atomically.
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const jitter = attempt === 0 ? 0 : Math.floor(Math.random() * 10_000);
-    amountLtcSat = baseLtcSat + jitter;
-    amountLtc = amountLtcSat / 1e8;
-    try {
-      [recharge] = await db
-        .insert(cryptoRechargesTable)
-        .values({
-          userId: req.userId!,
-          provider: "ltc",
-          amountEur: amountEur.toFixed(2),
-          amountLtc: amountLtc.toFixed(8),
-          address: LTC_WALLET_ADDRESS,
-          status: "pending",
-          expiresAt,
-        })
-        .returning();
-      break;
-    } catch (err) {
-      const e = err as { code?: string; cause?: { code?: string } };
-      const code = e.code ?? e.cause?.code;
-      if (code !== "23505") throw err;
-      // Amount collides with an active pending → retry with a fresh jitter.
+  try {
+    [recharge] = await db
+      .insert(cryptoRechargesTable)
+      .values({
+        userId: req.userId!,
+        provider: "ltc",
+        amountEur: "0.00",
+        amountLtc: "0.00000000",
+        address: LTC_WALLET_ADDRESS,
+        status: "pending",
+        expiresAt,
+      })
+      .returning();
+  } catch (err) {
+    const e = err as { code?: string; cause?: { code?: string } };
+    const code = e.code ?? e.cause?.code;
+    if (code === "23505") {
+      res.status(503).json({ error: "Une recharge LTC est déjà en cours. Annule-la d'abord ou attends qu'elle expire." });
+      return;
     }
+    throw err;
   }
 
   if (!recharge) {
-    res.status(503).json({
-      error: "Trop de recharges en cours, réessaie dans quelques instants",
-    });
+    res.status(503).json({ error: "Impossible de créer la session de recharge." });
     return;
   }
 
@@ -140,18 +99,16 @@ router.post("/wallet/recharge/crypto", requireAuth, async (req, res): Promise<vo
       .select({ id: usersTable.id, username: usersTable.username, firstName: usersTable.firstName })
       .from(usersTable)
       .where(eq(usersTable.id, req.userId!));
-    if (me) {
-      notify.rechargeStarted({ user: me, method: "crypto", amount: amountEur });
-    }
+    if (me) notify.rechargeStarted({ user: me, method: "crypto", amount: 0 });
   });
 
   res.json(
     InitiateCryptoRechargeResponse.parse({
       sessionId: recharge.id,
       address: LTC_WALLET_ADDRESS,
-      amountLtc,
-      amountEur,
-      exchangeRate,
+      amountLtc: 0,
+      amountEur: 0,
+      exchangeRate: 0,
       expiresAt: expiresAt.toISOString(),
     })
   );
@@ -295,16 +252,7 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
     return;
   }
 
-  const credited = Number(pending.amountEur);
-  if (Math.abs(credited - amountEur) > 0.01) {
-    res.json(VerifyCryptoRechargeResponse.parse({
-      success: false, message: "Le montant ne correspond pas à la session", newBalance: null,
-    }));
-    return;
-  }
-
-  // 2) On-chain verification — server fetches the tx and validates address+amount+confirmations.
-  const expectedSat = Math.round(Number(pending.amountLtc) * 1e8);
+  // 2) On-chain verification — server fetches the tx and validates address+confirmations.
   const verification = await verifyLitecoinTx(txHash, pending.address, 1);
   if (!verification.ok) {
     res.json(VerifyCryptoRechargeResponse.parse({
@@ -312,22 +260,7 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
     }));
     return;
   }
-  // STRICT match in satoshis (±1 for rounding) — same rule as the watcher.
-  // Per-session amounts are jitter-unique so this prevents claiming an
-  // unrelated on-chain tx that happens to be on the shared deposit address.
-  const receivedSat = Math.round(verification.ltcReceived * 1e8);
-  if (Math.abs(receivedSat - expectedSat) > 1) {
-    res.json(VerifyCryptoRechargeResponse.parse({
-      success: false,
-      message: `Montant LTC reçu non conforme (${verification.ltcReceived} / ${(expectedSat / 1e8).toFixed(8)} LTC)`,
-      newBalance: null,
-    }));
-    return;
-  }
-  // FAIL-CLOSED temporal guard: require a confirmed block timestamp from the
-  // explorer and reject any tx older than the session (5s clock-skew slack).
-  // We never assume "now" when the timestamp is missing — that would let an
-  // unconfirmed/old tx slip through.
+  // Temporal guard: reject any tx older than the session (5s clock-skew slack).
   if (!verification.timestamp || verification.timestamp <= 0) {
     res.json(VerifyCryptoRechargeResponse.parse({
       success: false,
@@ -346,12 +279,29 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
     return;
   }
 
-  // 3) Atomic credit — only the UPDATE that flips pending→verified actually grants funds.
+  // 3) Calculer le montant EUR reçu + bonus crypto (10% si > 100€, sinon 5%)
+  let exchangeRate = 80;
+  try {
+    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=litecoin&vs_currencies=eur");
+    const d = await r.json() as { litecoin?: { eur?: number } };
+    exchangeRate = d?.litecoin?.eur ?? 80;
+  } catch { /* fallback */ }
+  const amountEurBase = verification.ltcReceived * exchangeRate;
+  const bonusPct = amountEurBase > 100 ? 10 : 5;
+  const credited = Math.round(amountEurBase * (1 + bonusPct / 100) * 100) / 100;
+
+  // 4) Atomic credit — only the UPDATE that flips pending→verified actually grants funds.
   try {
     const result = await db.transaction(async (tx) => {
       const claimed = await tx
         .update(cryptoRechargesTable)
-        .set({ status: "verified", txHash, verifiedAt: new Date() })
+        .set({
+          status: "verified",
+          txHash,
+          verifiedAt: new Date(),
+          amountLtc: verification.ltcReceived.toFixed(8),
+          amountEur: credited.toFixed(2),
+        })
         .where(and(
           eq(cryptoRechargesTable.id, pending!.id),
           eq(cryptoRechargesTable.status, "pending"),
@@ -373,12 +323,12 @@ router.post("/wallet/recharge/crypto/verify", requireAuth, async (req, res): Pro
         userId: req.userId!,
         type: "credit",
         amount: credited.toFixed(2),
-        description: `Recharge Litecoin (${credited.toFixed(2)}€) — tx ${txHash.slice(0, 12)}…`,
+        description: `Recharge Litecoin +${bonusPct}% bonus (${credited.toFixed(2)}€) — tx ${txHash.slice(0, 12)}…`,
       });
 
       return {
         success: true,
-        message: `Recharge de ${credited.toFixed(2)}€ effectuée avec succès`,
+        message: `Recharge de ${credited.toFixed(2)}€ crédités (+${bonusPct}% bonus inclus)`,
         newBalance: Number(user.balance),
         username: user.username,
         firstName: user.firstName,
