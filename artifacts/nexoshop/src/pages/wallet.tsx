@@ -45,6 +45,7 @@ import {
   Clock,
   XCircle,
   Wrench,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
