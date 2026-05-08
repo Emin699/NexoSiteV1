@@ -46,6 +46,9 @@ import {
   XCircle,
   Wrench,
   Zap,
+  TrendingUp,
+  ChevronRight,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -96,6 +99,10 @@ export default function Wallet() {
     id: string;
     amountEur: number;
   } | null>(null);
+
+  const [expandedMethod, setExpandedMethod] = useState<"ltc" | "sumup" | null>(null);
+  const toggleMethod = (m: "ltc" | "sumup") =>
+    setExpandedMethod((prev) => (prev === m ? null : m));
 
   const parseCustom = (v: string): number => {
     const n = Number(v.replace(",", "."));
@@ -325,167 +332,133 @@ export default function Wallet() {
         </Card>
       )}
 
-      <Tabs defaultValue="recharge" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-card border border-border/50 p-1 rounded-xl">
-          <TabsTrigger value="recharge" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
-            Recharger
-          </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary">
-            Historique
-          </TabsTrigger>
-        </TabsList>
+      {/* ── RECHARGER ──────────────────────────────── */}
+      <div>
+        <div className="text-[11px] font-bold tracking-widest uppercase mb-3 px-1" style={{ color: "#5a4d7a" }}>
+          Recharger
+        </div>
+        <div className="flex flex-col gap-2.5">
 
-        <TabsContent value="recharge" className="mt-4 space-y-4">
-          {/* Crypto card */}
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(52,93,157,0.35)" }}>
-                  <img src="/logos-ltc.png" alt="Litecoin" className="w-9 h-9 object-contain rounded-full" />
+          {/* Litecoin row */}
+          <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${expandedMethod === "ltc" ? "rgba(168,85,247,0.35)" : "rgba(168,85,247,0.18)"}`, background: "rgba(168,85,247,0.05)" }}>
+            <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => toggleMethod("ltc")}>
+              <div className="w-11 h-11 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(52,93,157,0.35)" }}>
+                <img src="/logos-ltc.png" alt="Litecoin" className="w-9 h-9 object-contain rounded-full" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">Litecoin</span>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: "#22c55e", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)" }}>+5% bonus</span>
                 </div>
-                Crypto (Litecoin)
-              </CardTitle>
-              <CardDescription>Recharge automatique rapide et sans frais via LTC.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {!rechargeSession ? (
-                <>
-                  <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2.5 flex gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      <span className="font-semibold text-green-400">+5% de bonus</span> sur toutes les recharges LTC •{" "}
-                      <span className="font-semibold text-green-400">+10% de bonus</span> si ta recharge dépasse 100€ •{" "}
-                      Aucun montant minimum requis.
-                    </p>
-                  </div>
-                  <Button
-                    className="w-full bg-gradient-to-r from-primary to-secondary text-white border-none rounded-xl h-12 font-medium disabled:opacity-50"
-                    onClick={handleInitiateRecharge}
-                    disabled={initiateCrypto.isPending}
-                  >
-                    {initiateCrypto.isPending ? "Génération…" : "Générer un lien de paiement LTC"}
-                  </Button>
-                </>
-              ) : (
-                <div className="space-y-4 animate-in slide-in-from-bottom-2 fade-in">
-                  <div className="bg-background rounded-xl p-4 border border-border">
-                    <div className="text-sm font-medium text-center mb-1">Envoyez le montant de votre choix</div>
-                    <div className="text-xs text-muted-foreground text-center mb-4">
-                      Votre solde sera crédité + bonus automatiquement après confirmation
-                    </div>
-
-                    <div className="flex justify-center mb-4">
-                      <div className="bg-white p-3 rounded-lg shadow-md">
-                        <QRCodeSVG
-                          value={`litecoin:${rechargeSession.address}`}
-                          size={180}
-                          level="M"
-                          includeMargin={false}
-                        />
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-center text-muted-foreground mb-4">
-                      Scanne avec ton portefeuille Litecoin
-                    </p>
-
-                    <div className="space-y-2 mb-4">
-                      <Label className="text-xs text-muted-foreground">…ou copie l'adresse :</Label>
-                      <div className="flex gap-2">
-                        <Input value={rechargeSession.address} readOnly className="font-mono text-xs bg-muted/50" />
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          onClick={() => copyToClipboard(rechargeSession.address)}
-                        >
-                          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-                      <ShieldAlert className="w-3 h-3 text-orange-500" />
-                      Réseau Litecoin (LTC) uniquement
-                    </div>
-                  </div>
-
-                  <div className="rounded-md bg-green-500/10 border border-green-500/30 px-3 py-2 flex gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-muted-foreground">
-                      <span className="font-semibold text-green-400">+5% bonus</span> inclus • <span className="font-semibold text-green-400">+10%</span> si votre envoi dépasse 100€
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 pt-2 border-t border-border">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                      <p className="text-sm font-medium text-primary">
-                        En attente du paiement… (expire dans 1h)
+                <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>Crypto — sans frais</div>
+              </div>
+              <ChevronRight className="w-4 h-4 shrink-0 transition-transform duration-200" style={{ color: "#a855f7", transform: expandedMethod === "ltc" ? "rotate(90deg)" : "none" }} />
+            </button>
+            {expandedMethod === "ltc" && (
+              <div className="px-4 pb-4 space-y-3 animate-in slide-in-from-top-2 fade-in">
+                {!rechargeSession ? (
+                  <>
+                    <div className="rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-2.5 flex gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        <span className="font-semibold text-green-400">+5% de bonus</span> sur toutes les recharges LTC •{" "}
+                        <span className="font-semibold text-green-400">+10% de bonus</span> si ta recharge dépasse 100€ •{" "}
+                        Aucun montant minimum requis.
                       </p>
                     </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Une fois ton virement Litecoin confirmé sur le réseau (env. 2-5 min),
-                      ton solde sera crédité <span className="font-semibold text-foreground">automatiquement</span>.
-                      Aucune action de ta part requise.
-                    </p>
+                    <Button
+                      className="w-full bg-gradient-to-r from-primary to-secondary text-white border-none rounded-xl h-12 font-medium"
+                      onClick={handleInitiateRecharge}
+                      disabled={initiateCrypto.isPending}
+                    >
+                      {initiateCrypto.isPending ? "Génération…" : "Générer un lien de paiement LTC"}
+                    </Button>
+                  </>
+                ) : (
+                  <div className="space-y-4 animate-in slide-in-from-bottom-2 fade-in">
+                    <div className="bg-background rounded-xl p-4 border border-border">
+                      <div className="text-sm font-medium text-center mb-1">Envoyez le montant de votre choix</div>
+                      <div className="text-xs text-muted-foreground text-center mb-4">
+                        Votre solde sera crédité + bonus automatiquement après confirmation
+                      </div>
+                      <div className="flex justify-center mb-4">
+                        <div className="bg-white p-3 rounded-lg shadow-md">
+                          <QRCodeSVG value={`litecoin:${rechargeSession.address}`} size={180} level="M" includeMargin={false} />
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-center text-muted-foreground mb-4">Scanne avec ton portefeuille Litecoin</p>
+                      <div className="space-y-2 mb-4">
+                        <Label className="text-xs text-muted-foreground">…ou copie l'adresse :</Label>
+                        <div className="flex gap-2">
+                          <Input value={rechargeSession.address} readOnly className="font-mono text-xs bg-muted/50" />
+                          <Button variant="secondary" size="icon" onClick={() => copyToClipboard(rechargeSession.address)}>
+                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+                        <ShieldAlert className="w-3 h-3 text-orange-500" /> Réseau Litecoin (LTC) uniquement
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-green-500/10 border border-green-500/30 px-3 py-2 flex gap-2">
+                      <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-muted-foreground">
+                        <span className="font-semibold text-green-400">+5% bonus</span> inclus • <span className="font-semibold text-green-400">+10%</span> si votre envoi dépasse 100€
+                      </p>
+                    </div>
+                    <div className="space-y-2 pt-2 border-t border-border/50">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <p className="text-sm font-medium text-primary">En attente du paiement… (expire dans 1h)</p>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        Une fois ton virement Litecoin confirmé sur le réseau (env. 2-5 min), ton solde sera crédité <span className="font-semibold text-foreground">automatiquement</span>. Aucune action de ta part requise.
+                      </p>
+                    </div>
+                    <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={() => setRechargeSession(null)}>
+                      Fermer (la session reste active en arrière-plan)
+                    </Button>
                   </div>
-
-                  <Button
-                    variant="ghost"
-                    className="w-full text-xs text-muted-foreground"
-                    onClick={() => setRechargeSession(null)}
-                  >
-                    Fermer (la session reste active en arrière-plan)
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* PayPal card — en maintenance */}
-          <Card className="bg-card/50 border-border/50 opacity-70">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 p-1" style={{ boxShadow: "0 2px 8px rgba(0,48,135,0.3)" }}>
-                  <img src="/logos-paypal.png" alt="PayPal" className="w-full h-full object-contain" />
-                </div>
-                PayPal
-                <span className="text-[10px] uppercase tracking-wide bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded inline-flex items-center gap-1">
-                  <Wrench className="w-3 h-3" />
-                  maintenance
-                </span>
-              </CardTitle>
-              <CardDescription>
-                Service PayPal temporairement indisponible.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-3 text-sm text-amber-200">
-                Le paiement via PayPal est momentanément en maintenance. Merci de réessayer ultérieurement ou d'utiliser une autre méthode de paiement.
+                )}
               </div>
-            </CardContent>
-          </Card>
-          {/* SumUp (Carte bancaire) - Remplace Stripe visuellement */}
+            )}
+          </div>
+
+          {/* PayPal row — maintenance (non cliquable) */}
+          <div className="rounded-2xl flex items-center gap-3 p-4" style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", opacity: 0.55 }}>
+            <div className="w-11 h-11 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0 p-1.5" style={{ boxShadow: "0 2px 8px rgba(0,48,135,0.3)" }}>
+              <img src="/logos-paypal.png" alt="PayPal" className="w-full h-full object-contain" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold" style={{ color: "#5a4d7a" }}>PayPal</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)" }}>maintenance</span>
+              </div>
+              <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>Temporairement indisponible</div>
+            </div>
+          </div>
+
+          {/* SumUp row */}
           {!SHOW_STRIPE && (
-            <Card className={`bg-card/50 border-border/50 relative ${!sumupConfig?.enabled ? "opacity-70" : ""}`}>
-              <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                <PaymentBadge type="visa" />
-                <PaymentBadge type="mastercard" />
-              </div>
-              <CardHeader className="pb-3 pr-28 sm:pr-32">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-xl overflow-hidden bg-black flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
-                    <img src="/logos-sumup.png" alt="SumUp" className="w-8 h-8 object-contain" />
+            <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${expandedMethod === "sumup" ? "rgba(6,182,212,0.35)" : "rgba(168,85,247,0.18)"}`, background: sumupConfig?.enabled === false ? "rgba(255,255,255,0.02)" : "rgba(168,85,247,0.05)", opacity: sumupConfig?.enabled === false ? 0.65 : 1 }}>
+              <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => toggleMethod("sumup")}>
+                <div className="w-11 h-11 rounded-xl overflow-hidden bg-black flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+                  <img src="/logos-sumup.png" alt="SumUp" className="w-8 h-8 object-contain" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-bold text-foreground">Carte bancaire</span>
+                    <div className="flex items-center gap-1">
+                      <PaymentBadge type="visa" />
+                      <PaymentBadge type="mastercard" />
+                    </div>
                   </div>
-                  Carte Bancaire (SumUp)
-                </CardTitle>
-                <CardDescription>
-                  {sumupConfig?.enabled
-                    ? "Paiement sécurisé par carte via SumUp."
-                    : "Bientôt disponible — configuration serveur requise."}
-                </CardDescription>
-              </CardHeader>
-              {(sumupConfig?.enabled ?? true) && (
-                <CardContent className="space-y-4">
+                  <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>Via SumUp — sécurisé</div>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0 transition-transform duration-200" style={{ color: "#a855f7", transform: expandedMethod === "sumup" ? "rotate(90deg)" : "none" }} />
+              </button>
+              {expandedMethod === "sumup" && (sumupConfig?.enabled ?? true) && (
+                <div className="px-4 pb-4 space-y-4 animate-in slide-in-from-top-2 fade-in">
                   {!sumupCheckout ? (
                     <>
                       <div className="grid grid-cols-3 gap-2">
@@ -493,11 +466,7 @@ export default function Wallet() {
                           <Button
                             key={amt}
                             variant={stripeMode === amt ? "default" : "outline"}
-                            className={`h-12 ${
-                              stripeMode === amt
-                                ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                                : "bg-background hover:bg-muted"
-                            }`}
+                            className={`h-12 ${stripeMode === amt ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
                             onClick={() => setStripeMode(amt)}
                           >
                             {amt}€
@@ -505,33 +474,21 @@ export default function Wallet() {
                         ))}
                         <Button
                           variant={stripeMode === "custom" ? "default" : "outline"}
-                          className={`h-12 ${
-                            stripeMode === "custom"
-                              ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                              : "bg-background hover:bg-muted"
-                          }`}
+                          className={`h-12 ${stripeMode === "custom" ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted"}`}
                           onClick={() => setStripeMode("custom")}
                         >
                           Autre
                         </Button>
                       </div>
                       {stripeMode === "custom" && (
-                        <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
-                          <div className="relative">
-                            <Input
-                              type="number"
-                              inputMode="decimal"
-                              min={5}
-                              max={5000}
-                              step="0.01"
-                              placeholder="Montant en €"
-                              value={stripeCustomAmount}
-                              onChange={(e) => setStripeCustomAmount(e.target.value)}
-                              className="h-12 pr-10 text-base font-medium"
-                              autoFocus
-                            />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
-                          </div>
+                        <div className="relative animate-in slide-in-from-top-1 fade-in">
+                          <Input
+                            type="number" inputMode="decimal" min={5} max={5000} step="0.01"
+                            placeholder="Montant en €" value={stripeCustomAmount}
+                            onChange={(e) => setStripeCustomAmount(e.target.value)}
+                            className="h-12 pr-10 text-base font-medium" autoFocus
+                          />
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
                         </div>
                       )}
                       <Button
@@ -539,226 +496,91 @@ export default function Wallet() {
                         disabled={!isStripeAmountValid || initiateSumup.isPending}
                         onClick={handleStartSumup}
                       >
-                        {initiateSumup.isPending
-                          ? "Préparation..."
-                          : `Continuer — ${stripeAmount.toFixed(2)}€`}
+                        {initiateSumup.isPending ? "Préparation..." : `Continuer — ${stripeAmount.toFixed(2)}€`}
                       </Button>
                     </>
                   ) : (
                     <SumupPaymentForm
                       checkoutId={sumupCheckout.id}
                       amountEur={sumupCheckout.amountEur}
-                      onSuccess={() => {
-                        invalidateWallet();
-                        setSumupCheckout(null);
-                      }}
+                      onSuccess={() => { invalidateWallet(); setSumupCheckout(null); }}
                       onCancel={() => setSumupCheckout(null)}
                     />
                   )}
-                </CardContent>
+                </div>
               )}
-            </Card>
+            </div>
           )}
 
-          {/* Stripe Original (Masqué mais conservé) */}
-          {SHOW_STRIPE && (
-            <Card className={`bg-card/50 border-border/50 relative ${!stripeConfig?.enabled ? "opacity-70" : ""}`}>
-            {/* Payment method badges, top-right */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5">
-              <PaymentBadge type="visa" />
-              <PaymentBadge type="mastercard" />
-              <PaymentBadge type="link" />
-            </div>
-            <CardHeader className="pb-3 pr-28 sm:pr-32">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#635BFF] to-[#3a32d6] text-white flex items-center justify-center font-bold text-sm">
-                  S
-                </div>
-                Stripe
-              </CardTitle>
-              <CardDescription>
-                {stripeConfig?.enabled
-                  ? "Carte bancaire ou Link — paiement instantané et sécurisé."
-                  : "Bientôt disponible — configuration serveur requise."}
-              </CardDescription>
-            </CardHeader>
-            {stripeConfig?.enabled && (
-              <CardContent className="space-y-4">
+          {/* Stripe (conservé, masqué) */}
+          {SHOW_STRIPE && stripeConfig?.enabled && stripePromise && (
+            <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(99,91,255,0.3)", background: "rgba(99,91,255,0.05)" }}>
+              <div className="p-4 space-y-4">
                 {!stripeIntent ? (
                   <>
                     <div className="grid grid-cols-3 gap-2">
                       {RECHARGE_AMOUNTS.map((amt) => (
-                        <Button
-                          key={amt}
-                          variant={stripeMode === amt ? "default" : "outline"}
-                          className={`h-12 ${
-                            stripeMode === amt
-                              ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                              : "bg-background hover:bg-muted"
-                          }`}
-                          onClick={() => setStripeMode(amt)}
-                        >
-                          {amt}€
-                        </Button>
+                        <Button key={amt} variant={stripeMode === amt ? "default" : "outline"} className="h-12" onClick={() => setStripeMode(amt)}>{amt}€</Button>
                       ))}
-                      <Button
-                        variant={stripeMode === "custom" ? "default" : "outline"}
-                        className={`h-12 ${
-                          stripeMode === "custom"
-                            ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
-                            : "bg-background hover:bg-muted"
-                        }`}
-                        onClick={() => setStripeMode("custom")}
-                      >
-                        Autre
-                      </Button>
+                      <Button variant={stripeMode === "custom" ? "default" : "outline"} className="h-12" onClick={() => setStripeMode("custom")}>Autre</Button>
                     </div>
-                    {stripeMode === "custom" && (
-                      <div className="space-y-1 animate-in slide-in-from-top-1 fade-in">
-                        <div className="relative">
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            min={5}
-                            max={5000}
-                            step="0.01"
-                            placeholder="Montant en €"
-                            value={stripeCustomAmount}
-                            onChange={(e) => setStripeCustomAmount(e.target.value)}
-                            className="h-12 pr-10 text-base font-medium"
-                            autoFocus
-                          />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground px-1">
-                          Minimum 5€ — Maximum 5000€
-                        </p>
-                      </div>
-                    )}
-                    <Button
-                      className="w-full h-12 bg-gradient-to-r from-[#635BFF] to-[#3a32d6] hover:from-[#5249f5] hover:to-[#2f28b8] text-white shadow-md shadow-[#635BFF]/30"
-                      disabled={!isStripeAmountValid || createStripe.isPending}
-                      onClick={handleStartStripe}
-                    >
-                      {createStripe.isPending
-                        ? "Préparation..."
-                        : isStripeAmountValid
-                        ? `Continuer vers le paiement — ${stripeAmount.toFixed(2)}€`
-                        : "Entrez un montant entre 5€ et 5000€"}
+                    <Button className="w-full h-12 bg-gradient-to-r from-[#635BFF] to-[#3a32d6] text-white" disabled={!isStripeAmountValid || createStripe.isPending} onClick={handleStartStripe}>
+                      {createStripe.isPending ? "Préparation..." : `Continuer — ${stripeAmount.toFixed(2)}€`}
                     </Button>
-                    <div className="rounded-md border border-border/40 bg-muted/20 px-3 py-2.5 flex gap-2">
-                      <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-muted-foreground leading-relaxed">
-                        <span className="font-semibold text-foreground">NexoShop n'enregistre pas tes coordonnées bancaires.</span> Le paiement est traité directement par Stripe (PCI-DSS niveau 1). Si tu préfères, tu peux utiliser une carte virtuelle ou éphémère (Revolut, N26, Lydia, PCS…).
-                      </p>
-                    </div>
                   </>
-                ) : stripePromise ? (
-                  <Elements
-                    stripe={stripePromise}
-                    options={{
-                      clientSecret: stripeIntent.clientSecret,
-                      appearance: {
-                        theme: "night",
-                        variables: {
-                          colorPrimary: "#635BFF",
-                          colorBackground: "#0a0a0a",
-                          colorText: "#fafafa",
-                          borderRadius: "8px",
-                        },
-                      },
-                    }}
-                  >
-                    <StripePaymentForm
-                      intentId={stripeIntent.intentId}
-                      amountEur={stripeIntent.amountEur}
-                      onSuccess={() => {
-                        invalidateWallet();
-                        setStripeIntent(null);
-                      }}
-                      onCancel={() => setStripeIntent(null)}
-                    />
-                  </Elements>
-                ) : null}
-              </CardContent>
-            )}
-          </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-4">
-          <Card className="bg-card/50 border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <History className="w-5 h-5 text-primary" />
-                Dernières Transactions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ScrollArea className="h-[400px]">
-                {isLoadingTx ? (
-                  <div className="p-4 space-y-3">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="h-12 bg-muted/50 rounded animate-pulse" />
-                    ))}
-                  </div>
-                ) : !transactions || transactions.length === 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    Aucune transaction pour le moment.
-                  </div>
                 ) : (
-                  <div className="divide-y divide-border/50">
-                    {transactions.map((tx) => {
-                      const isCredit = tx.type === "credit" || tx.type === "admin_credit";
-                      return (
-                      <div
-                        key={tx.id}
-                        className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              isCredit
-                                ? "bg-green-500/10 text-green-500"
-                                : "bg-red-500/10 text-red-500"
-                            }`}
-                          >
-                            {isCredit ? (
-                              <ArrowDownToLine className="w-4 h-4" />
-                            ) : (
-                              <ArrowUpRight className="w-4 h-4" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium text-sm">{tx.description}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(tx.createdAt).toLocaleDateString("fr-FR", {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                        <div
-                          className={`font-mono font-bold ${
-                            isCredit ? "text-green-500" : "text-foreground"
-                          }`}
-                        >
-                          {isCredit ? "+" : "-"}
-                          {tx.amount.toFixed(2)}€
-                        </div>
-                      </div>
-                      );
-                    })}
-                  </div>
+                  <Elements stripe={stripePromise} options={{ clientSecret: stripeIntent.clientSecret, appearance: { theme: "night" } }}>
+                    <StripePaymentForm intentId={stripeIntent.intentId} amountEur={stripeIntent.amountEur} onSuccess={() => { invalidateWallet(); setStripeIntent(null); }} onCancel={() => setStripeIntent(null)} />
+                  </Elements>
                 )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── HISTORIQUE RÉCENT ───────────────────────── */}
+      <div>
+        <div className="text-[11px] font-bold tracking-widest uppercase mb-3 px-1" style={{ color: "#5a4d7a" }}>
+          Historique récent
+        </div>
+        {isLoadingTx ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl bg-muted/30 animate-pulse" />)}
+          </div>
+        ) : !transactions || transactions.length === 0 ? (
+          <div className="text-center text-sm text-muted-foreground py-8">Aucune transaction pour le moment.</div>
+        ) : (
+          <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(168,85,247,0.03)", border: "1px solid rgba(168,85,247,0.1)" }}>
+            {transactions.slice(0, 10).map((tx, i, arr) => {
+              const isCredit = tx.type === "credit" || tx.type === "admin_credit";
+              return (
+                <div
+                  key={tx.id}
+                  className="flex items-center gap-3 px-4 py-3"
+                  style={{ borderBottom: i < arr.length - 1 ? "1px solid rgba(168,85,247,0.08)" : "none" }}
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: isCredit ? "rgba(34,197,94,0.1)" : "rgba(168,85,247,0.1)", border: `1px solid ${isCredit ? "rgba(34,197,94,0.2)" : "rgba(168,85,247,0.2)"}` }}>
+                    {isCredit
+                      ? <TrendingUp className="w-3.5 h-3.5" style={{ color: "#22c55e" }} />
+                      : <CreditCard className="w-3.5 h-3.5" style={{ color: "#a855f7" }} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">{tx.description}</div>
+                    <div className="text-[10px]" style={{ color: "#5a4d7a" }}>
+                      {new Date(tx.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                  <div className="text-sm font-bold font-mono shrink-0" style={{ color: isCredit ? "#22c55e" : "#e2d9f3" }}>
+                    {isCredit ? "+" : "-"}{tx.amount.toFixed(2)}€
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
