@@ -1,4 +1,5 @@
 import { Wallet, Coins, ArrowUpRight, ArrowDownLeft, Zap, TrendingUp, ChevronRight } from "lucide-react";
+import { LitecoinLogo, PaypalLogo, SumUpLogo } from "./logos";
 
 const transactions = [
   { label: "Netflix Premium", type: "out", amount: 14.99, date: "Auj." },
@@ -7,38 +8,10 @@ const transactions = [
   { label: "Recharge SumUp", type: "in", amount: 50.00, date: "10/05" },
 ];
 
-function LitecoinLogo() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 26 26">
-      <circle cx="13" cy="13" r="13" fill="#345D9D" />
-      <text x="6" y="19" fontFamily="serif" fontWeight="bold" fontSize="16" fill="white">Ł</text>
-    </svg>
-  );
-}
-
-function PaypalLogo() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 32 32">
-      <rect width="32" height="32" rx="8" fill="#003087" />
-      <text x="7" y="22" fontFamily="Arial" fontWeight="bold" fontSize="14" fill="white">P</text>
-      <text x="14" y="22" fontFamily="Arial" fontWeight="bold" fontSize="14" fill="#009cde">P</text>
-    </svg>
-  );
-}
-
-function SumUpLogo() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 26 26">
-      <rect width="26" height="26" rx="7" fill="#3063E9" />
-      <text x="5" y="19" fontFamily="Arial" fontWeight="bold" fontSize="15" fill="white">Σ</text>
-    </svg>
-  );
-}
-
 const methods = [
-  { logo: <LitecoinLogo />, name: "Litecoin", sub: "+5% bonus", color: "#345D9D", active: true },
-  { logo: <PaypalLogo />,   name: "PayPal",   sub: "Maintenance", color: "#003087", active: false },
-  { logo: <SumUpLogo />,    name: "SumUp",    sub: "Visa / Mastercard", color: "#3063E9", active: true },
+  { logo: <LitecoinLogo size={28} />, name: "Litecoin", sub: "+5% bonus", color: "#BFBBBB", active: true },
+  { logo: <PaypalLogo size={28} />,   name: "PayPal",   sub: "Maintenance", color: "#003087", active: false },
+  { logo: <SumUpLogo size={28} />,    name: "SumUp",    sub: "Visa / Mastercard", color: "#00D4AA", active: true },
 ];
 
 export function NeonDashboard() {

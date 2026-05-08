@@ -1,4 +1,5 @@
-import { Shield, Zap, Clock, Copy, TrendingUp, Coins, CreditCard, ChevronRight } from "lucide-react";
+import { Shield, Zap, TrendingUp, Coins, CreditCard, ChevronRight } from "lucide-react";
+import { LitecoinLogo, PaypalLogo, SumUpLogo, VisaBadge, MastercardBadge } from "./logos";
 
 const transactions = [
   { label: "Netflix Premium", amount: -14.99, date: "Aujourd'hui" },
@@ -6,30 +7,6 @@ const transactions = [
   { label: "ChatGPT Plus", amount: -19.99, date: "12 mai" },
   { label: "Recharge SumUp", amount: +50.00, date: "10 mai" },
 ];
-
-function PaypalLogo() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M7.5 3h7.5C17.5 3 19 4.5 19 7c0 3-2 5-5 5H9.5l-1 5H5L7.5 3z" fill="#003087" />
-      <path d="M9.5 8h4c2 0 3.5-1 3.5-3s-1.5-3-3.5-3H9.5L8 8h1.5z" fill="#009cde" />
-    </svg>
-  );
-}
-
-function LitecoinLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="11" fill="#345D9D" />
-      <text x="5" y="17" fontFamily="serif" fontWeight="bold" fontSize="14" fill="white">Ł</text>
-    </svg>
-  );
-}
-
-function SumUpLogo() {
-  return (
-    <div style={{ width: 22, height: 22, borderRadius: 6, background: "#3063E9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "white" }}>Σ</div>
-  );
-}
 
 const methods = [
   {

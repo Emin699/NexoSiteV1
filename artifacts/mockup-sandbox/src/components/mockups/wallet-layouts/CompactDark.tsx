@@ -1,4 +1,5 @@
-import { ArrowDownLeft, ArrowUpRight, Zap, Coins, TrendingUp, ChevronRight, Shield } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Coins, TrendingUp, ChevronRight, Shield } from "lucide-react";
+import { LitecoinLogo, PaypalLogo, SumUpLogo, VisaBadge, MastercardBadge } from "./logos";
 
 const amounts = [5, 10, 20, 30, 50];
 const transactions = [
@@ -7,49 +8,6 @@ const transactions = [
   { label: "ChatGPT Plus",     type: "out", amount: 19.99, date: "12 mai" },
   { label: "Recharge SumUp",   type: "in",  amount: 50.00, date: "10 mai" },
 ];
-
-function LitecoinLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="10" fill="#345D9D" />
-      <text x="4" y="15" fontFamily="serif" fontWeight="bold" fontSize="12" fill="white">Ł</text>
-    </svg>
-  );
-}
-
-function PaypalLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20">
-      <rect width="20" height="20" rx="5" fill="#003087" />
-      <text x="4" y="14" fontFamily="Arial" fontWeight="bold" fontSize="9" fill="white">P</text>
-      <text x="9" y="14" fontFamily="Arial" fontWeight="bold" fontSize="9" fill="#009cde">P</text>
-    </svg>
-  );
-}
-
-function SumUpLogo() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20">
-      <rect width="20" height="20" rx="5" fill="#3063E9" />
-      <text x="4" y="14" fontFamily="Arial" fontWeight="bold" fontSize="11" fill="white">Σ</text>
-    </svg>
-  );
-}
-
-function VisaBadge() {
-  return (
-    <div style={{ background: "#1a1f71", borderRadius: 4, padding: "2px 6px", fontSize: 10, fontWeight: 900, color: "white", fontStyle: "italic", letterSpacing: "0.05em" }}>VISA</div>
-  );
-}
-
-function McBadge() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", background: "#252525", borderRadius: 4, padding: "2px 4px", gap: -4 }}>
-      <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#eb001b" }} />
-      <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#f79e1b", marginLeft: -5 }} />
-    </div>
-  );
-}
 
 export function CompactDark() {
   return (
@@ -116,7 +74,7 @@ export function CompactDark() {
               <div style={{ fontSize: 13, fontWeight: 700, color: "#e2d9f3" }}>Carte bancaire (SumUp)</div>
               <div style={{ fontSize: 10, color: "#5a4d7a" }}>Paiement sécurisé</div>
             </div>
-            <div style={{ display: "flex", gap: 4 }}><VisaBadge /><McBadge /></div>
+            <div style={{ display: "flex", gap: 4 }}><VisaBadge /><MastercardBadge /></div>
           </div>
 
           {/* Amount selector */}
