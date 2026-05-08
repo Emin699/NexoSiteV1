@@ -54,6 +54,7 @@ import { toast } from "sonner";
 
 const RECHARGE_AMOUNTS = [5, 10, 20, 30, 50];
 const SHOW_STRIPE = false; // Basculer à true pour réactiver Stripe
+const SUMUP_FEE = 0.02; // 2% de frais bancaires répercutés sur le client
 
 export default function Wallet() {
   const [, setLocation] = useLocation();
@@ -493,12 +494,21 @@ export default function Wallet() {
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
                         </div>
                       )}
+                      <div className="rounded-xl px-3 py-2 flex items-start gap-2" style={{ background: "rgba(6,182,212,0.07)", border: "1px solid rgba(6,182,212,0.2)" }}>
+                        <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "#06b6d4" }} />
+                        <p className="text-[11px] leading-relaxed" style={{ color: "rgba(255,255,255,0.5)" }}>
+                          <span className="font-semibold" style={{ color: "#06b6d4" }}>2% de frais bancaires</span> seront ajoutés au montant choisi.{" "}
+                          Vous payez <span className="font-semibold text-white">{(Math.round(stripeAmount * (1 + SUMUP_FEE) * 100) / 100).toFixed(2)}€</span> — votre solde sera crédité de <span className="font-semibold text-white">{stripeAmount.toFixed(2)}€</span>.
+                        </p>
+                      </div>
                       <Button
                         className="w-full h-12 bg-[#3063E9] hover:bg-[#254eba] text-white shadow-md shadow-[#3063E9]/30"
                         disabled={!isStripeAmountValid || initiateSumup.isPending}
                         onClick={handleStartSumup}
                       >
-                        {initiateSumup.isPending ? "Préparation..." : `Continuer — ${stripeAmount.toFixed(2)}€`}
+                        {initiateSumup.isPending
+                          ? "Préparation..."
+                          : `Payer ${(Math.round(stripeAmount * (1 + SUMUP_FEE) * 100) / 100).toFixed(2)}€ → +${stripeAmount.toFixed(2)}€ crédités`}
                       </Button>
                     </>
                   ) : (

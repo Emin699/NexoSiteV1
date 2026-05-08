@@ -38,13 +38,17 @@ router.post("/wallet/recharge/sumup/create", requireAuth, async (req, res): Prom
   try {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.userId!));
     
-    const checkout = await createSumupCheckout(parsed.data.amountEur, req.userId!, user?.email || undefined);
+    // 2% frais SumUp répercutés sur le client — le checkout SumUp est créé pour
+    // le montant majoré, mais la DB stocke le montant net (ce qui sera crédité).
+    const SUMUP_FEE = 0.02;
+    const chargedAmount = Math.round(parsed.data.amountEur * (1 + SUMUP_FEE) * 100) / 100;
+    const checkout = await createSumupCheckout(chargedAmount, req.userId!, user?.email || undefined);
     
     await db.insert(sumupRechargesTable).values({
       userId: req.userId!,
       checkoutId: checkout.id,
       checkoutReference: checkout.checkout_reference,
-      amountEur: parsed.data.amountEur.toFixed(2),
+      amountEur: parsed.data.amountEur.toFixed(2), // montant net crédité au wallet
       status: checkout.status,
     });
 
