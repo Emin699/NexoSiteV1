@@ -451,6 +451,8 @@ export default function Wallet() {
                     <div className="flex items-center gap-1">
                       <PaymentBadge type="visa" />
                       <PaymentBadge type="mastercard" />
+                      <PaymentBadge type="applepay" />
+                      <PaymentBadge type="googlepay" />
                     </div>
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>Via SumUp — sécurisé</div>
@@ -739,7 +741,7 @@ function StripePaymentForm({
   );
 }
 
-function PaymentBadge({ type }: { type: "visa" | "mastercard" | "link" }) {
+function PaymentBadge({ type }: { type: "visa" | "mastercard" | "link" | "applepay" | "googlepay" }) {
   const base = "h-5 w-9 rounded-[3px] bg-white flex items-center justify-center shadow-sm border border-black/5";
   if (type === "visa") {
     return (
@@ -755,6 +757,31 @@ function PaymentBadge({ type }: { type: "visa" | "mastercard" | "link" }) {
           <circle cx="9" cy="8" r="6" fill="#EB001B" />
           <circle cx="15" cy="8" r="6" fill="#F79E1B" />
           <path d="M12 3.5a6 6 0 0 1 0 9 6 6 0 0 1 0-9z" fill="#FF5F00" />
+        </svg>
+      </div>
+    );
+  }
+  if (type === "applepay") {
+    return (
+      <div className="h-5 w-9 rounded-[3px] bg-black flex items-center justify-center shadow-sm border border-white/10" title="Apple Pay">
+        <svg viewBox="0 0 40 16" className="h-3" aria-hidden="true" fill="white">
+          <path d="M7.8 2.4c.5-.6.8-1.4.7-2.2-.7 0-1.6.5-2.1 1.1-.5.5-.8 1.3-.7 2.1.8 0 1.6-.4 2.1-1z"/>
+          <path d="M8.5 3.6c-1.2-.1-2.2.7-2.7.7-.6 0-1.4-.6-2.3-.6C2.2 3.8 1 4.6.4 5.8c-1.2 2.1-.3 5.2.8 6.9.6.8 1.2 1.7 2.1 1.7.8 0 1.1-.5 2.1-.5s1.3.5 2.1.5c.9 0 1.5-.9 2.1-1.7.6-.9.9-1.8.9-1.8s-1.7-.7-1.7-2.5c0-1.6 1.3-2.3 1.4-2.4-.8-1.2-2-1.4-2.7-1.4z"/>
+          <path d="M17.3.5h-1.7l-3.5 9.8h1.5l1-2.8h3.7l1 2.8h1.5L17.3.5zm-2.3 5.8 1.5-4.2 1.5 4.2h-3z"/>
+          <path d="M26.2 3.8c-1.7 0-2.9 1.3-2.9 3.1 0 1.9 1.2 3.1 2.9 3.1.9 0 1.6-.4 2-.9v2.7h1.4V3.9h-1.3v.9c-.4-.6-1.2-1-2.1-1zm.3 1.2c1 0 1.8.8 1.8 2s-.8 2-1.8 2c-1 0-1.8-.8-1.8-2s.8-2 1.8-2z"/>
+          <path d="M33.8 3.8c-1 0-1.8.4-2.2 1v-.9H30v8.9h1.4V9.1c.4.6 1.2 1 2.1 1 1.8 0 3-1.2 3-3.1 0-2-.9-3.2-2.7-3.2zm-.4 5.1c-1 0-1.8-.8-1.8-2s.8-2 1.8-2c1.1 0 1.8.8 1.8 2s-.7 2-1.8 2z"/>
+        </svg>
+      </div>
+    );
+  }
+  if (type === "googlepay") {
+    return (
+      <div className={base} title="Google Pay">
+        <svg viewBox="0 0 40 16" className="h-3" aria-hidden="true">
+          <text x="0" y="12" fontSize="10" fontWeight="700" fontFamily="Arial,sans-serif">
+            <tspan fill="#4285F4">G</tspan><tspan fill="#EA4335">o</tspan><tspan fill="#FBBC05">o</tspan><tspan fill="#4285F4">g</tspan><tspan fill="#34A853">l</tspan><tspan fill="#EA4335">e</tspan>
+          </text>
+          <text x="22" y="12" fontSize="10" fontWeight="700" fontFamily="Arial,sans-serif" fill="#3c4043"> Pay</text>
         </svg>
       </div>
     );
