@@ -33,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isHome = location === "/";
   const isCart = location === "/cart";
   const isWallet = location === "/wallet";
-  const isAdmin = location === "/admin";
+  const isAdmin = location === "/gestion-x7q2p9k";
   const isOrders = location === "/orders";
   const isReviews = location === "/reviews";
   const isProfile = !isAdmin && (location.startsWith("/profile") ||
@@ -242,7 +242,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
 
           {user?.isAdmin ? (
-            <Link href="/admin" className={navItem(isAdmin)}>
+            <Link href="/gestion-x7q2p9k" className={navItem(isAdmin)}>
               <ShieldCheck className="w-5 h-5" />
               <span className="text-[10px] font-medium">Admin</span>
             </Link>

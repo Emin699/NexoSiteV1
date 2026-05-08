@@ -64,7 +64,7 @@ function AppContent() {
             <Route path="/orders" component={OrdersPage} />
             <Route path="/support" component={Support} />
             <Route path="/support/:id" component={SupportTicketDetail} />
-            <Route path="/admin" component={Admin} />
+            <Route path="/gestion-x7q2p9k" component={Admin} />
             <Route component={NotFound} />
           </Switch>
         </Layout>
