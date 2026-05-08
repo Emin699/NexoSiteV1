@@ -4,5 +4,9 @@ export const modules: ModuleMap = {
   "./components/mockups/product-cards/HoloCard.tsx": () => import("../components/mockups/product-cards/HoloCard.tsx"),
   "./components/mockups/product-cards/MinimalApple.tsx": () => import("../components/mockups/product-cards/MinimalApple.tsx"),
   "./components/mockups/product-cards/NeonGaming.tsx": () => import("../components/mockups/product-cards/NeonGaming.tsx"),
-  "./components/mockups/product-cards/PremiumGlass.tsx": () => import("../components/mockups/product-cards/PremiumGlass.tsx")
+  "./components/mockups/product-cards/PremiumGlass.tsx": () => import("../components/mockups/product-cards/PremiumGlass.tsx"),
+  "./components/mockups/themes/Cyberpunk.tsx": () => import("../components/mockups/themes/Cyberpunk.tsx"),
+  "./components/mockups/themes/EmeraldDark.tsx": () => import("../components/mockups/themes/EmeraldDark.tsx"),
+  "./components/mockups/themes/LuxeMinimal.tsx": () => import("../components/mockups/themes/LuxeMinimal.tsx"),
+  "./components/mockups/themes/MidnightBlue.tsx": () => import("../components/mockups/themes/MidnightBlue.tsx")
 };
