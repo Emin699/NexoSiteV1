@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startRechargeWatcher } from "./lib/recharge-watcher";
+import { startSumupWatcher, stopSumupWatcher } from "./lib/sumup-watcher";
 import { startPendingOrdersWatcher, stopPendingOrdersWatcher } from "./lib/pending-orders-watcher";
 import { notify } from "./lib/notifier";
 
@@ -27,6 +28,8 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
   // Start the background watcher that auto-credits confirmed LTC payments.
   startRechargeWatcher();
+  // Start the background watcher that auto-credits confirmed SumUp payments.
+  startSumupWatcher();
   // Start the periodic pending-orders summary to the Telegram notify channel.
   startPendingOrdersWatcher();
   if (notify.isEnabled()) {
@@ -36,6 +39,7 @@ app.listen(port, (err) => {
 
 // Make sure we send a graceful shutdown notice if the server is stopped.
 const shutdown = (signal: string) => {
+  stopSumupWatcher();
   stopPendingOrdersWatcher();
   if (notify.isEnabled()) {
     notify.raw(`🔴 <b>Serveur arrêté</b> (${signal})`);
