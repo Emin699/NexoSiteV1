@@ -7,9 +7,6 @@ import {
   useInitiateCryptoRecharge,
   useGetPendingCryptoRecharges,
   useCancelPendingCryptoRecharge,
-  useGetPaypalConfig,
-  useCreatePaypalOrder,
-  useCapturePaypalOrder,
   useGetStripeConfig,
   useCreateStripeIntent,
   useConfirmStripeIntent,
@@ -22,7 +19,6 @@ import {
   getGetPendingCryptoRechargesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { loadStripe, type Stripe as StripeJS } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { QRCodeSVG } from "qrcode.react";
@@ -30,21 +26,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Wallet as WalletIcon,
   Coins,
-  History,
-  ArrowDownToLine,
-  ArrowUpRight,
   Copy,
   Check,
   ShieldAlert,
   ShieldCheck,
   Clock,
   XCircle,
-  Wrench,
   Zap,
   TrendingUp,
   ChevronRight,
@@ -73,21 +63,16 @@ export default function Wallet() {
   const { data: wallet, isLoading: isLoadingWallet } = useGetWallet(refetchOpts);
   const { data: transactions, isLoading: isLoadingTx } = useGetTransactions(refetchOpts);
   const { data: pending } = useGetPendingCryptoRecharges(refetchOpts);
-  const { data: paypalConfig } = useGetPaypalConfig();
   const { data: stripeConfig } = useGetStripeConfig();
 
   const initiateCrypto = useInitiateCryptoRecharge();
   const cancelPending = useCancelPendingCryptoRecharge();
-  const createPaypal = useCreatePaypalOrder();
-  const capturePaypal = useCapturePaypalOrder();
   const createStripe = useCreateStripeIntent();
 
   const { data: sumupConfig } = useGetSumupConfig();
   const initiateSumup = useInitiateSumupCheckout();
   const confirmSumup = useConfirmSumupCheckout();
 
-  const [paypalMode, setPaypalMode] = useState<number | "custom">(10);
-  const [paypalCustomAmount, setPaypalCustomAmount] = useState<string>("");
   const [stripeMode, setStripeMode] = useState<number | "custom">(10);
   const [stripeCustomAmount, setStripeCustomAmount] = useState<string>("");
   const [stripeIntent, setStripeIntent] = useState<{
@@ -109,9 +94,7 @@ export default function Wallet() {
     const n = Number(v.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   };
-  const paypalAmount = paypalMode === "custom" ? parseCustom(paypalCustomAmount) : paypalMode;
   const stripeAmount = stripeMode === "custom" ? parseCustom(stripeCustomAmount) : stripeMode;
-  const isPaypalAmountValid = paypalAmount >= 5 && paypalAmount <= 5000;
   const isStripeAmountValid = stripeAmount >= 5 && stripeAmount <= 5000;
 
   const stripePromise = useMemo<Promise<StripeJS | null> | null>(() => {

@@ -16,7 +16,10 @@ import {
 
 const router: IRouter = Router();
 
-const LTC_WALLET_ADDRESS = process.env["LTC_WALLET_ADDRESS"] || "MEmhJRCuDSfCQdqdPvszdMJcNgNNmVJ5nS";
+const LTC_WALLET_ADDRESS = process.env["LTC_WALLET_ADDRESS"];
+if (!LTC_WALLET_ADDRESS) {
+  throw new Error("LTC_WALLET_ADDRESS manquante dans les variables d'environnement");
+}
 
 router.get("/wallet", requireAuth, async (req, res): Promise<void> => {
   const [user] = await db

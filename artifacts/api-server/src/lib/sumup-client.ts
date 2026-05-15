@@ -4,11 +4,14 @@ const SUMUP_API_BASE = "https://api.sumup.com";
 let tokenCache: { token: string; expiresAt: number } | null = null;
 
 async function getAccessToken(): Promise<string> {
-  const clientId = process.env["SUMUP_CLIENT_ID"] || "cc_classic_ju7wWXPLFWeNtFgwerzub54kOSlsh";
-  const clientSecret = process.env["SUMUP_CLIENT_SECRET"] || "cc_sk_classic_zGdCSOq3BzS2lPsVFmKZHpQKI8fwt8V6zoIFQLqpl46jLCizbf";
-  const apiKey = process.env["SUMUP_API_KEY"] || "sup_sk_3pYZm9Maezj1XgpL76qxKvKUc";
+  const clientId = process.env["SUMUP_CLIENT_ID"];
+  const clientSecret = process.env["SUMUP_CLIENT_SECRET"];
+  const apiKey = process.env["SUMUP_API_KEY"];
 
-  // Check cache (with 1 minute buffer)
+  if (!clientId || !clientSecret || !apiKey) {
+    throw new Error("SumUp credentials manquantes (SUMUP_CLIENT_ID, SUMUP_CLIENT_SECRET, SUMUP_API_KEY)");
+  }
+
   if (tokenCache && Date.now() < tokenCache.expiresAt - 60000) {
     return tokenCache.token;
   }
@@ -41,8 +44,12 @@ async function getAccessToken(): Promise<string> {
 }
 
 export function isSumupConfigured(): boolean {
-  // On considère configuré si les clés sont présentes (hardcodées par défaut ici pour le test)
-  return true;
+  return !!(
+    process.env["SUMUP_CLIENT_ID"] &&
+    process.env["SUMUP_CLIENT_SECRET"] &&
+    process.env["SUMUP_API_KEY"] &&
+    process.env["SUMUP_PAY_TO_EMAIL"]
+  );
 }
 
 export async function createSumupCheckout(amountEur: number, userId: number, userEmail?: string): Promise<{
@@ -51,7 +58,11 @@ export async function createSumupCheckout(amountEur: number, userId: number, use
   status: string;
 }> {
   const token = await getAccessToken();
-  const payToEmail = process.env["SUMUP_PAY_TO_EMAIL"] || "dupuisrenov83@outlook.fr";
+  const payToEmail = process.env["SUMUP_PAY_TO_EMAIL"];
+
+  if (!payToEmail) {
+    throw new Error("SUMUP_PAY_TO_EMAIL manquante");
+  }
 
   const checkoutReference = `recharge_${userId}_${Date.now()}`;
   
