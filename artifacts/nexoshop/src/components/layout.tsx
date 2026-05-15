@@ -56,384 +56,201 @@ export function Layout({ children }: { children: React.ReactNode }) {
         : "text-muted-foreground hover:text-foreground"
     }`;
 
-  const sideNavItem = (active: boolean) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-      active
-        ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_rgba(168,85,247,0.3)]"
-        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-    }`;
-
   return (
-    <div className="flex min-h-[100dvh] bg-background text-foreground">
+    <div className="flex flex-col min-h-[100dvh] bg-background text-foreground">
 
-      {/* ── DESKTOP SIDEBAR ─────────────────────────────────────────── */}
-      <aside
-        className="hidden lg:flex fixed inset-y-0 left-0 w-56 flex-col z-50 border-r"
+      {/* ── HEADER ───────────────────────────────────────────────── */}
+      <header
+        className="sticky top-0 z-40 w-full backdrop-blur-md border-b"
         style={{
-          background: "rgba(6,4,15,0.97)",
-          borderRightColor: "rgba(168,85,247,0.18)",
-          boxShadow: "2px 0 30px rgba(168,85,247,0.06)",
+          background: "rgba(6,4,15,0.92)",
+          borderBottomColor: "rgba(168,85,247,0.25)",
+          boxShadow: "0 1px 30px rgba(168,85,247,0.08)",
         }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2 px-5 py-5 border-b"
-          style={{ borderBottomColor: "rgba(168,85,247,0.12)" }}>
-          <Link href="/" className="flex items-center">
+        <div className="flex items-center justify-between px-4 h-14 max-w-screen-md mx-auto">
+          {/* Left: balance (if authed) */}
+          <div>
+            {isAuthed ? (
+              <Link href="/wallet" className="flex items-center gap-2 p-1 -ml-1 rounded-full hover:bg-primary/10 transition-colors">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" }}>
+                  <Wallet className="w-4 h-4 text-primary" />
+                </div>
+                <span className="font-mono font-bold text-sm"
+                  style={{ color: "#a855f7", textShadow: "0 0 12px rgba(168,85,247,0.5)" }}>
+                  {user?.balance.toFixed(2) || "0.00"}€
+                </span>
+              </Link>
+            ) : (
+              <span aria-hidden="true" className="w-2" />
+            )}
+          </div>
+
+          {/* Center: logo */}
+          <Link href="/" className="flex items-center absolute left-1/2 -translate-x-1/2">
             <img
               src="/nexoshop-logo.png"
               alt="NexoShop"
-              className="h-8 w-auto select-none"
-              style={{ filter: "drop-shadow(0 0 10px rgba(168,85,247,0.5))" }}
+              className="h-6 sm:h-9 w-auto select-none"
+              style={{ filter: "drop-shadow(0 0 10px rgba(168,85,247,0.4))" }}
               draggable={false}
             />
           </Link>
+
+          {/* Right: auth + cart */}
+          <div className="flex items-center gap-2 -mr-2">
+            {!isAuthed && (
+              <Link
+                href="/auth"
+                data-signup-anchor
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                style={{
+                  background: "linear-gradient(135deg, #a855f7, #7c3aed)",
+                  color: "#fff",
+                  boxShadow: "0 0 16px rgba(168,85,247,0.45)",
+                }}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Se connecter</span>
+              </Link>
+            )}
+            <Link
+              href="/cart"
+              onClick={(e) => guard(e, "Connecte-toi pour accéder à ton panier")}
+              className="relative p-2 rounded-full hover:bg-primary/10 transition-colors"
+            >
+              <ShoppingCart className="w-5 h-5 text-foreground" />
+              {cart?.itemCount ? (
+                <Badge
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] border-none rounded-full animate-in zoom-in"
+                  style={{ background: "#a855f7", color: "#fff" }}
+                >
+                  {cart.itemCount}
+                </Badge>
+              ) : null}
+            </Link>
+          </div>
         </div>
+      </header>
 
-        {/* Balance (if authed) */}
-        {isAuthed && (
-          <Link
-            href="/wallet"
-            className="flex items-center gap-3 mx-3 mt-3 px-3 py-2.5 rounded-xl transition-all hover:bg-primary/10"
-            style={{ border: "1px solid rgba(168,85,247,0.2)", background: "rgba(168,85,247,0.07)" }}
-          >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ background: "rgba(168,85,247,0.2)" }}>
-              <Wallet className="w-4 h-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground leading-none mb-0.5">Solde</p>
-              <p className="font-mono font-bold text-sm leading-none"
-                style={{ color: "#a855f7", textShadow: "0 0 12px rgba(168,85,247,0.5)" }}>
-                {user?.balance.toFixed(2) || "0.00"}€
-              </p>
-            </div>
-          </Link>
-        )}
+      {!isAuthed && <SignupPrompt />}
 
-        {/* Nav items */}
-        <nav className="flex flex-col gap-1 px-3 mt-4 flex-1">
-          <Link href="/" className={sideNavItem(isHome)}>
-            <Store className="w-4 h-4 flex-shrink-0" />
-            <span>Shop</span>
+      {/* ── MAIN CONTENT ─────────────────────────────────────────── */}
+      <main className="flex-1 w-full max-w-screen-md mx-auto overflow-x-hidden flex flex-col pb-16">
+        <div className="flex-1">{children}</div>
+
+        {/* Footer */}
+        <footer
+          className="mt-10 border-t px-4 py-5"
+          style={{ borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.03)" }}
+        >
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
+            <p className="text-center sm:text-left">
+              © {new Date().getFullYear()}{" "}
+              <span className="font-semibold" style={{ color: "#a855f7" }}>NexoShop</span>{" "}
+              — Tous droits réservés.
+            </p>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/support"
+                onClick={(e) => guard(e, "Connecte-toi pour accéder au support")}
+                className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                <LifeBuoy className="w-3.5 h-3.5" />
+                <span>Support</span>
+              </Link>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+                    <Radio className="w-3.5 h-3.5" />
+                    <span>Canal</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="end" className="w-60 p-3" sideOffset={8}>
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <div className="w-9 h-9 rounded-full bg-[#229ED9]/15 flex items-center justify-center text-[#229ED9]">
+                      <TelegramLogo className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-foreground leading-tight">Canal Telegram</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight">Annonces, drops & promos.</p>
+                    </div>
+                  </div>
+                  <a
+                    href={TELEGRAM_CHANNEL_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 w-full px-3 py-2 rounded-md bg-[#229ED9] hover:bg-[#1c84b5] text-white text-xs font-semibold transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <TelegramLogo className="w-3.5 h-3.5" />
+                      Rejoindre
+                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </footer>
+      </main>
+
+      {/* ── MOBILE BOTTOM NAV ────────────────────────────────────── */}
+      <nav
+        className="fixed bottom-0 w-full backdrop-blur-md border-t z-50 pb-safe"
+        style={{
+          background: "rgba(6,4,15,0.94)",
+          borderTopColor: "rgba(168,85,247,0.2)",
+          boxShadow: "0 -1px 30px rgba(168,85,247,0.08)",
+        }}
+      >
+        <div className="flex items-center justify-around h-16 max-w-screen-md mx-auto px-2">
+          <Link href="/" className={mobileNavItem(isHome)}>
+            <Store className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Shop</span>
           </Link>
 
           <Link
             href="/orders"
             onClick={(e) => guard(e, "Connecte-toi pour voir tes commandes")}
-            className={sideNavItem(isOrders)}
+            className={mobileNavItem(isOrders)}
           >
-            <PackageSearch className="w-4 h-4 flex-shrink-0" />
-            <span>Commandes</span>
+            <PackageSearch className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Commandes</span>
           </Link>
 
-          <Link href="/reviews" className={sideNavItem(isReviews)}>
-            <Star className="w-4 h-4 flex-shrink-0" />
-            <span>Avis</span>
+          <Link href="/reviews" className={mobileNavItem(isReviews)}>
+            <Star className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Avis</span>
           </Link>
 
           <Link
             href="/wallet"
             onClick={(e) => guard(e, "Connecte-toi pour accéder à ton portefeuille")}
-            className={sideNavItem(isWallet)}
+            className={mobileNavItem(isWallet)}
           >
-            <Wallet className="w-4 h-4 flex-shrink-0" />
-            <span>Wallet</span>
+            <Wallet className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Wallet</span>
           </Link>
 
           <Link
             href="/profile"
             onClick={(e) => guard(e, "Connecte-toi pour accéder à ton profil")}
-            className={sideNavItem(isProfile)}
+            className={mobileNavItem(isProfile)}
           >
-            <User className="w-4 h-4 flex-shrink-0" />
-            <span>Profil</span>
-          </Link>
-
-          <Link
-            href="/support"
-            onClick={(e) => guard(e, "Connecte-toi pour accéder au support")}
-            className={sideNavItem(isSupport)}
-          >
-            <LifeBuoy className="w-4 h-4 flex-shrink-0" />
-            <span>Support</span>
+            <User className="w-5 h-5" />
+            <span className="text-[10px] font-medium">Profil</span>
           </Link>
 
           {user?.isAdmin && (
-            <Link href="/gestion-x7q2p9k" className={sideNavItem(isAdmin)}>
-              <ShieldCheck className="w-4 h-4 flex-shrink-0" />
-              <span>Admin</span>
+            <Link href="/gestion-x7q2p9k" className={mobileNavItem(isAdmin)}>
+              <ShieldCheck className="w-5 h-5" />
+              <span className="text-[10px] font-medium">Admin</span>
             </Link>
           )}
-        </nav>
-
-        {/* Sidebar footer */}
-        <div className="px-3 pb-5 border-t pt-4 flex flex-col gap-2"
-          style={{ borderTopColor: "rgba(168,85,247,0.12)" }}>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-3 px-4 py-2 rounded-xl text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors w-full"
-              >
-                <Radio className="w-4 h-4 flex-shrink-0" />
-                <span>Canal Telegram</span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="right" align="end" className="w-60 p-3" sideOffset={8}>
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#229ED9]/15 flex items-center justify-center text-[#229ED9]">
-                  <TelegramLogo className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground leading-tight">Canal Telegram</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight">Annonces, drops & promos.</p>
-                </div>
-              </div>
-              <a
-                href={TELEGRAM_CHANNEL_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between gap-2 w-full px-3 py-2 rounded-md bg-[#229ED9] hover:bg-[#1c84b5] text-white text-xs font-semibold transition-colors"
-              >
-                <span className="flex items-center gap-1.5">
-                  <TelegramLogo className="w-3.5 h-3.5" />
-                  Rejoindre
-                </span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
-            </PopoverContent>
-          </Popover>
-
-          <p className="text-[10px] text-muted-foreground/50 px-4">
-            © {new Date().getFullYear()} NexoShop
-          </p>
         </div>
-      </aside>
-
-      {/* ── MAIN AREA ───────────────────────────────────────────────── */}
-      <div className="flex flex-col flex-1 lg:ml-56 min-h-[100dvh] pb-16 lg:pb-0">
-
-        {/* Header */}
-        <header
-          className="sticky top-0 z-40 w-full backdrop-blur-md border-b"
-          style={{
-            background: "rgba(6,4,15,0.92)",
-            borderBottomColor: "rgba(168,85,247,0.25)",
-            boxShadow: "0 1px 30px rgba(168,85,247,0.08)",
-          }}
-        >
-          <div className="flex items-center justify-between px-4 h-14 max-w-screen-md mx-auto lg:max-w-none">
-            {/* Mobile: balance | Desktop: empty left */}
-            <div className="lg:hidden">
-              {isAuthed ? (
-                <Link href="/wallet" className="flex items-center gap-2 p-1 -ml-1 rounded-full hover:bg-primary/10 transition-colors">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                    style={{ background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)" }}>
-                    <Wallet className="w-4 h-4 text-primary" />
-                  </div>
-                  <span className="font-mono font-bold text-sm"
-                    style={{ color: "#a855f7", textShadow: "0 0 12px rgba(168,85,247,0.5)" }}>
-                    {user?.balance.toFixed(2) || "0.00"}€
-                  </span>
-                </Link>
-              ) : (
-                <span aria-hidden="true" className="w-2" />
-              )}
-            </div>
-
-            {/* Mobile: centered logo | Desktop: hidden (sidebar has it) */}
-            <Link href="/" className="flex items-center lg:hidden absolute left-1/2 -translate-x-1/2">
-              <img
-                src="/nexoshop-logo.png"
-                alt="NexoShop"
-                className="h-6 sm:h-9 w-auto select-none"
-                style={{ filter: "drop-shadow(0 0 10px rgba(168,85,247,0.4))" }}
-                draggable={false}
-              />
-            </Link>
-
-            {/* Desktop: page title spacer */}
-            <div className="hidden lg:block" />
-
-            {/* Right: auth + cart */}
-            <div className="flex items-center gap-2 -mr-2">
-              {!isAuthed && (
-                <Link
-                  href="/auth"
-                  data-signup-anchor
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
-                  style={{
-                    background: "linear-gradient(135deg, #a855f7, #7c3aed)",
-                    color: "#fff",
-                    boxShadow: "0 0 16px rgba(168,85,247,0.45)",
-                  }}
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Se connecter</span>
-                </Link>
-              )}
-              <Link
-                href="/cart"
-                onClick={(e) => guard(e, "Connecte-toi pour accéder à ton panier")}
-                className="relative p-2 rounded-full hover:bg-primary/10 transition-colors"
-              >
-                <ShoppingCart className="w-5 h-5 text-foreground" />
-                {cart?.itemCount ? (
-                  <Badge
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-[10px] border-none rounded-full animate-in zoom-in"
-                    style={{ background: "#a855f7", color: "#fff" }}
-                  >
-                    {cart.itemCount}
-                  </Badge>
-                ) : null}
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        {!isAuthed && <SignupPrompt />}
-
-        {/* Main content */}
-        <main className="flex-1 w-full max-w-screen-md mx-auto lg:max-w-none lg:mx-0 overflow-x-hidden flex flex-col">
-          <div className="flex-1 lg:px-8 lg:py-2">{children}</div>
-
-          {/* Footer — desktop only (mobile uses bottom nav) */}
-          <footer
-            className="mt-10 border-t px-4 py-5 hidden lg:block"
-            style={{ borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.03)" }}
-          >
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
-              <p>
-                © {new Date().getFullYear()}{" "}
-                <span className="font-semibold" style={{ color: "#a855f7" }}>NexoShop</span>{" "}
-                — Tous droits réservés.
-              </p>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/support"
-                  onClick={(e) => guard(e, "Connecte-toi pour accéder au support")}
-                  className="flex items-center gap-1.5 hover:text-foreground transition-colors"
-                >
-                  <LifeBuoy className="w-3.5 h-3.5" />
-                  <span>Support</span>
-                </Link>
-              </div>
-            </div>
-          </footer>
-
-          {/* Mobile footer */}
-          <footer
-            className="mt-10 border-t px-4 py-5 lg:hidden"
-            style={{ borderColor: "rgba(168,85,247,0.15)", background: "rgba(168,85,247,0.03)" }}
-          >
-            <div className="max-w-screen-md mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
-              <p className="text-center sm:text-left">
-                © {new Date().getFullYear()}{" "}
-                <span className="font-semibold" style={{ color: "#a855f7" }}>NexoShop</span>{" "}
-                — Tous droits réservés.
-              </p>
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/support"
-                  onClick={(e) => guard(e, "Connecte-toi pour accéder au support")}
-                  className="flex items-center gap-1.5 hover:text-foreground transition-colors"
-                >
-                  <LifeBuoy className="w-3.5 h-3.5" />
-                  <span>Support</span>
-                </Link>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button type="button" className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                      <Radio className="w-3.5 h-3.5" />
-                      <span>Canal</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent side="top" align="end" className="w-60 p-3" sideOffset={8}>
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                      <div className="w-9 h-9 rounded-full bg-[#229ED9]/15 flex items-center justify-center text-[#229ED9]">
-                        <TelegramLogo className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground leading-tight">Canal Telegram</p>
-                        <p className="text-[10px] text-muted-foreground leading-tight">Annonces, drops & promos.</p>
-                      </div>
-                    </div>
-                    <a
-                      href={TELEGRAM_CHANNEL_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between gap-2 w-full px-3 py-2 rounded-md bg-[#229ED9] hover:bg-[#1c84b5] text-white text-xs font-semibold transition-colors"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <TelegramLogo className="w-3.5 h-3.5" />
-                        Rejoindre
-                      </span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </a>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </footer>
-        </main>
-
-        {/* ── MOBILE BOTTOM NAV (hidden lg+) ──────────────────────── */}
-        <nav
-          className="lg:hidden fixed bottom-0 w-full backdrop-blur-md border-t z-50 pb-safe"
-          style={{
-            background: "rgba(6,4,15,0.94)",
-            borderTopColor: "rgba(168,85,247,0.2)",
-            boxShadow: "0 -1px 30px rgba(168,85,247,0.08)",
-          }}
-        >
-          <div className="flex items-center justify-around h-16 max-w-screen-md mx-auto px-2">
-            <Link href="/" className={mobileNavItem(isHome)}>
-              <Store className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Shop</span>
-            </Link>
-
-            <Link
-              href="/orders"
-              onClick={(e) => guard(e, "Connecte-toi pour voir tes commandes")}
-              className={mobileNavItem(isOrders)}
-            >
-              <PackageSearch className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Commandes</span>
-            </Link>
-
-            <Link href="/reviews" className={mobileNavItem(isReviews)}>
-              <Star className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Avis</span>
-            </Link>
-
-            <Link
-              href="/wallet"
-              onClick={(e) => guard(e, "Connecte-toi pour accéder à ton portefeuille")}
-              className={mobileNavItem(isWallet)}
-            >
-              <Wallet className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Wallet</span>
-            </Link>
-
-            <Link
-              href="/profile"
-              onClick={(e) => guard(e, "Connecte-toi pour accéder à ton profil")}
-              className={mobileNavItem(isProfile)}
-            >
-              <User className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Profil</span>
-            </Link>
-
-            {user?.isAdmin && (
-              <Link href="/gestion-x7q2p9k" className={mobileNavItem(isAdmin)}>
-                <ShieldCheck className="w-5 h-5" />
-                <span className="text-[10px] font-medium">Admin</span>
-              </Link>
-            )}
-          </div>
-        </nav>
-      </div>
+      </nav>
     </div>
   );
 }
