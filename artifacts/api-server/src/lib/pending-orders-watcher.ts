@@ -24,7 +24,9 @@ async function runOnce(): Promise<void> {
       .where(eq(ordersTable.status, "pending"))
       .orderBy(asc(ordersTable.createdAt));
 
-    const oldestAt = rows.length > 0 ? rows[0].createdAt : null;
+    if (rows.length === 0) return;
+
+    const oldestAt = rows[0].createdAt;
     notify.pendingOrdersSummary({
       pendingCount: rows.length,
       oldestAt,
