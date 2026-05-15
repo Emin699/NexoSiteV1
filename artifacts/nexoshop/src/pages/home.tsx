@@ -131,7 +131,7 @@ export default function Home() {
       </div>
 
       {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-8">
+      <div className="grid grid-cols-2 gap-4 pb-8">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="h-[480px] animate-pulse bg-muted/20 border-border/50" />

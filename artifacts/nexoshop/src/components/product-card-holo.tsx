@@ -91,7 +91,7 @@ export function ProductCardHolo({ product, onOpen, onAddToCart, onBuy, busy }: P
         />
 
         {/* Image / Visuel */}
-        <div className="relative h-44 overflow-hidden">
+        <div className="relative h-52 overflow-hidden">
           {product.imageUrl ? (
             <img
               src={product.imageUrl}
