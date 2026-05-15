@@ -416,7 +416,7 @@ export default function ProductDetail() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-12 bg-background/60 hover:bg-primary/10 hover:text-primary border-border/60 font-bold"
+                  className="h-12 border-2 border-secondary/70 text-secondary hover:bg-secondary/15 hover:border-secondary font-bold shadow-md shadow-secondary/20"
                   onClick={handleBuyNow}
                   disabled={(!product.inStock && !unlimited) || busy}
                 >
