@@ -112,7 +112,7 @@ export function ProductCardHolo({ product, onOpen, onAddToCart, onBuy, busy }: P
         {/* Contenu */}
         <div className="relative p-4 space-y-3">
           <div>
-            <h3 className="font-bold text-lg text-white leading-tight line-clamp-1">{product.name}</h3>
+            <h3 className="font-bold text-lg text-white leading-tight line-clamp-2">{product.name}</h3>
             {hasVariants && (
               <p className="mt-0.5 text-[10px] uppercase tracking-[0.2em] font-bold" style={{ color: "#06b6d4" }}>
                 {activeVariants.length} variante{activeVariants.length > 1 ? "s" : ""}
