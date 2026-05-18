@@ -39,6 +39,7 @@ import {
   TrendingUp,
   ChevronRight,
   CreditCard,
+  ArrowDownToLine,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -201,15 +202,6 @@ export default function Wallet() {
     toast.success("Copié dans le presse-papier");
   };
 
-  const paypalOptions = useMemo(() => {
-    if (!paypalConfig?.enabled || !paypalConfig.clientId) return null;
-    return {
-      clientId: paypalConfig.clientId,
-      currency: "EUR",
-      intent: "capture",
-      ...(paypalConfig.env === "sandbox" ? {} : {}),
-    };
-  }, [paypalConfig]);
 
   if (isLoadingWallet) {
     return <div className="p-4 animate-pulse h-screen bg-card/50"></div>;
