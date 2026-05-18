@@ -8,23 +8,47 @@ function getApiKey(): string {
 }
 
 export function isSumupConfigured(): boolean {
-  return !!(
-    process.env["SUMUP_API_KEY"] &&
-    process.env["SUMUP_PAY_TO_EMAIL"]
-  );
+  return !!process.env["SUMUP_API_KEY"];
 }
 
-export async function createSumupCheckout(amountEur: number, userId: number, userEmail?: string): Promise<{
+let cachedMerchantCode: string | null = null;
+
+async function getMerchantCode(): Promise<string> {
+  if (cachedMerchantCode) return cachedMerchantCode;
+
+  const envCode = process.env["SUMUP_MERCHANT_CODE"];
+  if (envCode) {
+    cachedMerchantCode = envCode;
+    return envCode;
+  }
+
+  const apiKey = getApiKey();
+  const response = await fetch(`${SUMUP_API_BASE}/v0.1/me/merchant-profile`, {
+    method: "GET",
+    headers: { "Authorization": `Bearer ${apiKey}` },
+  });
+
+  if (!response.ok) {
+    const err = await response.text().catch(() => "");
+    throw new Error(`SumUp merchant-profile error: ${response.status} ${err}`);
+  }
+
+  const data = await response.json() as { merchant_code?: string };
+  if (!data.merchant_code) {
+    throw new Error("SumUp: merchant_code introuvable dans le profil");
+  }
+
+  cachedMerchantCode = data.merchant_code;
+  return data.merchant_code;
+}
+
+export async function createSumupCheckout(amountEur: number, userId: number, _userEmail?: string): Promise<{
   id: string;
   checkout_reference: string;
   status: string;
 }> {
   const apiKey = getApiKey();
-  const payToEmail = process.env["SUMUP_PAY_TO_EMAIL"];
-
-  if (!payToEmail) {
-    throw new Error("SUMUP_PAY_TO_EMAIL manquante");
-  }
+  const merchantCode = await getMerchantCode();
 
   const checkoutReference = `recharge_${userId}_${Date.now()}`;
 
@@ -38,7 +62,7 @@ export async function createSumupCheckout(amountEur: number, userId: number, use
       checkout_reference: checkoutReference,
       amount: amountEur,
       currency: "EUR",
-      pay_to_email: payToEmail,
+      merchant_code: merchantCode,
       description: `Recharge NexoShop - Utilisateur #${userId}`,
     }),
   });
