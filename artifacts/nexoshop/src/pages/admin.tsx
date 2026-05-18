@@ -14,6 +14,7 @@ import { AdminTickets } from "@/components/admin-tickets";
 import { AdminProductModal } from "@/components/admin-product-modal";
 import { AdminCategoriesManager } from "@/components/admin-categories-manager";
 import { AdminCoupons } from "@/components/admin-coupons";
+import { AdminMaintenance } from "@/components/admin-maintenance";
 import type { Product } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -115,7 +116,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="products" className="w-full">
-        <TabsList className="grid grid-cols-7 w-full bg-card border border-border/50">
+        <TabsList className="grid grid-cols-8 w-full bg-card border border-border/50">
           <TabsTrigger value="products" className="text-[10px] px-1">Produits</TabsTrigger>
           <TabsTrigger value="categories" className="text-[10px] px-1">Catég.</TabsTrigger>
           <TabsTrigger value="coupons" className="text-[10px] px-1">Coupons</TabsTrigger>
@@ -123,7 +124,12 @@ export default function Admin() {
           <TabsTrigger value="tickets" className="text-[10px] px-1">Tickets</TabsTrigger>
           <TabsTrigger value="logs" className="text-[10px] px-1">Logs</TabsTrigger>
           <TabsTrigger value="users" className="text-[10px] px-1">Users</TabsTrigger>
+          <TabsTrigger value="maintenance" className="text-[10px] px-1">Maint.</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="maintenance" className="mt-4">
+          <AdminMaintenance />
+        </TabsContent>
 
         <TabsContent value="categories" className="mt-4">
           <AdminCategoriesManager />

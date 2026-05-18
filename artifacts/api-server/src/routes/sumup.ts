@@ -28,6 +28,12 @@ router.post("/wallet/recharge/sumup/create", requireAuth, async (req, res): Prom
     res.status(503).json({ error: "SumUp n'est pas configuré sur ce serveur" });
     return;
   }
+  const { getBoolSetting } = await import("../lib/app-settings.js");
+  const enabled = await getBoolSetting("sumup_enabled", true);
+  if (!enabled) {
+    res.status(503).json({ error: "Paiement par carte temporairement en maintenance" });
+    return;
+  }
   
   const parsed = CreateBody.safeParse(req.body);
   if (!parsed.success) {

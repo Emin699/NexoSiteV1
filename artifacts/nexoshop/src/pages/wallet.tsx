@@ -13,6 +13,7 @@ import {
   useGetSumupConfig,
   useInitiateSumupCheckout,
   useConfirmSumupCheckout,
+  useGetMaintenance,
   getGetWalletQueryKey,
   getGetMeQueryKey,
   getGetTransactionsQueryKey,
@@ -71,6 +72,7 @@ export default function Wallet() {
   const createStripe = useCreateStripeIntent();
 
   const { data: sumupConfig } = useGetSumupConfig();
+  const { data: maintenance } = useGetMaintenance();
   const initiateSumup = useInitiateSumupCheckout();
   const confirmSumup = useConfirmSumupCheckout();
 
@@ -316,21 +318,27 @@ export default function Wallet() {
         <div className="flex flex-col gap-2.5">
 
           {/* Litecoin row */}
-          <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${expandedMethod === "ltc" ? "rgba(168,85,247,0.35)" : "rgba(168,85,247,0.18)"}`, background: "rgba(168,85,247,0.05)" }}>
-            <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => toggleMethod("ltc")}>
+          <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${expandedMethod === "ltc" ? "rgba(168,85,247,0.35)" : "rgba(168,85,247,0.18)"}`, background: maintenance?.ltcEnabled === false ? "rgba(255,255,255,0.02)" : "rgba(168,85,247,0.05)", opacity: maintenance?.ltcEnabled === false ? 0.6 : 1 }}>
+            <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => maintenance?.ltcEnabled !== false && toggleMethod("ltc")} disabled={maintenance?.ltcEnabled === false}>
               <div className="w-11 h-11 rounded-xl overflow-hidden bg-white flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(52,93,157,0.35)" }}>
                 <img src="/logos-ltc.png" alt="Litecoin" className="w-9 h-9 object-contain rounded-full" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-foreground">Litecoin</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: "#22c55e", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)" }}>+5% bonus</span>
+                  {maintenance?.ltcEnabled === false ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)" }}>maintenance</span>
+                  ) : (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: "#22c55e", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)" }}>+5% bonus</span>
+                  )}
                 </div>
-                <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>Crypto — sans frais</div>
+                <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>
+                  {maintenance?.ltcEnabled === false ? "Temporairement indisponible" : "Crypto — sans frais"}
+                </div>
               </div>
               <ChevronRight className="w-4 h-4 shrink-0 transition-transform duration-200" style={{ color: "#a855f7", transform: expandedMethod === "ltc" ? "rotate(90deg)" : "none" }} />
             </button>
-            {expandedMethod === "ltc" && (
+            {expandedMethod === "ltc" && maintenance?.ltcEnabled !== false && (
               <div className="px-4 pb-4 space-y-3 animate-in slide-in-from-top-2 fade-in">
                 {!rechargeSession ? (
                   <>
@@ -415,15 +423,21 @@ export default function Wallet() {
           </div>
 
           {/* SumUp row */}
-          {!SHOW_STRIPE && (
-            <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${expandedMethod === "sumup" ? "rgba(6,182,212,0.35)" : "rgba(168,85,247,0.18)"}`, background: sumupConfig?.enabled === false ? "rgba(255,255,255,0.02)" : "rgba(168,85,247,0.05)", opacity: sumupConfig?.enabled === false ? 0.65 : 1 }}>
-              <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => toggleMethod("sumup")}>
+          {!SHOW_STRIPE && (() => {
+            const sumupDisabled = sumupConfig?.enabled === false || maintenance?.sumupEnabled === false;
+            const sumupMaintenance = maintenance?.sumupEnabled === false;
+            return (
+            <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${expandedMethod === "sumup" ? "rgba(6,182,212,0.35)" : "rgba(168,85,247,0.18)"}`, background: sumupDisabled ? "rgba(255,255,255,0.02)" : "rgba(168,85,247,0.05)", opacity: sumupDisabled ? 0.65 : 1 }}>
+              <button className="w-full flex items-center gap-3 p-4 text-left" onClick={() => !sumupDisabled && toggleMethod("sumup")} disabled={sumupDisabled}>
                 <div className="w-11 h-11 rounded-xl overflow-hidden bg-black flex items-center justify-center shrink-0" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
                   <img src="/logos-sumup.png" alt="SumUp" className="w-8 h-8 object-contain" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-foreground">Carte bancaire</span>
+                    {sumupMaintenance && (
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)" }}>maintenance</span>
+                    )}
                     <div className="flex items-center gap-1">
                       <PaymentBadge type="visa" />
                       <PaymentBadge type="mastercard" />
@@ -431,7 +445,9 @@ export default function Wallet() {
                       <PaymentBadge type="googlepay" />
                     </div>
                   </div>
-                  <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>Via SumUp — sécurisé</div>
+                  <div className="text-xs mt-0.5" style={{ color: "#5a4d7a" }}>
+                    {sumupMaintenance ? "Temporairement indisponible" : "Via SumUp — sécurisé"}
+                  </div>
                 </div>
                 <ChevronRight className="w-4 h-4 shrink-0 transition-transform duration-200" style={{ color: "#a855f7", transform: expandedMethod === "sumup" ? "rotate(90deg)" : "none" }} />
               </button>
@@ -490,7 +506,8 @@ export default function Wallet() {
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
 
           {/* Stripe (conservé, masqué) */}
           {SHOW_STRIPE && stripeConfig?.enabled && stripePromise && (

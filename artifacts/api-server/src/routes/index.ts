@@ -22,6 +22,7 @@ import stripeRouter from "./stripe";
 import sumupRouter from "./sumup";
 import ticketsRouter from "./tickets";
 import publicStatsRouter from "./public-stats";
+import maintenanceRouter from "./maintenance";
 
 const router: IRouter = Router();
 
@@ -48,5 +49,6 @@ router.use(stripeRouter);
 router.use(sumupRouter);
 router.use(ticketsRouter);
 router.use(publicStatsRouter);
+router.use(maintenanceRouter);
 
 export default router;

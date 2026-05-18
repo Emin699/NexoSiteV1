@@ -26,6 +26,12 @@ router.post("/wallet/recharge/paypal/create", requireAuth, async (req, res): Pro
     res.status(503).json({ error: "PayPal n'est pas configuré sur ce serveur" });
     return;
   }
+  const { getBoolSetting } = await import("../lib/app-settings.js");
+  const enabled = await getBoolSetting("paypal_enabled", false);
+  if (!enabled) {
+    res.status(503).json({ error: "PayPal temporairement en maintenance" });
+    return;
+  }
   const parsed = CreateBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Montant invalide (5-5000€)" });

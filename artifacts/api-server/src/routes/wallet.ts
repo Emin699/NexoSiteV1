@@ -61,6 +61,12 @@ router.get("/wallet/transactions", requireAuth, async (req, res): Promise<void> 
 });
 
 router.post("/wallet/recharge/crypto", requireAuth, async (req, res): Promise<void> => {
+  const { getBoolSetting } = await import("../lib/app-settings.js");
+  const enabled = await getBoolSetting("ltc_enabled", true);
+  if (!enabled) {
+    res.status(503).json({ error: "Recharge Litecoin temporairement en maintenance" });
+    return;
+  }
   // Nouveau système : aucun montant requis. L'utilisateur envoie ce qu'il veut ;
   // le watcher détecte la TX et crédite le montant reçu + bonus automatiquement.
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1h

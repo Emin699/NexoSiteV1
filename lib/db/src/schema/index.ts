@@ -19,3 +19,4 @@ export * from "./sumup_recharges";
 export * from "./tickets";
 export * from "./ticket_messages";
 export * from "./bot_subscribers";
+export * from "./app_settings";
