@@ -63,7 +63,8 @@ router.post("/wallet/recharge/sumup/create", requireAuth, async (req, res): Prom
     });
   } catch (err) {
     req.log.error({ err }, "SumUp createCheckout failed");
-    res.status(502).json({ error: "SumUp indisponible — réessaie" });
+    const detail = err instanceof Error ? err.message : String(err);
+    res.status(502).json({ error: `SumUp: ${detail}` });
   }
 });
 
